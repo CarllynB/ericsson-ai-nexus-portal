@@ -11,7 +11,7 @@ const Dashboard = () => {
             Dashboard
           </h1>
           <p className="text-lg text-muted-foreground">
-            Monitor and manage your AI agents and operations
+            Monitor and manage the AI-DU Agents
           </p>
         </div>
 
@@ -34,34 +34,18 @@ const Dashboard = () => {
                 We're working hard to bring you an amazing dashboard experience with:
               </p>
               
-              <div className="grid md:grid-cols-2 gap-4 text-left">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-primary rounded-full" />
-                    <span className="text-sm">Real-time agent monitoring</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-primary rounded-full" />
-                    <span className="text-sm">Performance analytics</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-primary rounded-full" />
-                    <span className="text-sm">Usage statistics</span>
-                  </div>
+              <div className="space-y-3 text-left max-w-md mx-auto">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full" />
+                  <span className="text-sm">Real-time agent monitoring</span>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-primary rounded-full" />
-                    <span className="text-sm">System health indicators</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-primary rounded-full" />
-                    <span className="text-sm">Custom reporting</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-primary rounded-full" />
-                    <span className="text-sm">Alert management</span>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full" />
+                  <span className="text-sm">Performance analytics</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full" />
+                  <span className="text-sm">Usage statistics</span>
                 </div>
               </div>
               

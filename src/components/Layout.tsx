@@ -29,7 +29,12 @@ export const Layout = () => {
                 />
               </div>
             </Button>
-            <h1 className="text-xl font-bold text-foreground">AI-DU Agent Portal</h1>
+            <button 
+              onClick={() => window.location.href = '/'}
+              className="text-xl font-bold text-foreground hover:text-primary transition-colors cursor-pointer"
+            >
+              AI-DU Agent Portal
+            </button>
           </div>
           
           <Button
