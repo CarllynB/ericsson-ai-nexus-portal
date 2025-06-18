@@ -22,11 +22,11 @@ export const Layout = () => {
               className="flex items-center gap-2 hover:bg-primary/10"
             >
               <div className="w-8 h-8 flex items-center justify-center">
-                <div className="flex flex-col gap-0.5">
-                  <div className="w-5 h-1 bg-foreground rounded-full"></div>
-                  <div className="w-5 h-1 bg-foreground rounded-full"></div>
-                  <div className="w-5 h-1 bg-foreground rounded-full"></div>
-                </div>
+                <img 
+                  src="/lovable-uploads/b8bb4758-0293-4ed5-983e-de4d68ff60d1.png" 
+                  alt="Ericsson Logo" 
+                  className="w-6 h-6 object-contain"
+                />
               </div>
             </Button>
             <h1 className="text-xl font-bold text-foreground">AI-DU Agent Portal</h1>
@@ -59,11 +59,11 @@ export const Layout = () => {
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 flex items-center justify-center">
-              <div className="flex flex-col gap-1">
-                <div className="w-6 h-1.5 bg-foreground rounded-full"></div>
-                <div className="w-6 h-1.5 bg-foreground rounded-full"></div>
-                <div className="w-6 h-1.5 bg-foreground rounded-full"></div>
-              </div>
+              <img 
+                src="/lovable-uploads/b8bb4758-0293-4ed5-983e-de4d68ff60d1.png" 
+                alt="Ericsson Logo" 
+                className="w-8 h-8 object-contain"
+              />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">AI-DU Agent Portal</p>
