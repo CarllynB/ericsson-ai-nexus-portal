@@ -21,12 +21,15 @@ export const Layout = () => {
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="flex items-center gap-2 hover:bg-primary/10"
             >
-              <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">E</span>
+              <div className="w-8 h-8 flex items-center justify-center">
+                <div className="flex flex-col gap-0.5">
+                  <div className="w-5 h-1 bg-foreground rounded-full"></div>
+                  <div className="w-5 h-1 bg-foreground rounded-full"></div>
+                  <div className="w-5 h-1 bg-foreground rounded-full"></div>
+                </div>
               </div>
-              <span className="font-semibold text-foreground">Ericsson</span>
             </Button>
-            <h1 className="text-xl font-bold text-foreground">AI-DU Portal</h1>
+            <h1 className="text-xl font-bold text-foreground">AI-DU Agent Portal</h1>
           </div>
           
           <Button
@@ -55,12 +58,15 @@ export const Layout = () => {
       }`}>
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">E</span>
+            <div className="w-10 h-10 flex items-center justify-center">
+              <div className="flex flex-col gap-1">
+                <div className="w-6 h-1.5 bg-foreground rounded-full"></div>
+                <div className="w-6 h-1.5 bg-foreground rounded-full"></div>
+                <div className="w-6 h-1.5 bg-foreground rounded-full"></div>
+              </div>
             </div>
             <div>
-              <h2 className="font-bold text-foreground">Ericsson</h2>
-              <p className="text-sm text-muted-foreground">AI-DU Portal</p>
+              <p className="text-sm text-muted-foreground">AI-DU Agent Portal</p>
             </div>
           </div>
           <Button

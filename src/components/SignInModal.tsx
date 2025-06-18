@@ -26,7 +26,7 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <LogIn className="w-5 h-5" />
-            Sign In to AI-DU Portal
+            Sign In to AI-DU Agent Portal
           </DialogTitle>
         </DialogHeader>
         

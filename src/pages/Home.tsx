@@ -12,10 +12,10 @@ const Home = () => {
           <div className="text-center space-y-8">
             <div className="space-y-4">
               <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                AI-DU Portal
+                AI-DU Agent Portal
               </h1>
               <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-                Your centralized gateway to access and interact with GenAI agents. 
+                Our centralized gateway to access and interact with GenAI agents. 
                 Streamline operations with intelligent automation.
               </p>
             </div>
@@ -47,7 +47,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-              Powered by Advanced AI
+              AI-DU Approved GenAI Agents
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Leverage cutting-edge GenAI agents to automate complex tasks and improve operational efficiency
@@ -86,7 +86,7 @@ const Home = () => {
                 </div>
                 <CardTitle>Seamless Integration</CardTitle>
                 <CardDescription>
-                  Connect with existing systems and workflows without disrupting current operations
+                  Connect with existing systems and workflows without having to navigate different websites
                 </CardDescription>
               </CardHeader>
             </Card>
