@@ -5,17 +5,32 @@ import { Badge } from "@/components/ui/badge";
 const Agents = () => {
   const agents = [
     {
-      id: "cns-tt",
-      title: "CNS TT Agent",
-      description: "Use GenAI to isolate and resolve CNS trouble tickets",
-      category: "Network Operations",
+      id: "devmate",
+      title: "DevMate",
+      description: "Accelerate the delivery of upgrades and patches on Ericsson-developed tools and systems.",
+      category: "Dev Tools",
       status: "Active",
       features: [
-        "Automated ticket analysis",
-        "Root cause identification",
-        "Resolution recommendations",
-        "Pattern recognition"
-      ]
+        "VS Code extension for efficient patch releases",
+        "Automated upgrade workflows",
+        "License management integration",
+        "Usage analytics"
+      ],
+      link: null
+    },
+    {
+      id: "smart-error-detect",
+      title: "Smart Error Detect",
+      description: "Use GenAI to resolve CNIS issues reported in JIRA",
+      category: "CNIS OPS",
+      status: "Active",
+      features: [
+        "Suggest possible solutions on CNIS issues",
+        "Leverages past Jira ticket knowledge base",
+        "Improves error detection accuracy",
+        "Speeds resolution time"
+      ],
+      link: null
     },
     {
       id: "5gc-fa",
@@ -28,7 +43,8 @@ const Agents = () => {
         "5G Core fault detection",
         "Performance analysis",
         "Predictive insights"
-      ]
+      ],
+      link: "https://5gcfa-csstip.msts.ericsson.net/login.html"
     },
     {
       id: "mop",
@@ -41,7 +57,8 @@ const Agents = () => {
         "Best practice integration",
         "Template customization",
         "Quality assurance"
-      ]
+      ],
+      link: "https://mop.cram066.rnd.gic.ericsson.se/mop-gui/mop-agent"
     }
   ];
 
@@ -100,6 +117,11 @@ const Agents = () => {
                 <Button 
                   className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                   variant="outline"
+                  onClick={() => {
+                    if (agent.link) {
+                      window.open(agent.link, '_blank');
+                    }
+                  }}
                 >
                   Access Agent
                 </Button>
@@ -111,13 +133,16 @@ const Agents = () => {
         {/* Info Section */}
         <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 text-center">
           <h2 className="text-2xl font-bold text-foreground mb-4">
-            Need a Custom Agent?
+            Got an Idea? Pitch It
           </h2>
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Our AI-DU platform can be extended with custom agents tailored to your specific operational needs. 
-            Contact our team to discuss your requirements.
+            Use our AI-DU PitchBox to submit smart, tailored pitches. Get funding. Lead the project. Make it real.
           </p>
-          <Button size="lg" variant="outline">
+          <Button 
+            size="lg" 
+            variant="outline"
+            onClick={() => window.open('https://apps.powerapps.com/play/e/default-92e84ceb-fbfd-47ab-be52-080c6b87953f/a/549a8af5-f6ba-4b8b-824c-dfdfcf6f3740?tenantId=92e84ceb-fbfd-47ab-be52-080c6b87953f&hint=ec5023c9-376e-41fb-9280-10bd9f925919&source=sharebutton&sourcetime=1750260233474', '_blank')}
+          >
             Request Custom Agent
           </Button>
         </div>
