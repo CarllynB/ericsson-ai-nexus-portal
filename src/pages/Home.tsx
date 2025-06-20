@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Search, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowRight, Search, ChevronUp, ChevronDown, Mail, User } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const Home = () => {
   const [welcomeOpen, setWelcomeOpen] = useState(true);
@@ -104,7 +105,7 @@ const Home = () => {
               <div className="text-center space-y-8">
                 <div className="space-y-4">
                   <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                    AI-DU Agent Portal
+                    Welcome to the AI-DU Agent Portal
                   </h1>
                   <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
                     Our centralized gateway to access and interact with GenAI agents. 
@@ -198,17 +199,48 @@ const Home = () => {
                         </ul>
                       </div>
                       
-                      <Button 
-                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                        variant="outline"
-                        onClick={() => {
-                          if (agent.link) {
-                            window.open(agent.link, '_blank');
-                          }
-                        }}
-                      >
-                        Access Agent
-                      </Button>
+                      {agent.id === "devmate" ? (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button 
+                              className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                              variant="outline"
+                            >
+                              Access Agent
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-80 p-4">
+                            <div className="space-y-3">
+                              <h4 className="font-semibold text-sm">Onboarding Required</h4>
+                              <p className="text-sm text-muted-foreground">
+                                To access this agent, you need to go through an onboarding process.
+                              </p>
+                              <div className="flex items-center gap-2 p-2 bg-muted rounded">
+                                <User className="w-4 h-4" />
+                                <div className="text-sm">
+                                  <p className="font-medium">Contact: Nitin Goel</p>
+                                  <div className="flex items-center gap-1 text-muted-foreground">
+                                    <Mail className="w-3 h-3" />
+                                    <span>nitin.goel@ericsson.com</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      ) : (
+                        <Button 
+                          className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                          variant="outline"
+                          onClick={() => {
+                            if (agent.link) {
+                              window.open(agent.link, '_blank');
+                            }
+                          }}
+                        >
+                          Access Agent
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 ))
@@ -255,7 +287,7 @@ const Home = () => {
                 </div>
                 <CardTitle>Intelligent Automation</CardTitle>
                 <CardDescription>
-                  Deploy AI agents that understand context and execute complex workflows automatically
+                  Deployed AI agents that understand context and execute complex workflows automatically
                 </CardDescription>
               </CardHeader>
             </Card>
