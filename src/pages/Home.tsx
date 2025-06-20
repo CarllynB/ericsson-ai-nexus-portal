@@ -1,46 +1,239 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { ArrowRight, Search, ChevronUp, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const Home = () => {
+  const [welcomeOpen, setWelcomeOpen] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const agents = [
+    {
+      id: "devmate",
+      title: "DevMate",
+      description: "Accelerate the delivery of upgrades and patches on Ericsson-developed tools and systems.",
+      category: "Dev Tools",
+      status: "Active",
+      features: [
+        "VS Code extension for efficient patch releases",
+        "Automated upgrade workflows",
+        "License management integration",
+        "Usage analytics"
+      ],
+      link: null
+    },
+    {
+      id: "smart-error-detect",
+      title: "Smart Error Detect",
+      description: "Use GenAI to resolve CNIS issues reported in JIRA",
+      category: "CNIS OPS",
+      status: "Active",
+      features: [
+        "Suggest possible solutions on CNIS issues",
+        "Leverages past Jira ticket knowledge base",
+        "Improves error detection accuracy",
+        "Speeds resolution time"
+      ],
+      link: "https://sed-csstip.msts.ericsson.net/"
+    },
+    {
+      id: "5gc-fa",
+      title: "5GC FA Agent", 
+      description: "Use GenAI to perform 5GC fault analysis from network PCAP logs",
+      category: "Fault Analysis",
+      status: "Active",
+      features: [
+        "PCAP log processing",
+        "5G Core fault detection",
+        "Performance analysis",
+        "Predictive insights"
+      ],
+      link: "https://5gcfa-csstip.msts.ericsson.net/login.html"
+    },
+    {
+      id: "mop",
+      title: "MoP Agent",
+      description: "Use GenAI to create base MoPs for delivery teams",
+      category: "Documentation",
+      status: "Active", 
+      features: [
+        "Automated MoP generation",
+        "Best practice integration",
+        "Template customization",
+        "Quality assurance"
+      ],
+      link: "https://mop.cram066.rnd.gic.ericsson.se/mop-gui/mop-agent"
+    }
+  ];
+
+  const filteredAgents = agents.filter(agent =>
+    agent.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agent.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agent.features.some(feature => feature.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-        <div className="absolute inset-0 bg-grid-white/10" />
-        <div className="relative max-w-7xl mx-auto px-6 py-24">
-          <div className="text-center space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                AI-DU Agent Portal
-              </h1>
-              <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
-                Our centralized gateway to access and interact with GenAI agents. 
-                Streamline operations with intelligent automation.
-              </p>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                className="text-lg px-8 py-6"
-                onClick={() => window.location.href = '/agents'}
-              >
-                Explore Agents
-                <ArrowRight className="ml-2 w-5 h-5" />
+      <Collapsible open={welcomeOpen} onOpenChange={setWelcomeOpen}>
+        {/* Collapsible Header */}
+        <div className="bg-gradient-to-br from-primary/5 via-background to-secondary/5 border-b">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between h-auto p-4">
+                <div className="text-left">
+                  <h2 className="text-2xl font-bold text-foreground">AI-DU Agent Portal</h2>
+                  <p className="text-muted-foreground">
+                    {welcomeOpen ? "Click to collapse welcome section" : "Click to expand welcome section"}
+                  </p>
+                </div>
+                {welcomeOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
               </Button>
+            </CollapsibleTrigger>
+          </div>
+        </div>
+
+        {/* Welcome Section */}
+        <CollapsibleContent>
+          <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+            <div className="absolute inset-0 bg-grid-white/10" />
+            <div className="relative max-w-7xl mx-auto px-6 py-24">
+              <div className="text-center space-y-8">
+                <div className="space-y-4">
+                  <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                    AI-DU Agent Portal
+                  </h1>
+                  <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto">
+                    Our centralized gateway to access and interact with GenAI agents. 
+                    Streamline operations with intelligent automation.
+                  </p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button 
+                    size="lg" 
+                    className="text-lg px-8 py-6"
+                    onClick={() => setWelcomeOpen(false)}
+                  >
+                    Explore Agents
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="text-lg px-8 py-6"
+                    onClick={() => window.location.href = '/dashboard'}
+                  >
+                    View Dashboard
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Agent List Section - Always visible when welcome is collapsed */}
+      {!welcomeOpen && (
+        <section className="py-12 px-6">
+          <div className="max-w-7xl mx-auto">
+            {/* Search Bar */}
+            <div className="max-w-2xl mx-auto mb-12">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Search agents by name, description, category, or features..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-12 text-lg"
+                />
+              </div>
+            </div>
+
+            {/* Agents Grid */}
+            <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-8 mb-12">
+              {filteredAgents.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
+                </div>
+              ) : (
+                filteredAgents.map((agent) => (
+                  <Card key={agent.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20">
+                    <CardHeader className="space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2">
+                          <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                            {agent.title}
+                          </CardTitle>
+                          <Badge variant="secondary" className="text-xs">
+                            {agent.category}
+                          </Badge>
+                        </div>
+                        <Badge 
+                          variant="default" 
+                          className="bg-green-100 text-green-800 hover:bg-green-100"
+                        >
+                          {agent.status}
+                        </Badge>
+                      </div>
+                      <CardDescription className="text-sm leading-relaxed">
+                        {agent.description}
+                      </CardDescription>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-6">
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-sm text-foreground">Key Features:</h4>
+                        <ul className="space-y-2">
+                          {agent.features.map((feature, index) => (
+                            <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      
+                      <Button 
+                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                        variant="outline"
+                        onClick={() => {
+                          if (agent.link) {
+                            window.open(agent.link, '_blank');
+                          }
+                        }}
+                      >
+                        Access Agent
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+
+            {/* Pitch Section */}
+            <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 text-center">
+              <h2 className="text-2xl font-bold text-foreground mb-4">
+                Got an Idea? Pitch It!
+              </h2>
+              <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+                Use our AI-DU PitchBox to submit smart, tailored pitches. Get funding. Lead the project. Make it real.
+              </p>
               <Button 
-                variant="outline" 
                 size="lg" 
-                className="text-lg px-8 py-6"
-                onClick={() => window.location.href = '/dashboard'}
+                variant="outline"
+                onClick={() => window.open('https://apps.powerapps.com/play/e/default-92e84ceb-fbfd-47ab-be52-080c6b87953f/a/549a8af5-f6ba-4b8b-824c-dfdfcf6f3740?tenantId=92e84ceb-fbfd-47ab-be52-080c6b87953f&hint=ec5023c9-376e-41fb-9280-10bd9f925919&source=sharebutton&sourcetime=1750260233474', '_blank')}
               >
-                View Dashboard
+                Submit a Pitch
               </Button>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Features Section */}
       <section className="py-24 px-6">
