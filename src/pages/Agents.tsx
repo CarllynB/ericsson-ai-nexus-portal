@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, User } from "lucide-react";
+import { Search, Mail, User, ChevronRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const Agents = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(0);
+  const [paginationEnabled, setPaginationEnabled] = useState(true);
 
   const agents = [
     {
@@ -75,6 +77,34 @@ const Agents = () => {
     agent.features.some(feature => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Pagination logic
+  const AGENTS_PER_PAGE = 12;
+  const shouldShowPagination = filteredAgents.length > AGENTS_PER_PAGE;
+  const totalPages = Math.ceil(filteredAgents.length / AGENTS_PER_PAGE);
+  const hasNextPage = currentPage < totalPages - 1;
+
+  // Calculate the agents to display
+  const displayedAgents = paginationEnabled && shouldShowPagination
+    ? filteredAgents.slice(currentPage * AGENTS_PER_PAGE, (currentPage + 1) * AGENTS_PER_PAGE)
+    : filteredAgents;
+
+  // Reset pagination when search changes
+  useEffect(() => {
+    setCurrentPage(0);
+    setPaginationEnabled(true);
+  }, [searchTerm]);
+
+  const handleNext = () => {
+    if (hasNextPage) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const handleShowAll = () => {
+    setPaginationEnabled(false);
+    setCurrentPage(0);
+  };
+
   return (
     <div className="min-h-screen px-6 py-12">
       <div className="max-w-7xl mx-auto">
@@ -109,7 +139,7 @@ const Agents = () => {
               <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
             </div>
           ) : (
-            filteredAgents.map((agent) => (
+            displayedAgents.map((agent) => (
             <Card key={agent.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20">
               <CardHeader className="space-y-4">
                 <div className="flex items-start justify-between">
@@ -193,6 +223,33 @@ const Agents = () => {
             ))
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {shouldShowPagination && (
+          <div className="flex justify-center gap-4 mb-12">
+            {paginationEnabled && hasNextPage && (
+              <Button 
+                onClick={handleNext}
+                variant="outline" 
+                size="lg"
+                className="px-6"
+              >
+                Next
+                <ChevronRight className="ml-2 w-4 h-4" />
+              </Button>
+            )}
+            {paginationEnabled && (
+              <Button 
+                onClick={handleShowAll}
+                variant="default" 
+                size="lg"
+                className="px-6"
+              >
+                Show All
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Info Section */}
         <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 text-center">
