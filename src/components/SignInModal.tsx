@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -59,10 +60,6 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
           >
             Sign In
           </Button>
-          
-          <p className="text-xs text-muted-foreground text-center">
-            Note: This is a demo - credentials are not validated
-          </p>
         </div>
       </DialogContent>
     </Dialog>
