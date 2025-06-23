@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, User, ChevronRight, Settings } from "lucide-react";
+import { Search, Mail, User, ChevronRight, Settings, ChevronDown, ChevronUp } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AuthContext } from "@/lib/AuthContext";
@@ -25,6 +25,7 @@ const Agents = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [paginationEnabled, setPaginationEnabled] = useState(true);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const { isAdmin } = useContext(AuthContext);
 
   const DEFAULT_AGENTS: Agent[] = [
@@ -237,14 +238,26 @@ const Agents = () => {
     );
   };
 
+  const toggleCardExpansion = (agentId: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(agentId)) {
+        newSet.delete(agentId);
+      } else {
+        newSet.add(agentId);
+      }
+      return newSet;
+    });
+  };
+
   const getCardStyles = (status: AgentStatus) => {
     switch (status) {
       case "Active":
-        return "hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20";
+        return "hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/20";
       case "Coming Soon":
-        return "opacity-60 bg-muted/30 border-2 border-muted";
+        return "opacity-70 bg-muted/30 border-2 border-muted transition-all duration-300";
       case "Inactive":
-        return "opacity-40 bg-gray-100 border-2 border-gray-300";
+        return "opacity-50 bg-gray-100 border-2 border-gray-300 transition-all duration-300";
       default:
         return "";
     }
@@ -305,121 +318,141 @@ const Agents = () => {
               <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
             </div>
           ) : (
-            displayedAgents.map((agent) => (
-              <Card 
-                key={agent.id} 
-                className={`group relative ${getCardStyles(agent.status)}`}
-              >
-                {/* Admin Status Toggle */}
-                {isAdmin && (
-                  <div className="absolute top-2 right-2 z-20">
-                    <Select
-                      value={agent.status}
-                      onValueChange={(value: AgentStatus) => handleStatusChange(agent.id, value)}
-                    >
-                      <SelectTrigger className="w-8 h-8 p-0 border-none bg-white/80 hover:bg-white">
-                        <Settings className="w-4 h-4" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Coming Soon">Coming Soon</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+            displayedAgents.map((agent) => {
+              const isExpanded = expandedCards.has(agent.id);
+              return (
+                <Card 
+                  key={agent.id} 
+                  className={`group relative transition-all duration-300 ${getCardStyles(agent.status)} ${
+                    isExpanded ? 'shadow-lg' : ''
+                  }`}
+                >
+                  {/* Admin Status Toggle */}
+                  {isAdmin && (
+                    <div className="absolute top-2 right-2 z-20">
+                      <Select
+                        value={agent.status}
+                        onValueChange={(value: AgentStatus) => handleStatusChange(agent.id, value)}
+                      >
+                        <SelectTrigger className="w-8 h-8 p-0 border-none bg-white/80 hover:bg-white">
+                          <Settings className="w-4 h-4" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Active">Active</SelectItem>
+                          <SelectItem value="Coming Soon">Coming Soon</SelectItem>
+                          <SelectItem value="Inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
-                {/* Features Tooltip on Hover */}
-                <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 bg-white/95 rounded-lg p-3 shadow-lg max-w-xs">
-                  <h4 className="font-semibold text-xs text-foreground mb-2">Key Features:</h4>
-                  <ul className="space-y-1">
-                    {agent.features.slice(0, 3).map((feature, index) => (
-                      <li key={index} className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <div className="w-1 h-1 bg-primary rounded-full" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <CardHeader className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                        {agent.title}
-                      </CardTitle>
-                      <Badge variant="secondary" className="text-xs">
-                        {agent.category}
+                  <CardHeader className="space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-xl">
+                            {agent.title}
+                          </CardTitle>
+                          <button
+                            onClick={() => toggleCardExpansion(agent.id)}
+                            className="p-1 hover:bg-gray-100 rounded transition-colors"
+                            aria-label={isExpanded ? "Hide features" : "Show features"}
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                            )}
+                          </button>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {agent.category}
+                        </Badge>
+                      </div>
+                      <Badge 
+                        variant="secondary"
+                        className={getStatusBadgeColor(agent.status)}
+                      >
+                        {agent.status}
                       </Badge>
                     </div>
-                    <Badge 
-                      variant="secondary"
-                      className={getStatusBadgeColor(agent.status)}
-                    >
-                      {agent.status}
-                    </Badge>
-                  </div>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {agent.description}
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  {agent.status === "Active" ? (
-                    agent.id === "devmate" ? (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button 
-                            className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                            variant="outline"
-                          >
-                            Access Agent
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 p-4">
-                          <div className="space-y-3">
-                            <h4 className="font-semibold text-sm">Onboarding Required</h4>
-                            <p className="text-sm text-muted-foreground">
-                              To access this agent, you need to go through an onboarding process.
-                            </p>
-                            <div className="flex items-center gap-2 p-2 bg-muted rounded">
-                              <User className="w-4 h-4" />
-                              <div className="text-sm">
-                                <p className="font-medium">Contact: Nitin Goel</p>
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                  <Mail className="w-3 h-3" />
-                                  <span>nitin.goel@ericsson.com</span>
+                    <CardDescription className="text-sm leading-relaxed">
+                      {agent.description}
+                    </CardDescription>
+                  </CardHeader>
+                  
+                  {/* Expandable Features Section */}
+                  {isExpanded && (
+                    <div className="px-6 pb-4 border-t border-gray-100">
+                      <h4 className="font-semibold text-sm text-foreground mb-3 mt-4">Key Features:</h4>
+                      <ul className="space-y-2">
+                        {agent.features.map((feature, index) => (
+                          <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  <CardContent className="space-y-6">
+                    {agent.status === "Active" ? (
+                      agent.id === "devmate" ? (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button 
+                              className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                              variant="outline"
+                            >
+                              Access Agent
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-80 p-4">
+                            <div className="space-y-3">
+                              <h4 className="font-semibold text-sm">Onboarding Required</h4>
+                              <p className="text-sm text-muted-foreground">
+                                To access this agent, you need to go through an onboarding process.
+                              </p>
+                              <div className="flex items-center gap-2 p-2 bg-muted rounded">
+                                <User className="w-4 h-4" />
+                                <div className="text-sm">
+                                  <p className="font-medium">Contact: Nitin Goel</p>
+                                  <div className="flex items-center gap-1 text-muted-foreground">
+                                    <Mail className="w-3 h-3" />
+                                    <span>nitin.goel@ericsson.com</span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                          </PopoverContent>
+                        </Popover>
+                      ) : (
+                        <Button 
+                          className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                          variant="outline"
+                          onClick={() => {
+                            if (agent.link) {
+                              window.open(agent.link, '_blank');
+                            }
+                          }}
+                        >
+                          Access Agent
+                        </Button>
+                      )
                     ) : (
                       <Button 
-                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                        className="w-full opacity-50"
                         variant="outline"
-                        onClick={() => {
-                          if (agent.link) {
-                            window.open(agent.link, '_blank');
-                          }
-                        }}
+                        disabled
                       >
                         Access Agent
                       </Button>
-                    )
-                  ) : (
-                    <Button 
-                      className="w-full"
-                      variant="outline"
-                      disabled
-                    >
-                      Access Agent
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
 
@@ -450,7 +483,6 @@ const Agents = () => {
           </div>
         )}
 
-        {/* Info Section */}
         <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 text-center">
           <h2 className="text-2xl font-bold text-foreground mb-4">
             Got an Idea? Pitch It!
