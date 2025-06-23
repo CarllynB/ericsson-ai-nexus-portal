@@ -1,18 +1,33 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, User, ChevronRight } from "lucide-react";
+import { Search, Mail, User, ChevronRight, Settings } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AuthContext } from "@/lib/AuthContext";
+
+type AgentStatus = "Active" | "Coming Soon" | "Inactive";
+
+interface Agent {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  status: AgentStatus;
+  features: string[];
+  link: string | null;
+}
 
 const Agents = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [paginationEnabled, setPaginationEnabled] = useState(true);
+  const { isAdmin } = useContext(AuthContext);
 
-  const agents = [
+  const DEFAULT_AGENTS: Agent[] = [
     {
       id: "devmate",
       title: "DevMate",
@@ -155,6 +170,31 @@ const Agents = () => {
     }
   ];
 
+  const [agents, setAgents] = useState<Agent[]>(DEFAULT_AGENTS);
+  const [loading, setLoading] = useState(true);
+
+  // Backend API call simulation
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const response = await fetch('/api/agents');
+        if (response.ok) {
+          const data = await response.json();
+          setAgents(data);
+        } else {
+          setAgents(DEFAULT_AGENTS);
+        }
+      } catch (error) {
+        console.error('Failed to fetch agents:', error);
+        setAgents(DEFAULT_AGENTS);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAgents();
+  }, []);
+
   const filteredAgents = agents.filter(agent =>
     agent.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -168,12 +208,10 @@ const Agents = () => {
   const totalPages = Math.ceil(filteredAgents.length / AGENTS_PER_PAGE);
   const hasNextPage = currentPage < totalPages - 1;
 
-  // Calculate the agents to display
   const displayedAgents = paginationEnabled && shouldShowPagination
     ? filteredAgents.slice(currentPage * AGENTS_PER_PAGE, (currentPage + 1) * AGENTS_PER_PAGE)
     : filteredAgents;
 
-  // Reset pagination when search changes
   useEffect(() => {
     setCurrentPage(0);
     setPaginationEnabled(true);
@@ -189,6 +227,49 @@ const Agents = () => {
     setPaginationEnabled(false);
     setCurrentPage(0);
   };
+
+  const handleStatusChange = (agentId: string, newStatus: AgentStatus) => {
+    console.log(`Changing agent ${agentId} status to: ${newStatus}`);
+    setAgents(prev => 
+      prev.map(agent => 
+        agent.id === agentId ? { ...agent, status: newStatus } : agent
+      )
+    );
+  };
+
+  const getCardStyles = (status: AgentStatus) => {
+    switch (status) {
+      case "Active":
+        return "hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20";
+      case "Coming Soon":
+        return "opacity-60 bg-muted/30 border-2 border-muted";
+      case "Inactive":
+        return "opacity-40 bg-gray-100 border-2 border-gray-300";
+      default:
+        return "";
+    }
+  };
+
+  const getStatusBadgeColor = (status: AgentStatus) => {
+    switch (status) {
+      case "Active":
+        return "bg-green-100 text-green-800 hover:bg-green-100";
+      case "Coming Soon":
+        return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100";
+      case "Inactive":
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
+      default:
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen px-6 py-12 flex items-center justify-center">
+        <p className="text-lg text-muted-foreground">Loading agents...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-6 py-12">
@@ -227,17 +308,34 @@ const Agents = () => {
             displayedAgents.map((agent) => (
               <Card 
                 key={agent.id} 
-                className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
-                  agent.status === "Coming Soon" ? "opacity-75 bg-muted/30" : ""
-                }`}
+                className={`group relative ${getCardStyles(agent.status)}`}
               >
-                {/* Features Overlay on Hover */}
-                <div className="absolute inset-0 bg-background/95 p-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-center">
-                  <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
-                  <ul className="space-y-2">
-                    {agent.features.map((feature, index) => (
-                      <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                {/* Admin Status Toggle */}
+                {isAdmin && (
+                  <div className="absolute top-2 right-2 z-20">
+                    <Select
+                      value={agent.status}
+                      onValueChange={(value: AgentStatus) => handleStatusChange(agent.id, value)}
+                    >
+                      <SelectTrigger className="w-8 h-8 p-0 border-none bg-white/80 hover:bg-white">
+                        <Settings className="w-4 h-4" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Coming Soon">Coming Soon</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Features Tooltip on Hover */}
+                <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 bg-white/95 rounded-lg p-3 shadow-lg max-w-xs">
+                  <h4 className="font-semibold text-xs text-foreground mb-2">Key Features:</h4>
+                  <ul className="space-y-1">
+                    {agent.features.slice(0, 3).map((feature, index) => (
+                      <li key={index} className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="w-1 h-1 bg-primary rounded-full" />
                         {feature}
                       </li>
                     ))}
@@ -255,11 +353,8 @@ const Agents = () => {
                       </Badge>
                     </div>
                     <Badge 
-                      variant={agent.status === "Active" ? "default" : "secondary"}
-                      className={agent.status === "Active" 
-                        ? "bg-green-100 text-green-800 hover:bg-green-100" 
-                        : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                      }
+                      variant="secondary"
+                      className={getStatusBadgeColor(agent.status)}
                     >
                       {agent.status}
                     </Badge>
@@ -270,52 +365,54 @@ const Agents = () => {
                 </CardHeader>
                 
                 <CardContent className="space-y-6">
-                  {agent.status === "Coming Soon" ? (
+                  {agent.status === "Active" ? (
+                    agent.id === "devmate" ? (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button 
+                            className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                            variant="outline"
+                          >
+                            Access Agent
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-4">
+                          <div className="space-y-3">
+                            <h4 className="font-semibold text-sm">Onboarding Required</h4>
+                            <p className="text-sm text-muted-foreground">
+                              To access this agent, you need to go through an onboarding process.
+                            </p>
+                            <div className="flex items-center gap-2 p-2 bg-muted rounded">
+                              <User className="w-4 h-4" />
+                              <div className="text-sm">
+                                <p className="font-medium">Contact: Nitin Goel</p>
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Mail className="w-3 h-3" />
+                                  <span>nitin.goel@ericsson.com</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    ) : (
+                      <Button 
+                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                        variant="outline"
+                        onClick={() => {
+                          if (agent.link) {
+                            window.open(agent.link, '_blank');
+                          }
+                        }}
+                      >
+                        Access Agent
+                      </Button>
+                    )
+                  ) : (
                     <Button 
                       className="w-full"
                       variant="outline"
                       disabled
-                    >
-                      Coming Soon
-                    </Button>
-                  ) : agent.id === "devmate" ? (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button 
-                          className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                          variant="outline"
-                        >
-                          Access Agent
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80 p-4">
-                        <div className="space-y-3">
-                          <h4 className="font-semibold text-sm">Onboarding Required</h4>
-                          <p className="text-sm text-muted-foreground">
-                            To access this agent, you need to go through an onboarding process.
-                          </p>
-                          <div className="flex items-center gap-2 p-2 bg-muted rounded">
-                            <User className="w-4 h-4" />
-                            <div className="text-sm">
-                              <p className="font-medium">Contact: Nitin Goel</p>
-                              <div className="flex items-center gap-1 text-muted-foreground">
-                                <Mail className="w-3 h-3" />
-                                <span>nitin.goel@ericsson.com</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  ) : (
-                    <Button 
-                      className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                      variant="outline"
-                      onClick={() => {
-                        if (agent.link) {
-                          window.open(agent.link, '_blank');
-                        }
-                      }}
                     >
                       Access Agent
                     </Button>
