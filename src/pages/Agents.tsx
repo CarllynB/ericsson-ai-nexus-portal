@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,6 +68,90 @@ const Agents = () => {
         "Quality assurance"
       ],
       link: "https://mop.cram066.rnd.gic.ericsson.se/mop-gui/mop-agent"
+    },
+    {
+      id: "palle",
+      title: "PALLE",
+      description: "Use GenAI to provide lessons learned from all projects",
+      category: "Learning",
+      status: "Coming Soon",
+      features: [
+        "Project knowledge extraction",
+        "Lessons learned database",
+        "Best practice recommendations",
+        "Historical insights"
+      ],
+      link: null
+    },
+    {
+      id: "ml4sec",
+      title: "ML4SEC",
+      description: "Use GenAI to execute SRM (Security Reliability Model)",
+      category: "Security",
+      status: "Coming Soon",
+      features: [
+        "Security reliability modeling",
+        "Risk assessment automation",
+        "Compliance monitoring",
+        "Threat analysis"
+      ],
+      link: null
+    },
+    {
+      id: "henka",
+      title: "Henka",
+      description: "GenAI based utility to improve Change Request (CR) - Henka",
+      category: "Change Management",
+      status: "Coming Soon",
+      features: [
+        "Change request optimization",
+        "Impact analysis",
+        "Automated workflows",
+        "Risk mitigation"
+      ],
+      link: null
+    },
+    {
+      id: "swift",
+      title: "SWIFT",
+      description: "GenAI based chatbot for end-use issue resolution (STWFT)",
+      category: "Support",
+      status: "Coming Soon",
+      features: [
+        "End-user issue resolution",
+        "Automated troubleshooting",
+        "Knowledge base integration",
+        "Real-time support"
+      ],
+      link: null
+    },
+    {
+      id: "nexus",
+      title: "Nexus",
+      description: "GenAI based handover from Project to Delivery (CNS)",
+      category: "Project Management",
+      status: "Coming Soon",
+      features: [
+        "Project handover automation",
+        "Documentation generation",
+        "Knowledge transfer",
+        "Delivery optimization"
+      ],
+      link: null
+    },
+    {
+      id: "stlc",
+      title: "STLC",
+      description: "Use GenAI to create full software test life cycle",
+      category: "Testing",
+      status: "Coming Soon",
+      features: [
+        "Test case generation",
+        "Automated test planning",
+        "Coverage analysis",
+        "Quality assurance"
+      ],
+      link: null
     }
   ];
 
@@ -140,32 +225,15 @@ const Agents = () => {
             </div>
           ) : (
             displayedAgents.map((agent) => (
-            <Card key={agent.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20">
-              <CardHeader className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                      {agent.title}
-                    </CardTitle>
-                    <Badge variant="secondary" className="text-xs">
-                      {agent.category}
-                    </Badge>
-                  </div>
-                  <Badge 
-                    variant="default" 
-                    className="bg-green-100 text-green-800 hover:bg-green-100"
-                  >
-                    {agent.status}
-                  </Badge>
-                </div>
-                <CardDescription className="text-sm leading-relaxed">
-                  {agent.description}
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent className="space-y-6">
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-sm text-foreground">Key Features:</h4>
+              <Card 
+                key={agent.id} 
+                className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
+                  agent.status === "Coming Soon" ? "opacity-75 bg-muted/30" : ""
+                }`}
+              >
+                {/* Features Overlay on Hover */}
+                <div className="absolute inset-0 bg-background/95 p-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-center">
+                  <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
                   <ul className="space-y-2">
                     {agent.features.map((feature, index) => (
                       <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -175,51 +243,85 @@ const Agents = () => {
                     ))}
                   </ul>
                 </div>
+
+                <CardHeader className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                        {agent.title}
+                      </CardTitle>
+                      <Badge variant="secondary" className="text-xs">
+                        {agent.category}
+                      </Badge>
+                    </div>
+                    <Badge 
+                      variant={agent.status === "Active" ? "default" : "secondary"}
+                      className={agent.status === "Active" 
+                        ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                        : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+                      }
+                    >
+                      {agent.status}
+                    </Badge>
+                  </div>
+                  <CardDescription className="text-sm leading-relaxed">
+                    {agent.description}
+                  </CardDescription>
+                </CardHeader>
                 
-                {agent.id === "devmate" ? (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button 
-                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                        variant="outline"
-                      >
-                        Access Agent
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-4">
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-sm">Onboarding Required</h4>
-                        <p className="text-sm text-muted-foreground">
-                          To access this agent, you need to go through an onboarding process.
-                        </p>
-                        <div className="flex items-center gap-2 p-2 bg-muted rounded">
-                          <User className="w-4 h-4" />
-                          <div className="text-sm">
-                            <p className="font-medium">Contact: Nitin Goel</p>
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <Mail className="w-3 h-3" />
-                              <span>nitin.goel@ericsson.com</span>
+                <CardContent className="space-y-6">
+                  {agent.status === "Coming Soon" ? (
+                    <Button 
+                      className="w-full"
+                      variant="outline"
+                      disabled
+                    >
+                      Coming Soon
+                    </Button>
+                  ) : agent.id === "devmate" ? (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                          variant="outline"
+                        >
+                          Access Agent
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 p-4">
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-sm">Onboarding Required</h4>
+                          <p className="text-sm text-muted-foreground">
+                            To access this agent, you need to go through an onboarding process.
+                          </p>
+                          <div className="flex items-center gap-2 p-2 bg-muted rounded">
+                            <User className="w-4 h-4" />
+                            <div className="text-sm">
+                              <p className="font-medium">Contact: Nitin Goel</p>
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Mail className="w-3 h-3" />
+                                <span>nitin.goel@ericsson.com</span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                ) : (
-                  <Button 
-                    className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                    variant="outline"
-                    onClick={() => {
-                      if (agent.link) {
-                        window.open(agent.link, '_blank');
-                      }
-                    }}
-                  >
-                    Access Agent
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    <Button 
+                      className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                      variant="outline"
+                      onClick={() => {
+                        if (agent.link) {
+                          window.open(agent.link, '_blank');
+                        }
+                      }}
+                    >
+                      Access Agent
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
             ))
           )}
         </div>
