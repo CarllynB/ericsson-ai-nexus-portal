@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -323,9 +322,7 @@ const Agents = () => {
               return (
                 <Card 
                   key={agent.id} 
-                  className={`group relative transition-all duration-300 ${getCardStyles(agent.status)} ${
-                    isExpanded ? 'shadow-lg' : ''
-                  }`}
+                  className={`group relative transition-all duration-300 ${getCardStyles(agent.status)}`}
                 >
                   {/* Admin Status Toggle */}
                   {isAdmin && (
