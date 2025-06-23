@@ -252,7 +252,7 @@ const Agents = () => {
   const getCardStyles = (status: AgentStatus) => {
     switch (status) {
       case "Active":
-        return "hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/20";
+        return "border-2 border-primary/20 transition-all duration-300";
       case "Coming Soon":
         return "opacity-70 bg-muted/30 border-2 border-muted transition-all duration-300";
       case "Inactive":
@@ -322,7 +322,7 @@ const Agents = () => {
               return (
                 <Card 
                   key={agent.id} 
-                  className={`group relative transition-all duration-300 ${getCardStyles(agent.status)}`}
+                  className={`relative transition-all duration-300 ${getCardStyles(agent.status)}`}
                 >
                   {/* Admin Status Toggle */}
                   {isAdmin && (
@@ -399,7 +399,7 @@ const Agents = () => {
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button 
-                              className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                              className="w-full"
                               variant="outline"
                             >
                               Access Agent
@@ -426,7 +426,7 @@ const Agents = () => {
                         </Popover>
                       ) : (
                         <Button 
-                          className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                          className="w-full"
                           variant="outline"
                           onClick={() => {
                             if (agent.link) {
