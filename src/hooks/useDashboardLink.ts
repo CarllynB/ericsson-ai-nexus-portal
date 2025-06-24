@@ -3,6 +3,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
+interface DashboardSettings {
+  dashboard_url: string | null;
+}
+
 export const useDashboardLink = () => {
   const [dashboardLink, setDashboardLink] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -11,7 +15,7 @@ export const useDashboardLink = () => {
   const fetchDashboardLink = async () => {
     try {
       const { data, error } = await supabase
-        .from('dashboard_settings' as any)
+        .from('dashboard_settings')
         .select('dashboard_url')
         .single();
 
@@ -20,8 +24,9 @@ export const useDashboardLink = () => {
         return;
       }
 
-      if (data?.dashboard_url) {
-        setDashboardLink(data.dashboard_url);
+      const settings = data as DashboardSettings | null;
+      if (settings?.dashboard_url) {
+        setDashboardLink(settings.dashboard_url);
       }
     } catch (error) {
       console.error('Error in fetchDashboardLink:', error);
@@ -35,7 +40,7 @@ export const useDashboardLink = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       const { error } = await supabase
-        .from('dashboard_settings' as any)
+        .from('dashboard_settings')
         .upsert({
           id: 1,
           dashboard_url: newLink,
