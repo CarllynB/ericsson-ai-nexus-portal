@@ -69,6 +69,30 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_settings: {
+        Row: {
+          created_at: string | null
+          dashboard_url: string | null
+          id: number
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dashboard_url?: string | null
+          id?: number
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dashboard_url?: string | null
+          id?: number
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       follows: {
         Row: {
           created_at: string

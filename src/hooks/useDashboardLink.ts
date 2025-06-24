@@ -11,7 +11,7 @@ export const useDashboardLink = () => {
   const fetchDashboardLink = async () => {
     try {
       const { data, error } = await supabase
-        .from('dashboard_settings')
+        .from('dashboard_settings' as any)
         .select('dashboard_url')
         .single();
 
@@ -35,7 +35,7 @@ export const useDashboardLink = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       const { error } = await supabase
-        .from('dashboard_settings')
+        .from('dashboard_settings' as any)
         .upsert({
           id: 1,
           dashboard_url: newLink,
