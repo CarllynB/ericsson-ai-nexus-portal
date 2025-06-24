@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Agent } from '@/types/database';
 import { apiService } from '@/services/api';
@@ -182,25 +183,34 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     }
   ];
 
-  useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        setLoading(true);
-        const response = await apiService.getAgents(page, pageSize, showAll);
-        setAgents(response.items || response);
+  const fetchAgents = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getAgents(page, pageSize, showAll);
+      
+      // Handle both response formats properly
+      if (Array.isArray(response)) {
+        setAgents(response);
+      } else if (response && response.items) {
+        setAgents(response.items);
         if (response.total) {
           setTotalPages(Math.ceil(response.total / pageSize));
         }
-        setError(null);
-      } catch (err) {
-        console.error('Failed to fetch agents:', err);
+      } else {
         setAgents(DEFAULT_AGENTS);
-        setError('Failed to load agents from server, showing cached data');
-      } finally {
-        setLoading(false);
       }
-    };
+      
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch agents:', err);
+      setAgents(DEFAULT_AGENTS);
+      setError('Failed to load agents from server, showing cached data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchAgents();
   }, [page, pageSize, showAll]);
 
@@ -237,6 +247,6 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     totalPages,
     updateAgentStatus,
     deleteAgent,
-    refetch: () => fetchAgents(),
+    refetch: fetchAgents,
   };
 };
