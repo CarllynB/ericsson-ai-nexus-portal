@@ -91,6 +91,20 @@ const Agents = () => {
       link: "https://mop.cram066.rnd.gic.ericsson.se/mop-gui/mop-agent"
     },
     {
+      id: "cantt",
+      title: "CANTT Agent",
+      description: "Use GenAI to optimize network configuration and troubleshooting tasks",
+      category: "Network Operations",
+      status: "Active",
+      features: [
+        "Network configuration automation",
+        "Troubleshooting assistance",
+        "Performance optimization",
+        "Real-time monitoring"
+      ],
+      link: "https://cantt-agent.example.com"
+    },
+    {
       id: "palle",
       title: "PALLE",
       description: "Use GenAI to provide lessons learned from all projects",
