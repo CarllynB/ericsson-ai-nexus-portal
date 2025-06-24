@@ -177,11 +177,14 @@ export const AgentManagement = () => {
     return null;
   }
 
+  // Check if user can create/delete (super admin only)
+  const canCreateDelete = currentUserRole === 'super_admin';
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Agent Management</h2>
-        {currentUserRole === 'super_admin' && (
+        {canCreateDelete && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2">
@@ -321,7 +324,7 @@ export const AgentManagement = () => {
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
-                      {currentUserRole === 'super_admin' && (
+                      {canCreateDelete && (
                         <Button
                           variant="destructive"
                           size="sm"
