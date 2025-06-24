@@ -9,7 +9,8 @@ class ApiService {
   // Agent endpoints
   async getAgents(page = 1, pageSize = 12, showAll = false): Promise<{ items: Agent[]; total: number }> {
     try {
-      let query = supabase
+      // Use any to bypass TypeScript checking since agents table is not in generated types yet
+      let query = (supabase as any)
         .from('agents')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false });
@@ -36,7 +37,7 @@ class ApiService {
 
   async getActiveAgents(): Promise<Agent[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('agents')
         .select('*')
         .eq('status', 'active')
@@ -52,7 +53,7 @@ class ApiService {
 
   async createAgent(agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>): Promise<Agent> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('agents')
         .insert({
           ...agent,
@@ -72,7 +73,7 @@ class ApiService {
 
   async updateAgent(id: string, updates: Partial<Agent>): Promise<Agent> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('agents')
         .update({
           ...updates,
@@ -92,7 +93,7 @@ class ApiService {
 
   async deleteAgent(id: string): Promise<void> {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('agents')
         .delete()
         .eq('id', id);
