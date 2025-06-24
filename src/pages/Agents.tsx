@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -267,13 +266,13 @@ const Agents = () => {
   const getCardStyles = (status: AgentStatus) => {
     switch (status) {
       case "Active":
-        return "border-2 border-primary/20 transition-all duration-300";
+        return "border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer";
       case "Coming Soon":
-        return "opacity-70 bg-muted/30 border-2 border-muted transition-all duration-300";
+        return "opacity-70 bg-muted/30 border-2 border-muted hover:border-muted/70 hover:shadow-md hover:scale-[1.01] transition-all duration-300 cursor-pointer";
       case "Inactive":
-        return "opacity-50 bg-gray-100 border-2 border-gray-300 transition-all duration-300";
+        return "opacity-50 bg-gray-100 border-2 border-gray-300 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] transition-all duration-300 cursor-pointer";
       default:
-        return "";
+        return "hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer";
     }
   };
 
@@ -358,7 +357,7 @@ const Agents = () => {
               return (
                 <Card 
                   key={agent.id} 
-                  className={`relative transition-all duration-300 ${getCardStyles(agent.status)}`}
+                  className={`relative ${getCardStyles(agent.status)}`}
                 >
                   {/* Admin Controls */}
                   <div className="absolute top-2 right-2 z-20 flex gap-1">
