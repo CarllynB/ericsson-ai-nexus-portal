@@ -154,9 +154,15 @@ export const SuperAdminPanel = () => {
               </div>
             ))}
             {users.length === 0 && (
-              <p className="text-center text-muted-foreground py-4">
-                No users found. Assign roles to users above.
-              </p>
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">
+                  No role assignments found.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  The hardcoded super admins (muhammad.mahmood@ericsson.com and carllyn.barfi@ericsson.com) 
+                  are automatically recognized when they sign in, but won't appear here until explicitly assigned through this panel.
+                </p>
+              </div>
             )}
           </div>
         </CardContent>

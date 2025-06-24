@@ -73,18 +73,16 @@ export const useRoles = () => {
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       
-      // First, check if user exists in auth.users by trying to find them
-      // Since we can't directly query auth.users, we'll insert and let the foreign key constraint handle validation
+      // Generate a temporary user ID for the assignment
+      const tempUserId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
       const { error } = await supabase
         .from('user_roles')
-        .upsert({
-          user_id: `temp-${Date.now()}`, // This will be updated when the user signs up
+        .insert({
+          user_id: tempUserId,
           email: userEmail,
           role,
           assigned_by: currentUser?.id
-        }, {
-          onConflict: 'email',
-          ignoreDuplicates: false
         });
 
       if (error) {
