@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogIn } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface SignInModalProps {
   open: boolean;
@@ -14,11 +16,39 @@ interface SignInModalProps {
 export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+  const { toast } = useToast();
 
-  const handleSignIn = () => {
-    // Mock sign in - doesn't actually work
-    console.log("Sign in attempted with:", email, password);
-    onOpenChange(false);
+  const handleSignIn = async () => {
+    if (!email || !password) {
+      toast({
+        title: "Error",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await login(email, password);
+      toast({
+        title: "Success",
+        description: "Signed in successfully",
+      });
+      onOpenChange(false);
+      setEmail("");
+      setPassword("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sign in",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -53,12 +83,20 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+
+          <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded">
+            <p><strong>Default Admin Accounts:</strong></p>
+            <p>muhammad.mahmood@ericsson.com</p>
+            <p>carllyn.barfi@ericsson.com</p>
+            <p>Default password: <code>password123</code></p>
+          </div>
           
           <Button 
             onClick={handleSignIn}
             className="w-full"
+            disabled={loading}
           >
-            Sign In
+            {loading ? "Signing In..." : "Sign In"}
           </Button>
         </div>
       </DialogContent>
