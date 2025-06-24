@@ -26,7 +26,11 @@ export const getAgents = async (): Promise<Agent[]> => {
       throw error;
     }
 
-    return data || [];
+    return (data || []).map(agent => ({
+      ...agent,
+      status: agent.status as 'active' | 'inactive' | 'coming_soon',
+      access_link: agent.access_link || undefined
+    }));
   } catch (error) {
     console.error('Error in getAgents:', error);
     throw error;
@@ -50,7 +54,11 @@ export const createAgent = async (agent: Omit<Agent, 'id' | 'created_at' | 'last
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      status: data.status as 'active' | 'inactive' | 'coming_soon',
+      access_link: data.access_link || undefined
+    };
   } catch (error) {
     console.error('Error in createAgent:', error);
     throw error;
@@ -74,7 +82,11 @@ export const updateAgent = async (id: string, agent: Partial<Agent>): Promise<Ag
       throw error;
     }
 
-    return data;
+    return {
+      ...data,
+      status: data.status as 'active' | 'inactive' | 'coming_soon',
+      access_link: data.access_link || undefined
+    };
   } catch (error) {
     console.error('Error in updateAgent:', error);
     throw error;
@@ -95,5 +107,16 @@ export const deleteAgent = async (id: string): Promise<void> => {
   } catch (error) {
     console.error('Error in deleteAgent:', error);
     throw error;
+  }
+};
+
+// Export as apiService for backward compatibility
+export const apiService = {
+  getAgents,
+  createAgent,
+  updateAgent,
+  deleteAgent,
+  logAction: async (agentId: string, action: string, details?: any) => {
+    console.log('Action logged:', { agentId, action, details });
   }
 };

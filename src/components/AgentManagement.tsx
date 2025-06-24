@@ -8,20 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useRoles } from '@/hooks/useRoles';
-
-interface Agent {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  status: 'active' | 'inactive' | 'coming_soon';
-  key_features: string[];
-  access_link?: string;
-  owner: string;
-}
+import { Agent, getAgents, createAgent, updateAgent, deleteAgent } from '@/services/api';
 
 export const AgentManagement = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -34,89 +23,68 @@ export const AgentManagement = () => {
     name: '',
     description: '',
     category: '',
-    status: 'active' as const,
+    status: 'active' as Agent['status'],
     key_features: '',
     access_link: '',
     owner: ''
   });
 
-  const fetchAgents = async () => {
-    const { data, error } = await supabase
-      .from('agents')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
+  const fetchAgentsList = async () => {
+    try {
+      const data = await getAgents();
+      setAgents(data);
+    } catch (error) {
       console.error('Error fetching agents:', error);
-      return;
     }
-
-    setAgents(data || []);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const agentData = {
-      ...formData,
+      name: formData.name,
+      description: formData.description,
+      category: formData.category,
+      status: formData.status,
       key_features: formData.key_features.split('\n').filter(f => f.trim()),
-      last_updated: new Date().toISOString()
+      access_link: formData.access_link || undefined,
+      owner: formData.owner
     };
 
-    if (editingAgent) {
-      const { error } = await supabase
-        .from('agents')
-        .update(agentData)
-        .eq('id', editingAgent.id);
-
-      if (error) {
+    try {
+      if (editingAgent) {
+        await updateAgent(editingAgent.id, agentData);
         toast({
-          title: "Error",
-          description: "Failed to update agent",
-          variant: "destructive"
+          title: "Success",
+          description: "Agent updated successfully"
         });
-        return;
+      } else {
+        await createAgent(agentData);
+        toast({
+          title: "Success",
+          description: "Agent created successfully"
+        });
       }
 
-      toast({
-        title: "Success",
-        description: "Agent updated successfully"
+      setIsDialogOpen(false);
+      setEditingAgent(null);
+      setFormData({
+        name: '',
+        description: '',
+        category: '',
+        status: 'active',
+        key_features: '',
+        access_link: '',
+        owner: ''
       });
-    } else {
-      const { error } = await supabase
-        .from('agents')
-        .insert({
-          ...agentData,
-          id: formData.name.toLowerCase().replace(/\s+/g, '-')
-        });
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to create agent",
-          variant: "destructive"
-        });
-        return;
-      }
-
+      fetchAgentsList();
+    } catch (error) {
       toast({
-        title: "Success",
-        description: "Agent created successfully"
+        title: "Error",
+        description: editingAgent ? "Failed to update agent" : "Failed to create agent",
+        variant: "destructive"
       });
     }
-
-    setIsDialogOpen(false);
-    setEditingAgent(null);
-    setFormData({
-      name: '',
-      description: '',
-      category: '',
-      status: 'active',
-      key_features: '',
-      access_link: '',
-      owner: ''
-    });
-    fetchAgents();
   };
 
   const handleEdit = (agent: Agent) => {
@@ -136,29 +104,24 @@ export const AgentManagement = () => {
   const handleDelete = async (agentId: string) => {
     if (!confirm('Are you sure you want to delete this agent?')) return;
 
-    const { error } = await supabase
-      .from('agents')
-      .delete()
-      .eq('id', agentId);
-
-    if (error) {
+    try {
+      await deleteAgent(agentId);
+      toast({
+        title: "Success",
+        description: "Agent deleted successfully"
+      });
+      fetchAgentsList();
+    } catch (error) {
       toast({
         title: "Error",
         description: "Failed to delete agent",
         variant: "destructive"
       });
-      return;
     }
-
-    toast({
-      title: "Success",
-      description: "Agent deleted successfully"
-    });
-    fetchAgents();
   };
 
   useEffect(() => {
-    fetchAgents();
+    fetchAgentsList();
   }, []);
 
   if (!currentUserRole || !['admin', 'super_admin'].includes(currentUserRole)) {
@@ -204,7 +167,7 @@ export const AgentManagement = () => {
                 />
                 <Select
                   value={formData.status}
-                  onValueChange={(value: 'active' | 'inactive' | 'coming_soon') => 
+                  onValueChange={(value: Agent['status']) => 
                     setFormData({...formData, status: value})
                   }
                 >

@@ -4,14 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, User, ChevronRight, Settings, ChevronDown, ChevronUp, X, Edit, Trash2 } from "lucide-react";
+import { Search, Mail, User, ChevronRight, ChevronDown, ChevronUp, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgents } from "@/hooks/useAgents";
-import { Agent } from "@/types/database";
-
-type AgentStatus = "active" | "coming_soon" | "inactive";
+import { Agent } from "@/services/api";
 
 const Agents = () => {
   // Search & Filter
@@ -26,8 +23,8 @@ const Agents = () => {
   const [showWelcome, setShowWelcome] = useState(true);
   
   // Auth and Data Hooks
-  const { user, isAdmin, isSuperAdmin } = useAuth();
-  const { agents, loading, error, totalPages, updateAgentStatus, deleteAgent } = useAgents(page, 12, showAll);
+  const { user } = useAuth();
+  const { agents, loading, error, totalPages } = useAgents(page, 12, showAll);
 
   // Search filtering
   const filteredAgents = agents.filter(agent =>
@@ -53,22 +50,6 @@ const Agents = () => {
     setPage(1);
   };
 
-  const handleStatusChange = async (agentId: string, newStatus: AgentStatus) => {
-    console.log('Toggle', agentId, newStatus);
-    await updateAgentStatus(agentId, newStatus);
-  };
-
-  const handleEdit = (agentId: string) => {
-    console.log('Edit agent:', agentId);
-  };
-
-  const handleDelete = async (agentId: string) => {
-    if (confirm('Are you sure you want to delete this agent?')) {
-      console.log('Delete agent:', agentId);
-      await deleteAgent(agentId);
-    }
-  };
-
   const toggleCardExpansion = (agentId: string) => {
     setExpandedCards(prev => {
       const newSet = new Set(prev);
@@ -81,7 +62,7 @@ const Agents = () => {
     });
   };
 
-  const getCardStyles = (status: AgentStatus) => {
+  const getCardStyles = (status: Agent['status']) => {
     switch (status) {
       case "active":
         return "border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer";
@@ -94,7 +75,7 @@ const Agents = () => {
     }
   };
 
-  const getStatusBadgeColor = (status: AgentStatus) => {
+  const getStatusBadgeColor = (status: Agent['status']) => {
     switch (status) {
       case "active":
         return "bg-green-100 text-green-800 hover:bg-green-100";
@@ -184,45 +165,6 @@ const Agents = () => {
                   key={agent.id} 
                   className={`relative ${getCardStyles(agent.status)}`}
                 >
-                  {/* Admin Controls */}
-                  <div className="absolute top-2 right-2 z-20 flex gap-1">
-                    {isAdmin && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleEdit(agent.id)}
-                          className="w-8 h-8 p-0"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Select
-                          value={agent.status}
-                          onValueChange={(value: AgentStatus) => handleStatusChange(agent.id, value)}
-                        >
-                          <SelectTrigger className="w-8 h-8 p-0 border-none bg-white/80 hover:bg-white">
-                            <Settings className="w-4 h-4" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="coming_soon">Coming Soon</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </>
-                    )}
-                    {isSuperAdmin && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(agent.id)}
-                        className="w-8 h-8 p-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-
                   <CardHeader className="space-y-4">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">

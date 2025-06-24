@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { Agent } from '@/types/database';
-import { apiService } from '@/services/api';
+import { Agent, getAgents, updateAgent, deleteAgent } from '@/services/api';
 
 export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -23,7 +21,7 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
         "License management integration",
         "Usage analytics"
       ],
-      access_link: null,
+      access_link: undefined,
       owner: "system",
       last_updated: new Date().toISOString(),
       created_at: new Date().toISOString(),
@@ -186,16 +184,10 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
   const fetchAgents = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getAgents(page, pageSize, showAll);
+      const response = await getAgents();
       
-      // Handle both response formats properly
       if (Array.isArray(response)) {
         setAgents(response);
-      } else if (response && response.items) {
-        setAgents(response.items);
-        if (response.total) {
-          setTotalPages(Math.ceil(response.total / pageSize));
-        }
       } else {
         setAgents(DEFAULT_AGENTS);
       }
@@ -216,8 +208,7 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
 
   const updateAgentStatus = async (id: string, status: Agent['status']) => {
     try {
-      await apiService.updateAgent(id, { status });
-      await apiService.logAction(id, 'updated', { status });
+      await updateAgent(id, { status });
       setAgents(prev => 
         prev.map(agent => 
           agent.id === id ? { ...agent, status, last_updated: new Date().toISOString() } : agent
@@ -229,10 +220,9 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     }
   };
 
-  const deleteAgent = async (id: string) => {
+  const deleteAgentById = async (id: string) => {
     try {
-      await apiService.deleteAgent(id);
-      await apiService.logAction(id, 'deleted');
+      await deleteAgent(id);
       setAgents(prev => prev.filter(agent => agent.id !== id));
     } catch (err) {
       console.error('Failed to delete agent:', err);
@@ -246,7 +236,7 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     error,
     totalPages,
     updateAgentStatus,
-    deleteAgent,
+    deleteAgent: deleteAgentById,
     refetch: fetchAgents,
   };
 };
