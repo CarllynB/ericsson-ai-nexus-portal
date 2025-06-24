@@ -2,6 +2,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -10,6 +11,7 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  changePassword: (newPassword: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -25,6 +27,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   // Default super admin users
   const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
@@ -33,7 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'admin';
+        const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'viewer';
         setUser({
           id: session.user.id,
           email: session.user.email || '',
@@ -48,7 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session?.user) {
-          const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'admin';
+          const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'viewer';
           setUser({
             id: session.user.id,
             email: session.user.email || '',
@@ -75,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
 
       if (data.user) {
-        const role = SUPER_ADMINS.includes(data.user.email || '') ? 'super_admin' : 'admin';
+        const role = SUPER_ADMINS.includes(data.user.email || '') ? 'super_admin' : 'viewer';
         setUser({
           id: data.user.id,
           email: data.user.email || '',
@@ -98,6 +101,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const changePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      toast({
+        title: "Success",
+        description: "Password updated successfully"
+      });
+      return true;
+    } catch (error) {
+      console.error('Password change error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update password",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
   const value: AuthContextType = {
     user,
     login,
@@ -105,6 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loading,
     isAdmin: user?.role === 'admin' || user?.role === 'super_admin',
     isSuperAdmin: user?.role === 'super_admin',
+    changePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

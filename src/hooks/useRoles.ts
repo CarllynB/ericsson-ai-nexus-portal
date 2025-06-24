@@ -12,6 +12,13 @@ export interface UserWithRole {
   assigned_at: string;
 }
 
+// Temporary hardcoded roles until user_roles table is available
+const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
+const TEMP_USER_ROLES: Record<string, UserRole> = {
+  'muhammad.mahmood@ericsson.com': 'super_admin',
+  'carllyn.barfi@ericsson.com': 'super_admin',
+};
+
 export const useRoles = () => {
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
   const [users, setUsers] = useState<UserWithRole[]>([]);
@@ -21,18 +28,11 @@ export const useRoles = () => {
   const fetchCurrentUserRole = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user?.email) return;
 
-      // Use RPC function to get user role
-      const { data, error } = await supabase
-        .rpc('get_user_role', { _user_id: user.id });
-
-      if (error) {
-        console.error('Error fetching user role:', error);
-        return;
-      }
-
-      setCurrentUserRole(data || 'viewer');
+      // Use hardcoded roles for now
+      const role = TEMP_USER_ROLES[user.email] || 'viewer';
+      setCurrentUserRole(role);
     } catch (error) {
       console.error('Error in fetchCurrentUserRole:', error);
     }
@@ -40,38 +40,13 @@ export const useRoles = () => {
 
   const fetchAllUsers = async () => {
     try {
-      // First get all user roles
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role, assigned_at');
-
-      if (rolesError) {
-        console.error('Error fetching user roles:', rolesError);
-        return;
-      }
-
-      // Then get user emails from auth.users via a more direct approach
-      const userIds = rolesData?.map(role => role.user_id) || [];
-      
-      // Get users from profiles table which should have email info
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .in('user_id', userIds);
-
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-      }
-
-      // For now, use a simplified approach with mock emails
-      const formattedUsers = rolesData?.map(role => ({
-        id: role.user_id,
-        email: role.user_id.includes('muhammad') ? 'muhammad.mahmood@ericsson.com' : 
-               role.user_id.includes('carllyn') ? 'carllyn.barfi@ericsson.com' : 
-               `user-${role.user_id.slice(0, 8)}@example.com`,
-        role: role.role as UserRole,
-        assigned_at: role.assigned_at
-      })) || [];
+      // For now, return the hardcoded super admins
+      const formattedUsers: UserWithRole[] = SUPER_ADMINS.map(email => ({
+        id: email.includes('muhammad') ? 'cfd87936-7cef-4ddb-bea6-88cf29f6c399' : 'temp-carllyn-id',
+        email,
+        role: 'super_admin' as UserRole,
+        assigned_at: new Date().toISOString()
+      }));
 
       setUsers(formattedUsers);
     } catch (error) {
@@ -81,34 +56,26 @@ export const useRoles = () => {
 
   const assignRole = async (userId: string, role: UserRole) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { error } = await supabase
-        .from('user_roles')
-        .upsert({
-          user_id: userId,
-          role: role,
-          assigned_by: user?.id
-        });
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to assign role",
-          variant: "destructive"
-        });
-        return false;
-      }
+      // For now, just update local state
+      setUsers(prev => 
+        prev.map(user => 
+          user.id === userId ? { ...user, role } : user
+        )
+      );
 
       toast({
         title: "Success",
-        description: "Role assigned successfully"
+        description: "Role assigned successfully (temporary implementation)"
       });
 
-      await fetchAllUsers();
       return true;
     } catch (error) {
       console.error('Error assigning role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to assign role",
+        variant: "destructive"
+      });
       return false;
     }
   };

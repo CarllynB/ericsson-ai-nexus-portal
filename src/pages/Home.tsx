@@ -36,8 +36,8 @@ const Home = () => {
     agent.key_features.some((feature: string) => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Show status badges only for admins and super admins
-  const showStatusBadges = currentUserRole && ['admin', 'super_admin'].includes(currentUserRole);
+  // Only show status badges for super admins, not regular admins
+  const showStatusBadges = currentUserRole === 'super_admin';
 
   return (
     <div className="min-h-screen px-6 py-12">

@@ -4,98 +4,92 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PasswordChangeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isFirstLogin?: boolean;
 }
 
-export const PasswordChangeModal = ({ open, onOpenChange }: PasswordChangeModalProps) => {
+export const PasswordChangeModal = ({ open, onOpenChange, isFirstLogin = false }: PasswordChangeModalProps) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const { changePassword } = useAuth();
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     if (newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords don't match",
-        variant: "destructive"
-      });
+      alert('Passwords do not match');
       return;
     }
 
-    if (newPassword.length < 8) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 8 characters long",
-        variant: "destructive"
-      });
+    if (newPassword.length < 6) {
+      alert('Password must be at least 6 characters long');
       return;
     }
 
     setLoading(true);
+    const success = await changePassword(newPassword);
+    setLoading(false);
 
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword
-    });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Password updated successfully"
-      });
-      onOpenChange(false);
+    if (success) {
       setNewPassword('');
       setConfirmPassword('');
+      onOpenChange(false);
     }
-
-    setLoading(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Change Password</DialogTitle>
+          <DialogTitle>
+            {isFirstLogin ? 'Set New Password' : 'Change Password'}
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handlePasswordChange} className="space-y-4">
-          <div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
             <Label htmlFor="newPassword">New Password</Label>
             <Input
               id="newPassword"
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Enter new password"
               required
-              minLength={8}
+              minLength={6}
             />
           </div>
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
             <Input
               id="confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
               required
-              minLength={8}
+              minLength={6}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Updating...' : 'Update Password'}
-          </Button>
+          <div className="flex gap-2 justify-end">
+            {!isFirstLogin && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+            )}
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Updating...' : 'Update Password'}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

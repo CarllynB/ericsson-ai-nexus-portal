@@ -5,6 +5,7 @@ import { Menu, X, LogIn, Settings, Shield, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
 import { useRoles } from "@/hooks/useRoles";
+import { useAuth } from "@/hooks/useAuth";
 import { SuperAdminPanel } from "@/components/SuperAdminPanel";
 import { AgentManagement } from "@/components/AgentManagement";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -15,6 +16,12 @@ export const Layout = () => {
   const [superAdminPanelOpen, setSuperAdminPanelOpen] = useState(false);
   const [agentManagementOpen, setAgentManagementOpen] = useState(false);
   const { currentUserRole } = useRoles();
+  const { user, logout } = useAuth();
+
+  const handleSignOut = async () => {
+    await logout();
+    setSidebarOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -45,15 +52,28 @@ export const Layout = () => {
             </button>
           </div>
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSignInOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <LogIn className="w-4 h-4" />
-            Sign In
-          </Button>
+          {user ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{user.email}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSignOut}
+              >
+                Sign Out
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSignInOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              Sign In
+            </Button>
+          )}
         </div>
       </header>
 
