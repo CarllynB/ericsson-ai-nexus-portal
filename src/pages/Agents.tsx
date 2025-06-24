@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Mail, User, ChevronRight, Settings, ChevronDown, ChevronUp, X, Edit, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AuthContext } from "@/lib/AuthContext";
 
 type AgentStatus = "Active" | "Coming Soon" | "Inactive";
@@ -19,18 +20,23 @@ interface Agent {
   status: AgentStatus;
   features: string[];
   link: string | null;
-  contactEmail?: string;
 }
 
 const Agents = () => {
+  // Search & Filter
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Pagination & Display
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showAll, setShowAll] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  
+  // Welcome Banner
   const [showWelcome, setShowWelcome] = useState(true);
   
-  const { user, roles } = useContext(AuthContext);
+  // Auth Context
+  const user = useContext(AuthContext);
 
   const DEFAULT_AGENTS: Agent[] = [
     {
@@ -45,8 +51,7 @@ const Agents = () => {
         "License management integration",
         "Usage analytics"
       ],
-      link: null,
-      contactEmail: "nitin.goel@ericsson.com"
+      link: null
     },
     {
       id: "smart-error-detect",
@@ -89,20 +94,6 @@ const Agents = () => {
         "Quality assurance"
       ],
       link: "https://mop.cram066.rnd.gic.ericsson.se/mop-gui/mop-agent"
-    },
-    {
-      id: "cantt",
-      title: "CANTT Agent",
-      description: "Use GenAI to optimize network configuration and troubleshooting tasks",
-      category: "Network Operations",
-      status: "Active",
-      features: [
-        "Network configuration automation",
-        "Troubleshooting assistance",
-        "Performance optimization",
-        "Real-time monitoring"
-      ],
-      link: "https://cantt-agent.example.com"
     },
     {
       id: "palle",
@@ -190,9 +181,11 @@ const Agents = () => {
     }
   ];
 
+  // Fetch & Loading State
   const [agents, setAgents] = useState<Agent[]>(DEFAULT_AGENTS);
   const [loading, setLoading] = useState(true);
 
+  // Backend API call
   useEffect(() => {
     const fetchAgents = async () => {
       try {
@@ -218,6 +211,7 @@ const Agents = () => {
     fetchAgents();
   }, [page, showAll]);
 
+  // Search filtering
   const filteredAgents = agents.filter(agent =>
     agent.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -225,6 +219,7 @@ const Agents = () => {
     agent.features.some(feature => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Reset page when search changes
   useEffect(() => {
     setPage(1);
   }, [searchTerm]);
@@ -257,10 +252,6 @@ const Agents = () => {
     console.log('Delete agent:', agentId);
   };
 
-  const handleEmailClick = (email: string) => {
-    window.open(`mailto:${email}`, '_blank');
-  };
-
   const toggleCardExpansion = (agentId: string) => {
     setExpandedCards(prev => {
       const newSet = new Set(prev);
@@ -276,13 +267,13 @@ const Agents = () => {
   const getCardStyles = (status: AgentStatus) => {
     switch (status) {
       case "Active":
-        return "border-2 border-primary/20 hover:border-primary/40 hover:shadow-lg transition-all duration-300 cursor-pointer";
+        return "border-2 border-primary/20 transition-all duration-300";
       case "Coming Soon":
-        return "opacity-70 bg-muted/30 border-2 border-muted hover:border-muted/60 hover:shadow-md transition-all duration-300";
+        return "opacity-70 bg-muted/30 border-2 border-muted transition-all duration-300";
       case "Inactive":
-        return "opacity-50 bg-gray-100 border-2 border-gray-300 hover:border-gray-400 transition-all duration-300";
+        return "opacity-50 bg-gray-100 border-2 border-gray-300 transition-all duration-300";
       default:
-        return "hover:shadow-lg transition-all duration-300";
+        return "";
     }
   };
 
@@ -309,6 +300,7 @@ const Agents = () => {
 
   return (
     <div className="min-h-screen px-6 py-12">
+      {/* Welcome Banner */}
       {showWelcome && (
         <div className="mb-8 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-6 relative">
           <button
@@ -330,6 +322,7 @@ const Agents = () => {
       )}
 
       <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <div className="text-center space-y-4 mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground">
             AI Agents
@@ -339,6 +332,7 @@ const Agents = () => {
           </p>
         </div>
 
+        {/* Search Bar */}
         <div className="max-w-2xl mx-auto mb-12">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -352,6 +346,7 @@ const Agents = () => {
           </div>
         </div>
 
+        {/* Agents Grid */}
         <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-8 mb-12">
           {filteredAgents.length === 0 ? (
             <div className="col-span-full text-center py-12">
@@ -363,10 +358,11 @@ const Agents = () => {
               return (
                 <Card 
                   key={agent.id} 
-                  className={`relative ${getCardStyles(agent.status)}`}
+                  className={`relative transition-all duration-300 ${getCardStyles(agent.status)}`}
                 >
+                  {/* Admin Controls */}
                   <div className="absolute top-2 right-2 z-20 flex gap-1">
-                    {roles?.includes('admin') && (
+                    {user?.roles?.includes('admin') && (
                       <>
                         <Button
                           size="sm"
@@ -391,7 +387,7 @@ const Agents = () => {
                         </Select>
                       </>
                     )}
-                    {roles?.includes('super_admin') && (
+                    {user?.roles?.includes('super_admin') && (
                       <Button
                         size="sm"
                         variant="destructive"
@@ -438,6 +434,7 @@ const Agents = () => {
                     </CardDescription>
                   </CardHeader>
                   
+                  {/* Expandable Features Section */}
                   {isExpanded && (
                     <div className="px-6 pb-4 border-t border-gray-100">
                       <h4 className="font-semibold text-sm text-foreground mb-3 mt-4">Key Features:</h4>
@@ -476,12 +473,7 @@ const Agents = () => {
                                   <p className="font-medium">Contact: Nitin Goel</p>
                                   <div className="flex items-center gap-1 text-muted-foreground">
                                     <Mail className="w-3 h-3" />
-                                    <button 
-                                      onClick={() => handleEmailClick('nitin.goel@ericsson.com')}
-                                      className="hover:text-primary cursor-pointer"
-                                    >
-                                      nitin.goel@ericsson.com
-                                    </button>
+                                    <span>nitin.goel@ericsson.com</span>
                                   </div>
                                 </div>
                               </div>
@@ -517,6 +509,7 @@ const Agents = () => {
           )}
         </div>
 
+        {/* Pagination Controls */}
         {!loading && !showAll && totalPages > 1 && (
           <div className="flex justify-center gap-4 mb-12">
             {page < totalPages && (
