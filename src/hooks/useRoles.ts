@@ -51,7 +51,7 @@ export const useRoles = () => {
         .order('assigned_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching users:', error);
+        console.error('Error fetching user roles:', error);
         toast({
           title: "Error",
           description: "Failed to fetch user roles: " + error.message,
@@ -91,9 +91,23 @@ export const useRoles = () => {
         return false;
       }
 
-      // Check if user already exists
-      const existingUser = users.find(u => u.email.toLowerCase() === userEmail.toLowerCase());
-      if (existingUser) {
+      // Check if user already exists in user_roles table
+      const { data: existingUsers, error: fetchError } = await supabase
+        .from('user_roles')
+        .select('email')
+        .eq('email', userEmail.toLowerCase());
+
+      if (fetchError) {
+        console.error('Error checking existing user:', fetchError);
+        toast({
+          title: "Error",
+          description: "Failed to check existing users",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      if (existingUsers && existingUsers.length > 0) {
         toast({
           title: "Error",
           description: "User with this email already has a role assigned",
@@ -129,7 +143,7 @@ export const useRoles = () => {
         console.error('Error assigning role:', error);
         toast({
           title: "Error",
-          description: "Failed to assign role. Please check your permissions.",
+          description: "Failed to assign role: " + error.message,
           variant: "destructive"
         });
         return false;
@@ -179,7 +193,7 @@ export const useRoles = () => {
         console.error('Error updating user role:', error);
         toast({
           title: "Error",
-          description: "Failed to update role. Please check your permissions.",
+          description: "Failed to update role: " + error.message,
           variant: "destructive"
         });
         return false;
@@ -225,7 +239,7 @@ export const useRoles = () => {
         console.error('Error deleting user role:', error);
         toast({
           title: "Error",
-          description: "Failed to delete role. Please check your permissions.",
+          description: "Failed to delete role: " + error.message,
           variant: "destructive"
         });
         return false;
