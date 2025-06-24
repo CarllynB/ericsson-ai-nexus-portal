@@ -13,6 +13,7 @@ interface AuthContextType {
   login: (email: string, password: string) => void;
   logout: () => void;
   isAdmin: boolean;
+  roles?: string[];
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -20,6 +21,7 @@ export const AuthContext = createContext<AuthContextType>({
   login: () => {},
   logout: () => {},
   isAdmin: false,
+  roles: [],
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -28,12 +30,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     id: '1',
     email: 'admin@example.com',
     isAdmin: true,
-    roles: ['admin', 'super_admin'] // For demo - will come from Flask backend
+    roles: ['admin', 'super_admin']
   });
 
   const login = async (email: string, password: string) => {
     try {
-      // This will be replaced with actual Flask API call
       const response = await fetch('/auth/login', {
         method: 'POST',
         headers: {
@@ -44,7 +45,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (response.ok) {
         const data = await response.json();
-        // Store JWT in localStorage
         localStorage.setItem('token', data.access_token);
         setUser({
           id: data.user.id,
@@ -55,7 +55,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error) {
       console.error('Login failed:', error);
-      // Fallback for demo
       setUser({
         id: '1',
         email,
@@ -75,7 +74,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user,
       login,
       logout,
-      isAdmin: user?.isAdmin || false
+      isAdmin: user?.isAdmin || false,
+      roles: user?.roles || []
     }}>
       {children}
     </AuthContext.Provider>
