@@ -25,7 +25,7 @@ export const Layout = () => {
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            {/* Ericsson Logo Button with hamburger menu */}
+            {/* Ericsson Logo Button with custom menu icon */}
             <Button
               variant="ghost"
               size="sm"
@@ -39,11 +39,13 @@ export const Layout = () => {
                   className="w-6 h-6 object-contain"
                 />
               </div>
-              {/* Hamburger menu icon */}
-              <div className="flex flex-col gap-1">
-                <div className="w-4 h-0.5 bg-current"></div>
-                <div className="w-4 h-0.5 bg-current"></div>
-                <div className="w-4 h-0.5 bg-current"></div>
+              {/* Custom menu icon */}
+              <div className="w-6 h-6 flex items-center justify-center">
+                <img 
+                  src="/lovable-uploads/ead09f29-c601-44f5-8578-508b00189e3e.png" 
+                  alt="Menu" 
+                  className="w-5 h-5 object-contain"
+                />
               </div>
             </Button>
             <button 
