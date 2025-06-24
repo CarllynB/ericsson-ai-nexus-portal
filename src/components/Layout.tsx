@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { Menu, X, LogIn, Settings, Shield, UserPlus } from "lucide-react";
+import { X, LogIn, Settings, Shield, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
@@ -25,7 +25,7 @@ export const Layout = () => {
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            {/* Ericsson Logo Button */}
+            {/* Ericsson Logo Button with hamburger menu */}
             <Button
               variant="ghost"
               size="sm"
@@ -38,6 +38,12 @@ export const Layout = () => {
                   alt="Ericsson Logo" 
                   className="w-6 h-6 object-contain"
                 />
+              </div>
+              {/* Hamburger menu icon */}
+              <div className="flex flex-col gap-1">
+                <div className="w-4 h-0.5 bg-current"></div>
+                <div className="w-4 h-0.5 bg-current"></div>
+                <div className="w-4 h-0.5 bg-current"></div>
               </div>
             </Button>
             <button 
