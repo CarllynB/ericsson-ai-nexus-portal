@@ -16,7 +16,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
@@ -37,14 +37,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
 
   useEffect(() => {
-    let mounted = true;
+    let isMounted = true;
 
     const initializeAuth = async () => {
       try {
-        // Check for existing session
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Initializing auth...');
         
-        if (mounted && session?.user) {
+        // Check for existing session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          return;
+        }
+        
+        if (isMounted && session?.user) {
+          console.log('Found existing session for:', session.user.email);
           const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'viewer';
           setUser({
             id: session.user.id,
@@ -56,7 +64,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch (error) {
         console.error('Error initializing auth:', error);
       } finally {
-        if (mounted) {
+        if (isMounted) {
           setLoading(false);
         }
       }
@@ -66,8 +74,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) return;
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
+        if (!isMounted) return;
 
         if (session?.user) {
           const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'viewer';
@@ -80,26 +90,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else {
           setUser(null);
         }
-        setLoading(false);
+        
+        if (loading) {
+          setLoading(false);
+        }
       }
     );
 
     return () => {
-      mounted = false;
+      isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [loading]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<void> => {
     try {
+      console.log('Attempting login for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Login error:', error);
+        throw error;
+      }
 
       if (data.user) {
+        console.log('Login successful for:', data.user.email);
         const role = SUPER_ADMINS.includes(data.user.email || '') ? 'super_admin' : 'viewer';
         setUser({
           id: data.user.id,
@@ -114,8 +133,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     try {
+      console.log('Logging out...');
       await supabase.auth.signOut();
       setUser(null);
     } catch (error) {
@@ -123,7 +143,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const changePassword = async (newPassword: string) => {
+  const changePassword = async (newPassword: string): Promise<boolean> => {
     try {
       const { error } = await supabase.auth.updateUser({
         password: newPassword
@@ -154,7 +174,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const value: AuthContextType = {
+  const contextValue: AuthContextType = {
     user,
     login,
     logout,
@@ -165,7 +185,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
