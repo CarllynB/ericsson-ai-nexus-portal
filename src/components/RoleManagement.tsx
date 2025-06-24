@@ -5,14 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, Shield, Mail, Users, Trash2 } from 'lucide-react';
+import { UserPlus, Shield, Mail, Users, Trash2, AlertCircle } from 'lucide-react';
 import { useRoles, UserRole } from '@/hooks/useRoles';
 import { useToast } from '@/hooks/use-toast';
 
 export const RoleManagement = () => {
-  const { users, assignRole, updateUserRole, deleteUserRole, currentUserRole } = useRoles();
+  const { users, assignRole, updateUserRole, deleteUserRole, currentUserRole, loading } = useRoles();
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<UserRole>('admin');
+  const [isAssigning, setIsAssigning] = useState(false);
   const { toast } = useToast();
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
@@ -46,11 +47,13 @@ export const RoleManagement = () => {
       return;
     }
 
+    setIsAssigning(true);
     const success = await assignRole(newUserEmail.trim(), newUserRole);
     if (success) {
       setNewUserEmail('');
       setNewUserRole('admin');
     }
+    setIsAssigning(false);
   };
 
   const handleDeleteUser = async (userId: string, userEmail: string) => {
@@ -73,6 +76,37 @@ export const RoleManagement = () => {
   const canDeleteRole = (role: UserRole) => {
     return currentUserRole === 'super_admin' || (currentUserRole === 'admin' && role !== 'super_admin');
   };
+
+  const canAssignRole = () => {
+    return currentUserRole === 'super_admin' || currentUserRole === 'admin';
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center p-6">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+            <p>Loading role management...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!canAssignRole()) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center p-6">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
+            <p className="text-muted-foreground">You don't have permission to manage user roles.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -97,10 +131,12 @@ export const RoleManagement = () => {
                 onChange={(e) => setNewUserEmail(e.target.value)}
                 className="flex-1"
                 type="email"
+                disabled={isAssigning}
               />
               <Select
                 value={newUserRole}
                 onValueChange={(value: UserRole) => setNewUserRole(value)}
+                disabled={isAssigning}
               >
                 <SelectTrigger className="w-40">
                   <SelectValue />
@@ -113,9 +149,13 @@ export const RoleManagement = () => {
                   <SelectItem value="viewer">Viewer</SelectItem>
                 </SelectContent>
               </Select>
-              <Button onClick={handleAddUser}>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Assign Role
+              <Button onClick={handleAddUser} disabled={isAssigning}>
+                {isAssigning ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                ) : (
+                  <UserPlus className="w-4 h-4 mr-2" />
+                )}
+                {isAssigning ? 'Assigning...' : 'Assign Role'}
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
