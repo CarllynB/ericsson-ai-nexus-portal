@@ -1,5 +1,5 @@
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -24,7 +24,11 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -33,23 +37,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
 
   useEffect(() => {
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'viewer';
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          role,
-          created_at: session.user.created_at || new Date().toISOString(),
-        });
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Check for existing session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (mounted && session?.user) {
+          const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'viewer';
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            role,
+            created_at: session.user.created_at || new Date().toISOString(),
+          });
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!mounted) return;
+
         if (session?.user) {
           const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'viewer';
           setUser({
@@ -65,7 +84,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -142,5 +164,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     changePassword,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
