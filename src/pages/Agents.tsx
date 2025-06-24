@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, User, ChevronRight, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Search, Mail, User, ChevronRight, Menu, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgents } from "@/hooks/useAgents";
@@ -177,11 +176,7 @@ const Agents = () => {
                             className="p-1 hover:bg-gray-100 rounded transition-colors"
                             aria-label={isExpanded ? "Hide features" : "Show features"}
                           >
-                            {isExpanded ? (
-                              <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                            )}
+                            <Menu className="w-4 h-4 text-muted-foreground" />
                           </button>
                         </div>
                         <Badge variant="secondary" className="text-xs">
