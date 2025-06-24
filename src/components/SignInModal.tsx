@@ -73,10 +73,7 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
       
       const { error } = await supabase.auth.signUp({
         email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`
-        }
+        password
       });
 
       if (error) throw error;
@@ -86,8 +83,8 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
       setConfirmPassword('');
       onOpenChange(false);
       
-      // Show success message or redirect
-      alert('Account created successfully! Please check your email to verify your account.');
+      // Show success message
+      alert('Account created successfully! You can now sign in.');
     } catch (err: any) {
       setError(err.message || 'Sign up failed');
     } finally {

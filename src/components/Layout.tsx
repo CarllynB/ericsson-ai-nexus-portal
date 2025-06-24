@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { X, LogIn, Settings, Shield, UserPlus } from "lucide-react";
@@ -128,8 +129,8 @@ export const Layout = () => {
             <span className="font-medium">Dashboard</span>
           </a>
 
-          {/* Admin Section */}
-          {(currentUserRole === 'admin' || currentUserRole === 'super_admin') && (
+          {/* Admin Section - Only show for regular admin, not super admin */}
+          {currentUserRole === 'admin' && (
             <div className="pt-4 border-t border-border">
               <div className="px-4 py-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -154,7 +155,7 @@ export const Layout = () => {
             </div>
           )}
 
-          {/* Super Admin Section */}
+          {/* Super Admin Section - Only show for super admin */}
           {currentUserRole === 'super_admin' && (
             <div className="pt-4 border-t border-border">
               <div className="px-4 py-2">
@@ -162,6 +163,21 @@ export const Layout = () => {
                   Super Admin
                 </p>
               </div>
+
+              <Dialog open={agentManagementOpen} onOpenChange={setAgentManagementOpen}>
+                <DialogTrigger asChild>
+                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left">
+                    <Settings className="w-4 h-4" />
+                    <span className="font-medium">Manage Agents</span>
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Agent Management</DialogTitle>
+                  </DialogHeader>
+                  <AgentManagement />
+                </DialogContent>
+              </Dialog>
 
               <Dialog open={superAdminPanelOpen} onOpenChange={setSuperAdminPanelOpen}>
                 <DialogTrigger asChild>
