@@ -1,11 +1,13 @@
+
 import { useState, useEffect, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, User, ChevronRight, Settings, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Mail, User, ChevronRight, Settings, ChevronDown, ChevronUp, X, Edit, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AuthContext } from "@/lib/AuthContext";
 
 type AgentStatus = "Active" | "Coming Soon" | "Inactive";
@@ -21,11 +23,20 @@ interface Agent {
 }
 
 const Agents = () => {
+  // Search & Filter
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(0);
-  const [paginationEnabled, setPaginationEnabled] = useState(true);
+  
+  // Pagination & Display
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [showAll, setShowAll] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
-  const { isAdmin } = useContext(AuthContext);
+  
+  // Welcome Banner
+  const [showWelcome, setShowWelcome] = useState(true);
+  
+  // Auth Context
+  const user = useContext(AuthContext);
 
   const DEFAULT_AGENTS: Agent[] = [
     {
@@ -170,17 +181,22 @@ const Agents = () => {
     }
   ];
 
+  // Fetch & Loading State
   const [agents, setAgents] = useState<Agent[]>(DEFAULT_AGENTS);
   const [loading, setLoading] = useState(true);
 
-  // Backend API call simulation
+  // Backend API call
   useEffect(() => {
     const fetchAgents = async () => {
       try {
-        const response = await fetch('/api/agents');
+        const pageSize = showAll ? 100 : 12;
+        const response = await fetch(`/api/agents?page=${page}&page_size=${pageSize}`);
         if (response.ok) {
           const data = await response.json();
-          setAgents(data);
+          setAgents(data.items || data);
+          if (data.total) {
+            setTotalPages(Math.ceil(data.total / 12));
+          }
         } else {
           setAgents(DEFAULT_AGENTS);
         }
@@ -193,8 +209,9 @@ const Agents = () => {
     };
 
     fetchAgents();
-  }, []);
+  }, [page, showAll]);
 
+  // Search filtering
   const filteredAgents = agents.filter(agent =>
     agent.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -202,39 +219,37 @@ const Agents = () => {
     agent.features.some(feature => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Pagination logic
-  const AGENTS_PER_PAGE = 12;
-  const shouldShowPagination = filteredAgents.length > AGENTS_PER_PAGE;
-  const totalPages = Math.ceil(filteredAgents.length / AGENTS_PER_PAGE);
-  const hasNextPage = currentPage < totalPages - 1;
-
-  const displayedAgents = paginationEnabled && shouldShowPagination
-    ? filteredAgents.slice(currentPage * AGENTS_PER_PAGE, (currentPage + 1) * AGENTS_PER_PAGE)
-    : filteredAgents;
-
+  // Reset page when search changes
   useEffect(() => {
-    setCurrentPage(0);
-    setPaginationEnabled(true);
+    setPage(1);
   }, [searchTerm]);
 
   const handleNext = () => {
-    if (hasNextPage) {
-      setCurrentPage(prev => prev + 1);
+    if (page < totalPages) {
+      setPage(prev => prev + 1);
     }
   };
 
   const handleShowAll = () => {
-    setPaginationEnabled(false);
-    setCurrentPage(0);
+    setShowAll(true);
+    setPage(1);
   };
 
   const handleStatusChange = (agentId: string, newStatus: AgentStatus) => {
-    console.log(`Changing agent ${agentId} status to: ${newStatus}`);
+    console.log('Toggle', agentId, newStatus);
     setAgents(prev => 
       prev.map(agent => 
         agent.id === agentId ? { ...agent, status: newStatus } : agent
       )
     );
+  };
+
+  const handleEdit = (agentId: string) => {
+    console.log('Edit agent:', agentId);
+  };
+
+  const handleDelete = (agentId: string) => {
+    console.log('Delete agent:', agentId);
   };
 
   const toggleCardExpansion = (agentId: string) => {
@@ -285,6 +300,27 @@ const Agents = () => {
 
   return (
     <div className="min-h-screen px-6 py-12">
+      {/* Welcome Banner */}
+      {showWelcome && (
+        <div className="mb-8 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-6 relative">
+          <button
+            onClick={() => setShowWelcome(false)}
+            className="absolute top-4 right-4 p-1 hover:bg-white/20 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-bold text-foreground">
+              Welcome to the AI-DU Agent Portal
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Our centralized gateway to access and interact with GenAI agents. 
+              Streamline operations with intelligent automation.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center space-y-4 mb-12">
@@ -301,7 +337,7 @@ const Agents = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              type="text"
+              type="search"
               placeholder="Search agents by name, description, category, or features..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -317,31 +353,51 @@ const Agents = () => {
               <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
             </div>
           ) : (
-            displayedAgents.map((agent) => {
+            filteredAgents.map((agent) => {
               const isExpanded = expandedCards.has(agent.id);
               return (
                 <Card 
                   key={agent.id} 
                   className={`relative transition-all duration-300 ${getCardStyles(agent.status)}`}
                 >
-                  {/* Admin Status Toggle */}
-                  {isAdmin && (
-                    <div className="absolute top-2 right-2 z-20">
-                      <Select
-                        value={agent.status}
-                        onValueChange={(value: AgentStatus) => handleStatusChange(agent.id, value)}
+                  {/* Admin Controls */}
+                  <div className="absolute top-2 right-2 z-20 flex gap-1">
+                    {user?.roles?.includes('admin') && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEdit(agent.id)}
+                          className="w-8 h-8 p-0"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Select
+                          value={agent.status}
+                          onValueChange={(value: AgentStatus) => handleStatusChange(agent.id, value)}
+                        >
+                          <SelectTrigger className="w-8 h-8 p-0 border-none bg-white/80 hover:bg-white">
+                            <Settings className="w-4 h-4" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Active">Active</SelectItem>
+                            <SelectItem value="Coming Soon">Coming Soon</SelectItem>
+                            <SelectItem value="Inactive">Inactive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </>
+                    )}
+                    {user?.roles?.includes('super_admin') && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(agent.id)}
+                        className="w-8 h-8 p-0"
                       >
-                        <SelectTrigger className="w-8 h-8 p-0 border-none bg-white/80 hover:bg-white">
-                          <Settings className="w-4 h-4" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Active">Active</SelectItem>
-                          <SelectItem value="Coming Soon">Coming Soon</SelectItem>
-                          <SelectItem value="Inactive">Inactive</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
 
                   <CardHeader className="space-y-4">
                     <div className="flex items-start justify-between">
@@ -443,7 +499,7 @@ const Agents = () => {
                         variant="outline"
                         disabled
                       >
-                        Access Agent
+                        {agent.status === "Coming Soon" ? "Coming Soon" : "Access Agent"}
                       </Button>
                     )}
                   </CardContent>
@@ -454,9 +510,9 @@ const Agents = () => {
         </div>
 
         {/* Pagination Controls */}
-        {shouldShowPagination && (
+        {!loading && !showAll && totalPages > 1 && (
           <div className="flex justify-center gap-4 mb-12">
-            {paginationEnabled && hasNextPage && (
+            {page < totalPages && (
               <Button 
                 onClick={handleNext}
                 variant="outline" 
@@ -467,16 +523,14 @@ const Agents = () => {
                 <ChevronRight className="ml-2 w-4 h-4" />
               </Button>
             )}
-            {paginationEnabled && (
-              <Button 
-                onClick={handleShowAll}
-                variant="default" 
-                size="lg"
-                className="px-6"
-              >
-                Show All
-              </Button>
-            )}
+            <Button 
+              onClick={handleShowAll}
+              variant="default" 
+              size="lg"
+              className="px-6"
+            >
+              Show All
+            </Button>
           </div>
         )}
 
