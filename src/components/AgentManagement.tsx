@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Search, ChevronRight, ChevronDown, ChevronUp, User, Mail } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { Plus, Edit, Trash2, Search, ChevronRight, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { useRoles } from '@/hooks/useRoles';
 import { Agent, getAgents, createAgent, updateAgent, deleteAgent } from '@/services/api';
 
@@ -19,6 +19,7 @@ export const AgentManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [showAll, setShowAll] = useState(false);
   const { currentUserRole } = useRoles();
   const { toast } = useToast();
 
@@ -41,6 +42,11 @@ export const AgentManagement = () => {
       setAgents(data);
     } catch (error) {
       console.error('Error fetching agents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch agents",
+        variant: "destructive"
+      });
     }
   };
 
@@ -53,20 +59,29 @@ export const AgentManagement = () => {
   );
 
   const totalPages = Math.ceil(filteredAgents.length / pageSize);
-  const paginatedAgents = filteredAgents.slice((page - 1) * pageSize, page * pageSize);
+  const paginatedAgents = showAll ? filteredAgents : filteredAgents.slice((page - 1) * pageSize, page * pageSize);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData.name.trim() || !formData.description.trim() || !formData.category.trim() || !formData.owner.trim()) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const agentData = {
-      name: formData.name,
-      description: formData.description,
-      category: formData.category,
+      name: formData.name.trim(),
+      description: formData.description.trim(),
+      category: formData.category.trim(),
       status: formData.status,
-      key_features: formData.key_features.split('\n').filter(f => f.trim()),
-      access_link: formData.access_link || undefined,
-      contact_info: formData.contact_info || undefined,
-      owner: formData.owner
+      key_features: formData.key_features.split('\n').filter(f => f.trim()).map(f => f.trim()),
+      access_link: formData.access_link.trim() || undefined,
+      contact_info: formData.contact_info.trim() || undefined,
+      owner: formData.owner.trim()
     };
 
     try {
@@ -74,13 +89,13 @@ export const AgentManagement = () => {
         await updateAgent(editingAgent.id, agentData);
         toast({
           title: "Success",
-          description: "Agent updated successfully and saved to database"
+          description: "Agent updated successfully"
         });
       } else {
         await createAgent(agentData);
         toast({
           title: "Success",
-          description: "Agent created successfully and saved to database"
+          description: "Agent created successfully"
         });
       }
 
@@ -96,8 +111,9 @@ export const AgentManagement = () => {
         contact_info: '',
         owner: ''
       });
-      fetchAgentsList();
+      await fetchAgentsList();
     } catch (error) {
+      console.error('Error saving agent:', error);
       toast({
         title: "Error",
         description: editingAgent ? "Failed to update agent" : "Failed to create agent",
@@ -121,17 +137,18 @@ export const AgentManagement = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (agentId: string) => {
-    if (!confirm('Are you sure you want to delete this agent? This will permanently remove it from the database.')) return;
+  const handleDelete = async (agentId: string, agentName: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${agentName}"? This action cannot be undone.`)) return;
 
     try {
       await deleteAgent(agentId);
       toast({
         title: "Success",
-        description: "Agent deleted successfully from database"
+        description: "Agent deleted successfully"
       });
-      fetchAgentsList();
+      await fetchAgentsList();
     } catch (error) {
+      console.error('Error deleting agent:', error);
       toast({
         title: "Error",
         description: "Failed to delete agent",
@@ -171,13 +188,13 @@ export const AgentManagement = () => {
 
   useEffect(() => {
     setPage(1);
+    setShowAll(false);
   }, [searchTerm]);
 
   if (!currentUserRole || !['admin', 'super_admin'].includes(currentUserRole)) {
     return null;
   }
 
-  // Check if user can create/delete (super admin only)
   const canCreateDelete = currentUserRole === 'super_admin';
 
   return (
@@ -200,19 +217,19 @@ export const AgentManagement = () => {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Input
-                  placeholder="Agent Name"
+                  placeholder="Agent Name *"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   required
                 />
                 <Textarea
-                  placeholder="Description"
+                  placeholder="Description *"
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   required
                 />
                 <Input
-                  placeholder="Category"
+                  placeholder="Category *"
                   value={formData.category}
                   onChange={(e) => setFormData({...formData, category: e.target.value})}
                   required
@@ -241,6 +258,7 @@ export const AgentManagement = () => {
                   placeholder="Access Link (optional)"
                   value={formData.access_link}
                   onChange={(e) => setFormData({...formData, access_link: e.target.value})}
+                  type="url"
                 />
                 <Input
                   placeholder="Contact Info (for agents without access link)"
@@ -248,7 +266,7 @@ export const AgentManagement = () => {
                   onChange={(e) => setFormData({...formData, contact_info: e.target.value})}
                 />
                 <Input
-                  placeholder="Owner"
+                  placeholder="Owner *"
                   value={formData.owner}
                   onChange={(e) => setFormData({...formData, owner: e.target.value})}
                   required
@@ -276,11 +294,35 @@ export const AgentManagement = () => {
         </div>
       </div>
 
+      {/* Results Summary and Show All Toggle */}
+      {filteredAgents.length > 0 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Showing {paginatedAgents.length} of {filteredAgents.length} agents
+            {searchTerm && ` matching "${searchTerm}"`}
+          </p>
+          {filteredAgents.length > pageSize && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAll(!showAll)}
+            >
+              {showAll ? 'Show Paginated' : 'Show All'}
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Agents Grid */}
       <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-6">
         {paginatedAgents.length === 0 ? (
           <div className="col-span-full text-center py-12">
-            <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
+            <p className="text-muted-foreground text-lg">
+              {searchTerm 
+                ? `No agents found matching "${searchTerm}"`
+                : 'No agents found.'
+              }
+            </p>
           </div>
         ) : (
           paginatedAgents.map((agent) => {
@@ -328,7 +370,7 @@ export const AgentManagement = () => {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleDelete(agent.id)}
+                          onClick={() => handleDelete(agent.id, agent.name)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -377,9 +419,9 @@ export const AgentManagement = () => {
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-4">
+      {/* Pagination - only show if not showing all and more than one page */}
+      {!showAll && totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4">
           <Button 
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page === 1}
@@ -387,7 +429,7 @@ export const AgentManagement = () => {
           >
             Previous
           </Button>
-          <span className="flex items-center px-4">
+          <span className="flex items-center px-4 text-sm">
             Page {page} of {totalPages}
           </span>
           <Button 

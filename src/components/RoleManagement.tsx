@@ -1,15 +1,16 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, Shield, Mail, Users } from 'lucide-react';
+import { UserPlus, Shield, Mail, Users, Trash2 } from 'lucide-react';
 import { useRoles, UserRole } from '@/hooks/useRoles';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export const RoleManagement = () => {
-  const { users, assignRole, updateUserRole } = useRoles();
+  const { users, assignRole, updateUserRole, deleteUserRole, currentUserRole } = useRoles();
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<UserRole>('admin');
   const { toast } = useToast();
@@ -34,24 +35,27 @@ export const RoleManagement = () => {
       return;
     }
 
-    const existingUser = users.find(user => user.email.toLowerCase() === newUserEmail.toLowerCase());
-    if (existingUser) {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newUserEmail.trim())) {
       toast({
         title: "Error",
-        description: "User with this email already has a role assigned",
+        description: "Please enter a valid email address",
         variant: "destructive"
       });
       return;
     }
 
-    const success = await assignRole(newUserEmail, newUserRole);
+    const success = await assignRole(newUserEmail.trim(), newUserRole);
     if (success) {
-      toast({
-        title: "Success",
-        description: `${newUserRole} role assigned to ${newUserEmail}`,
-      });
       setNewUserEmail('');
       setNewUserRole('admin');
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userEmail: string) => {
+    if (window.confirm(`Are you sure you want to delete the role assignment for ${userEmail}?`)) {
+      await deleteUserRole(userId);
     }
   };
 
@@ -64,6 +68,10 @@ export const RoleManagement = () => {
       default:
         return 'secondary';
     }
+  };
+
+  const canDeleteRole = (role: UserRole) => {
+    return currentUserRole === 'super_admin' || (currentUserRole === 'admin' && role !== 'super_admin');
   };
 
   return (
@@ -88,6 +96,7 @@ export const RoleManagement = () => {
                 value={newUserEmail}
                 onChange={(e) => setNewUserEmail(e.target.value)}
                 className="flex-1"
+                type="email"
               />
               <Select
                 value={newUserRole}
@@ -97,7 +106,9 @@ export const RoleManagement = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                  {currentUserRole === 'super_admin' && (
+                    <SelectItem value="super_admin">Super Admin</SelectItem>
+                  )}
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="viewer">Viewer</SelectItem>
                 </SelectContent>
@@ -120,7 +131,7 @@ export const RoleManagement = () => {
             </div>
             <div className="space-y-3">
               {users.map((user) => (
-                <div key={`${user.id}-${user.email}`} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <Mail className="w-4 h-4 text-muted-foreground" />
                     <div>
@@ -137,6 +148,7 @@ export const RoleManagement = () => {
                     <Select
                       value={user.role}
                       onValueChange={(value: UserRole) => handleRoleChange(user.id, value)}
+                      disabled={user.role === 'super_admin' && currentUserRole !== 'super_admin'}
                     >
                       <SelectTrigger className="w-40">
                         <SelectValue />
@@ -144,9 +156,20 @@ export const RoleManagement = () => {
                       <SelectContent>
                         <SelectItem value="viewer">Viewer</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="super_admin">Super Admin</SelectItem>
+                        {currentUserRole === 'super_admin' && (
+                          <SelectItem value="super_admin">Super Admin</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
+                    {canDeleteRole(user.role) && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteUser(user.id, user.email)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
