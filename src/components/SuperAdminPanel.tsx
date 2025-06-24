@@ -91,10 +91,11 @@ export const SuperAdminPanel = () => {
                 value={newUserRole}
                 onValueChange={(value: UserRole) => setNewUserRole(value)}
               >
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="viewer">Viewer</SelectItem>
                 </SelectContent>
@@ -140,7 +141,7 @@ export const SuperAdminPanel = () => {
                     value={user.role}
                     onValueChange={(value: UserRole) => handleRoleChange(user.id, value)}
                   >
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-40">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
