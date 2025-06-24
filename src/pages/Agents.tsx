@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, User, ChevronRight, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Search, Mail, User, ChevronRight, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgents } from "@/hooks/useAgents";
@@ -177,11 +177,11 @@ const Agents = () => {
                             className="p-1 hover:bg-gray-100 rounded transition-colors"
                             aria-label={isExpanded ? "Hide features" : "Show features"}
                           >
-                            {isExpanded ? (
-                              <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                            )}
+                            <img 
+                              src="https://storage.googleapis.com/gpt-engineer-file-uploads/OUQTL7C0jEX4tnTlKTHgSToMwfD3/01fd0443-d544-434a-9261-e887b3668da3?Expires=1750809531&GoogleAccessId=admin-2%40gpt-engineer-390607.iam.gserviceaccount.com&Signature=ilgp7k8MSYNB8FH8HrCWQHQhFael%2F99uj0cB0QpRuDSwcC33PJSD0DAxanjyQJJd17p%2FywWB7gzGi%2Fe02nCteZnppl4T%2BNMpXA1p3fiRqPXUF5giZMxBbXGP3wmIKMiD5sErdtP4gyCLrhmTjMs5yD%2BahoKCBGtFQNDggR7F5JfsApdYGznTveZzH0UqZE6pEzD7M2xAisBCaO8bpPv7Yr37m905drKZ6D0%2BeDnrOu4gtbM8%2BxcQwPJ0VX%2FB5xOi2PvQ1xLcAG2msB47Xo5N9p9TWMJu1Rrj0%2BWvE7NsCGhWKm8Ewwoa%2Bw2D%2BM03adci0huK5aKRIkv4iLokqJw6UA%3D%3D"
+                              alt={isExpanded ? "Hide features" : "Show features"}
+                              className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                            />
                           </button>
                         </div>
                         <Badge variant="secondary" className="text-xs">
