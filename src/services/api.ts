@@ -9,6 +9,7 @@ export interface Agent {
   status: 'active' | 'inactive' | 'coming_soon';
   key_features: string[];
   access_link?: string;
+  contact_info?: string;
   owner: string;
   last_updated: string;
   created_at: string;
@@ -16,7 +17,7 @@ export interface Agent {
 
 export const getAgents = async (): Promise<Agent[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('agents')
       .select('*')
       .order('created_at', { ascending: false });
@@ -26,10 +27,11 @@ export const getAgents = async (): Promise<Agent[]> => {
       throw error;
     }
 
-    return (data || []).map(agent => ({
+    return (data || []).map((agent: any) => ({
       ...agent,
       status: agent.status as 'active' | 'inactive' | 'coming_soon',
-      access_link: agent.access_link || undefined
+      access_link: agent.access_link || undefined,
+      contact_info: agent.contact_info || undefined
     }));
   } catch (error) {
     console.error('Error in getAgents:', error);
@@ -39,11 +41,11 @@ export const getAgents = async (): Promise<Agent[]> => {
 
 export const createAgent = async (agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>): Promise<Agent> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('agents')
       .insert({
         ...agent,
-        id: agent.name.toLowerCase().replace(/\s+/g, '-'),
+        id: agent.name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now(),
         last_updated: new Date().toISOString()
       })
       .select()
@@ -57,7 +59,8 @@ export const createAgent = async (agent: Omit<Agent, 'id' | 'created_at' | 'last
     return {
       ...data,
       status: data.status as 'active' | 'inactive' | 'coming_soon',
-      access_link: data.access_link || undefined
+      access_link: data.access_link || undefined,
+      contact_info: data.contact_info || undefined
     };
   } catch (error) {
     console.error('Error in createAgent:', error);
@@ -67,7 +70,7 @@ export const createAgent = async (agent: Omit<Agent, 'id' | 'created_at' | 'last
 
 export const updateAgent = async (id: string, agent: Partial<Agent>): Promise<Agent> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('agents')
       .update({
         ...agent,
@@ -85,7 +88,8 @@ export const updateAgent = async (id: string, agent: Partial<Agent>): Promise<Ag
     return {
       ...data,
       status: data.status as 'active' | 'inactive' | 'coming_soon',
-      access_link: data.access_link || undefined
+      access_link: data.access_link || undefined,
+      contact_info: data.contact_info || undefined
     };
   } catch (error) {
     console.error('Error in updateAgent:', error);
@@ -95,7 +99,7 @@ export const updateAgent = async (id: string, agent: Partial<Agent>): Promise<Ag
 
 export const deleteAgent = async (id: string): Promise<void> => {
   try {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('agents')
       .delete()
       .eq('id', id);

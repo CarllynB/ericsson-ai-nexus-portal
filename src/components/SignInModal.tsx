@@ -53,7 +53,7 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Sign In</DialogTitle>
+            <DialogTitle>Sign In to AI-DU Agent Portal</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (

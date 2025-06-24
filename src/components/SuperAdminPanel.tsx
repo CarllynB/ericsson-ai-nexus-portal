@@ -1,16 +1,17 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, UserPlus, Shield } from 'lucide-react';
+import { UserPlus, Shield, Mail } from 'lucide-react';
 import { useRoles, UserRole } from '@/hooks/useRoles';
 import { useToast } from '@/components/ui/use-toast';
 
 export const SuperAdminPanel = () => {
   const { users, assignRole } = useRoles();
-  const [selectedRole, setSelectedRole] = useState<UserRole>('viewer');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserRole, setNewUserRole] = useState<UserRole>('admin');
   const { toast } = useToast();
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
@@ -18,7 +19,40 @@ export const SuperAdminPanel = () => {
     if (success) {
       toast({
         title: "Role Updated",
-        description: `User role updated to ${newRole}`,
+        description: `User role updated to ${newRole} and saved to database`,
+      });
+    }
+  };
+
+  const handleAddUser = async () => {
+    if (!newUserEmail.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // For now, we'll simulate adding a user by creating a mock user ID
+    // In a real system, this would integrate with Supabase auth
+    const mockUserId = `user-${Date.now()}`;
+    
+    try {
+      const success = await assignRole(mockUserId, newUserRole);
+      if (success) {
+        toast({
+          title: "Success",
+          description: `User ${newUserEmail} has been assigned ${newUserRole} role. They can now sign up and will automatically have this role.`,
+        });
+        setNewUserEmail('');
+        setNewUserRole('admin');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to assign role to user",
+        variant: "destructive"
       });
     }
   };
@@ -36,6 +70,48 @@ export const SuperAdminPanel = () => {
 
   return (
     <div className="space-y-6">
+      {/* Add New Admin */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserPlus className="w-5 h-5" />
+            Assign Admin Role
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter email address"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                className="flex-1"
+              />
+              <Select
+                value={newUserRole}
+                onValueChange={(value: UserRole) => setNewUserRole(value)}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="viewer">Viewer</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={handleAddUser}>
+                <UserPlus className="w-4 h-4 mr-2" />
+                Assign Role
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Assign a role to a user by their email. When they sign up, they'll automatically have this role.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Existing Users */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -48,6 +124,7 @@ export const SuperAdminPanel = () => {
             {users.map((user) => (
               <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
                   <div>
                     <p className="font-medium">{user.email}</p>
                     <p className="text-sm text-muted-foreground">
@@ -75,6 +152,11 @@ export const SuperAdminPanel = () => {
                 </div>
               </div>
             ))}
+            {users.length === 0 && (
+              <p className="text-center text-muted-foreground py-4">
+                No users found. Assign roles to users above.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 import { Menu, X, LogIn, Settings, Shield, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
+import { UserProfileMenu } from "@/components/UserProfileMenu";
 import { useRoles } from "@/hooks/useRoles";
 import { useAuth } from "@/hooks/useAuth";
 import { SuperAdminPanel } from "@/components/SuperAdminPanel";
@@ -16,12 +17,7 @@ export const Layout = () => {
   const [superAdminPanelOpen, setSuperAdminPanelOpen] = useState(false);
   const [agentManagementOpen, setAgentManagementOpen] = useState(false);
   const { currentUserRole } = useRoles();
-  const { user, logout } = useAuth();
-
-  const handleSignOut = async () => {
-    await logout();
-    setSidebarOpen(false);
-  };
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,16 +49,7 @@ export const Layout = () => {
           </div>
           
           {user ? (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{user.email}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-              >
-                Sign Out
-              </Button>
-            </div>
+            <UserProfileMenu email={user.email} />
           ) : (
             <Button
               variant="outline"
