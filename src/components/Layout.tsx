@@ -7,8 +7,9 @@ import { SignInModal } from "@/components/SignInModal";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
 import { useRoles } from "@/hooks/useRoles";
 import { useAuth } from "@/hooks/useAuth";
-import { SuperAdminPanel } from "@/components/SuperAdminPanel";
 import { AgentManagement } from "@/components/AgentManagement";
+import { DashboardManagement } from "@/components/DashboardManagement";
+import { RoleManagement } from "@/components/RoleManagement";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export const Layout = () => {
@@ -191,10 +192,7 @@ export const Layout = () => {
                   <DialogHeader>
                     <DialogTitle>Dashboard Management</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    {/* Dashboard Management content from SuperAdminPanel */}
-                    <SuperAdminPanel />
-                  </div>
+                  <DashboardManagement />
                 </DialogContent>
               </Dialog>
 
@@ -209,10 +207,7 @@ export const Layout = () => {
                   <DialogHeader>
                     <DialogTitle>Role Management</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    {/* Role Management content from SuperAdminPanel */}
-                    <SuperAdminPanel />
-                  </div>
+                  <RoleManagement />
                 </DialogContent>
               </Dialog>
             </div>
