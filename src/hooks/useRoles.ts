@@ -26,17 +26,27 @@ export const useRoles = () => {
         return;
       }
 
-      const { data, error } = await supabase.rpc('get_user_role', {
-        user_email: user.email
-      });
+      // Query user_roles table directly instead of using the RPC function
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('email', user.email.toLowerCase())
+        .order('assigned_at', { ascending: false })
+        .limit(1);
 
       if (error) {
-        console.error('Error fetching user role:', error);
+        console.error('Error fetching current user role:', error);
         setCurrentUserRole('viewer');
         return;
       }
 
-      setCurrentUserRole(data as UserRole);
+      // If no role found, default to viewer
+      if (!data || data.length === 0) {
+        setCurrentUserRole('viewer');
+        return;
+      }
+
+      setCurrentUserRole(data[0].role as UserRole);
     } catch (error) {
       console.error('Error in fetchCurrentUserRole:', error);
       setCurrentUserRole('viewer');
