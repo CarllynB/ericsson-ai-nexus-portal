@@ -1,17 +1,21 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, Shield, Mail } from 'lucide-react';
+import { UserPlus, Shield, Mail, ExternalLink, Settings } from 'lucide-react';
 import { useRoles, UserRole } from '@/hooks/useRoles';
 import { useToast } from '@/components/ui/use-toast';
+import { useDashboardLink } from '@/hooks/useDashboardLink';
 
 export const SuperAdminPanel = () => {
   const { users, assignRole, updateUserRole } = useRoles();
+  const { dashboardLink, updateDashboardLink } = useDashboardLink();
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<UserRole>('admin');
+  const [newDashboardLink, setNewDashboardLink] = useState('');
   const { toast } = useToast();
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
@@ -56,6 +60,26 @@ export const SuperAdminPanel = () => {
     }
   };
 
+  const handleUpdateDashboardLink = async () => {
+    if (!newDashboardLink.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid dashboard URL",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const success = await updateDashboardLink(newDashboardLink);
+    if (success) {
+      toast({
+        title: "Success",
+        description: "Dashboard link updated successfully",
+      });
+      setNewDashboardLink('');
+    }
+  };
+
   const getRoleBadgeVariant = (role: UserRole) => {
     switch (role) {
       case 'super_admin':
@@ -69,6 +93,41 @@ export const SuperAdminPanel = () => {
 
   return (
     <div className="space-y-6">
+      {/* Manage Dashboard */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="w-5 h-5" />
+            Manage Dashboard
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter dashboard URL (e.g., https://powerbi.com/dashboard)"
+                value={newDashboardLink}
+                onChange={(e) => setNewDashboardLink(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={handleUpdateDashboardLink}>
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Update Link
+              </Button>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {dashboardLink ? (
+                <p>
+                  Current dashboard link: <span className="text-primary font-medium">{dashboardLink}</span>
+                </p>
+              ) : (
+                <p>No dashboard link set. Users will see the "Coming Soon" page.</p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Add New Admin */}
       <Card>
         <CardHeader>

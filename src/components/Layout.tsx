@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { X, LogIn, Settings, Shield, UserPlus } from "lucide-react";
+import { X, LogIn, Settings, Shield, UserPlus, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
@@ -182,13 +182,13 @@ export const Layout = () => {
               <Dialog open={superAdminPanelOpen} onOpenChange={setSuperAdminPanelOpen}>
                 <DialogTrigger asChild>
                   <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left">
-                    <UserPlus className="w-4 h-4" />
-                    <span className="font-medium">Assign Roles</span>
+                    <Shield className="w-4 h-4" />
+                    <span className="font-medium">Manage Dashboard & Roles</span>
                   </button>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl">
                   <DialogHeader>
-                    <DialogTitle>Role Management</DialogTitle>
+                    <DialogTitle>Super Admin Panel</DialogTitle>
                   </DialogHeader>
                   <SuperAdminPanel />
                 </DialogContent>

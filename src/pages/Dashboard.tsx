@@ -1,7 +1,32 @@
+
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useDashboardLink } from "@/hooks/useDashboardLink";
 
 const Dashboard = () => {
+  const { dashboardLink, loading } = useDashboardLink();
+
+  useEffect(() => {
+    if (!loading && dashboardLink) {
+      window.location.href = dashboardLink;
+    }
+  }, [dashboardLink, loading]);
+
+  // Show loading state while checking for dashboard link
+  if (loading) {
+    return (
+      <div className="min-h-screen px-6 py-12 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 bg-primary rounded-full animate-pulse mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If there's a dashboard link, the useEffect will redirect
+  // This fallback shows the coming soon page
   return (
     <div className="min-h-screen px-6 py-12">
       <div className="max-w-7xl mx-auto">
