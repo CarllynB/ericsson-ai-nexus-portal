@@ -1,12 +1,20 @@
+
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { Menu, X, LogIn } from "lucide-react";
+import { Menu, X, LogIn, Settings, Shield, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
+import { useRoles } from "@/hooks/useRoles";
+import { SuperAdminPanel } from "@/components/SuperAdminPanel";
+import { AgentManagement } from "@/components/AgentManagement";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
+  const [superAdminPanelOpen, setSuperAdminPanelOpen] = useState(false);
+  const [agentManagementOpen, setAgentManagementOpen] = useState(false);
+  const { currentUserRole } = useRoles();
 
   return (
     <div className="min-h-screen bg-background">
@@ -72,6 +80,11 @@ export const Layout = () => {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">AI-DU Agent Portal</p>
+              {currentUserRole && (
+                <p className="text-xs text-primary font-medium">
+                  {currentUserRole.replace('_', ' ').toUpperCase()}
+                </p>
+              )}
             </div>
           </div>
           <Button
@@ -108,6 +121,47 @@ export const Layout = () => {
             <div className="w-2 h-2 bg-primary rounded-full" />
             <span className="font-medium">Dashboard</span>
           </a>
+
+          {/* Super Admin Section */}
+          {currentUserRole === 'super_admin' && (
+            <div className="pt-4 border-t border-border">
+              <div className="px-4 py-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Super Admin
+                </p>
+              </div>
+              
+              <Dialog open={agentManagementOpen} onOpenChange={setAgentManagementOpen}>
+                <DialogTrigger asChild>
+                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left">
+                    <Settings className="w-4 h-4" />
+                    <span className="font-medium">Manage Agents</span>
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Agent Management</DialogTitle>
+                  </DialogHeader>
+                  <AgentManagement />
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={superAdminPanelOpen} onOpenChange={setSuperAdminPanelOpen}>
+                <DialogTrigger asChild>
+                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left">
+                    <UserPlus className="w-4 h-4" />
+                    <span className="font-medium">Assign Roles</span>
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>Role Management</DialogTitle>
+                  </DialogHeader>
+                  <SuperAdminPanel />
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
         </nav>
       </aside>
 

@@ -7,160 +7,37 @@ import { Input } from "@/components/ui/input";
 import { ArrowRight, Search, Mail, User, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useRoles } from "@/hooks/useRoles";
+import { getAgents } from "@/services/api";
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
+  const [agents, setAgents] = useState<any[]>([]);
+  const { currentUserRole } = useRoles();
 
-  const agents = [
-    {
-      id: "devmate",
-      title: "DevMate",
-      description: "Accelerate the delivery of upgrades and patches on Ericsson-developed tools and systems.",
-      category: "Dev Tools",
-      status: "Active",
-      features: [
-        "VS Code extension for efficient patch releases",
-        "Automated upgrade workflows",
-        "License management integration",
-        "Usage analytics"
-      ],
-      link: null
-    },
-    {
-      id: "smart-error-detect",
-      title: "Smart Error Detect",
-      description: "Use GenAI to resolve CNIS issues reported in JIRA",
-      category: "CNIS OPS",
-      status: "Active",
-      features: [
-        "Suggest possible solutions on CNIS issues",
-        "Leverages past Jira ticket knowledge base",
-        "Improves error detection accuracy",
-        "Speeds resolution time"
-      ],
-      link: "https://sed-csstip.msts.ericsson.net/"
-    },
-    {
-      id: "5gc-fa",
-      title: "5GC FA Agent", 
-      description: "Use GenAI to perform 5GC fault analysis from network PCAP logs",
-      category: "Fault Analysis",
-      status: "Active",
-      features: [
-        "PCAP log processing",
-        "5G Core fault detection",
-        "Performance analysis",
-        "Predictive insights"
-      ],
-      link: "https://5gcfa-csstip.msts.ericsson.net/login.html"
-    },
-    {
-      id: "mop",
-      title: "MoP Agent",
-      description: "Use GenAI to create base MoPs for delivery teams",
-      category: "Documentation",
-      status: "Active", 
-      features: [
-        "Automated MoP generation",
-        "Best practice integration",
-        "Template customization",
-        "Quality assurance"
-      ],
-      link: "https://mop.cram066.rnd.gic.ericsson.se/mop-gui/mop-agent"
-    },
-    {
-      id: "palle",
-      title: "PALLE",
-      description: "Use GenAI to provide lessons learned from all projects",
-      category: "Learning",
-      status: "Coming Soon",
-      features: [
-        "Project knowledge extraction",
-        "Lessons learned database",
-        "Best practice recommendations",
-        "Historical insights"
-      ],
-      link: null
-    },
-    {
-      id: "ml4sec",
-      title: "ML4SEC",
-      description: "Use GenAI to execute SRM (Security Reliability Model)",
-      category: "Security",
-      status: "Coming Soon",
-      features: [
-        "Security reliability modeling",
-        "Risk assessment automation",
-        "Compliance monitoring",
-        "Threat analysis"
-      ],
-      link: null
-    },
-    {
-      id: "henka",
-      title: "Henka",
-      description: "GenAI based utility to improve Change Request (CR) - Henka",
-      category: "Change Management",
-      status: "Coming Soon",
-      features: [
-        "Change request optimization",
-        "Impact analysis",
-        "Automated workflows",
-        "Risk mitigation"
-      ],
-      link: null
-    },
-    {
-      id: "swift",
-      title: "SWIFT",
-      description: "GenAI based chatbot for end-use issue resolution (STWFT)",
-      category: "Support",
-      status: "Coming Soon",
-      features: [
-        "End-user issue resolution",
-        "Automated troubleshooting",
-        "Knowledge base integration",
-        "Real-time support"
-      ],
-      link: null
-    },
-    {
-      id: "nexus",
-      title: "Nexus",
-      description: "GenAI based handover from Project to Delivery (CNS)",
-      category: "Project Management",
-      status: "Coming Soon",
-      features: [
-        "Project handover automation",
-        "Documentation generation",
-        "Knowledge transfer",
-        "Delivery optimization"
-      ],
-      link: null
-    },
-    {
-      id: "stlc",
-      title: "STLC",
-      description: "Use GenAI to create full software test life cycle",
-      category: "Testing",
-      status: "Coming Soon",
-      features: [
-        "Test case generation",
-        "Automated test planning",
-        "Coverage analysis",
-        "Quality assurance"
-      ],
-      link: null
-    }
-  ];
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const agentsData = await getAgents();
+        setAgents(agentsData);
+      } catch (error) {
+        console.error('Error fetching agents:', error);
+      }
+    };
+
+    fetchAgents();
+  }, []);
 
   const filteredAgents = agents.filter(agent =>
-    agent.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agent.features.some(feature => feature.toLowerCase().includes(searchTerm.toLowerCase()))
+    agent.key_features.some((feature: string) => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Show status badges only for admins and super admins
+  const showStatusBadges = currentUserRole && ['admin', 'super_admin'].includes(currentUserRole);
 
   return (
     <div className="min-h-screen px-6 py-12">
@@ -235,14 +112,14 @@ const Home = () => {
               <Card 
                 key={agent.id} 
                 className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
-                  agent.status === "Coming Soon" ? "opacity-75 bg-muted/30" : ""
+                  agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
                 }`}
               >
                 {/* Features Overlay on Hover */}
                 <div className="absolute inset-0 bg-background/95 p-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-center">
                   <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
                   <ul className="space-y-2">
-                    {agent.features.map((feature, index) => (
+                    {agent.key_features.map((feature: string, index: number) => (
                       <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
                         <div className="w-1.5 h-1.5 bg-primary rounded-full" />
                         {feature}
@@ -255,21 +132,23 @@ const Home = () => {
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
                       <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                        {agent.title}
+                        {agent.name}
                       </CardTitle>
                       <Badge variant="secondary" className="text-xs">
                         {agent.category}
                       </Badge>
                     </div>
-                    <Badge 
-                      variant={agent.status === "Active" ? "default" : "secondary"}
-                      className={agent.status === "Active" 
-                        ? "bg-green-100 text-green-800 hover:bg-green-100" 
-                        : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                      }
-                    >
-                      {agent.status}
-                    </Badge>
+                    {showStatusBadges && (
+                      <Badge 
+                        variant={agent.status === "active" ? "default" : "secondary"}
+                        className={agent.status === "active" 
+                          ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                          : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+                        }
+                      >
+                        {agent.status.replace('_', ' ')}
+                      </Badge>
+                    )}
                   </div>
                   <CardDescription className="text-sm leading-relaxed">
                     {agent.description}
@@ -277,7 +156,7 @@ const Home = () => {
                 </CardHeader>
                 
                 <CardContent className="space-y-6">
-                  {agent.status === "Coming Soon" ? (
+                  {agent.status === "coming_soon" ? (
                     <Button 
                       className="w-full"
                       variant="outline"
@@ -319,8 +198,8 @@ const Home = () => {
                       className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                       variant="outline"
                       onClick={() => {
-                        if (agent.link) {
-                          window.open(agent.link, '_blank');
+                        if (agent.access_link) {
+                          window.open(agent.access_link, '_blank');
                         }
                       }}
                     >
