@@ -1,4 +1,5 @@
-import { useState, useEffect, useContext } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,20 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Search, Mail, User, ChevronRight, Settings, ChevronDown, ChevronUp, X, Edit, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AuthContext } from "@/lib/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useAgents } from "@/hooks/useAgents";
+import { Agent } from "@/types/database";
 
-type AgentStatus = "Active" | "Coming Soon" | "Inactive";
-
-interface Agent {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  status: AgentStatus;
-  features: string[];
-  link: string | null;
-}
+type AgentStatus = "active" | "coming_soon" | "inactive";
 
 const Agents = () => {
   // Search & Filter
@@ -27,195 +19,22 @@ const Agents = () => {
   
   // Pagination & Display
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [showAll, setShowAll] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   
   // Welcome Banner
   const [showWelcome, setShowWelcome] = useState(true);
   
-  // Auth Context
-  const user = useContext(AuthContext);
-
-  const DEFAULT_AGENTS: Agent[] = [
-    {
-      id: "devmate",
-      title: "DevMate",
-      description: "Accelerate the delivery of upgrades and patches on Ericsson-developed tools and systems.",
-      category: "Dev Tools",
-      status: "Active",
-      features: [
-        "VS Code extension for efficient patch releases",
-        "Automated upgrade workflows",
-        "License management integration",
-        "Usage analytics"
-      ],
-      link: null
-    },
-    {
-      id: "smart-error-detect",
-      title: "Smart Error Detect",
-      description: "Use GenAI to resolve CNIS issues reported in JIRA",
-      category: "CNIS OPS",
-      status: "Active",
-      features: [
-        "Suggest possible solutions on CNIS issues",
-        "Leverages past Jira ticket knowledge base",
-        "Improves error detection accuracy",
-        "Speeds resolution time"
-      ],
-      link: "https://sed-csstip.msts.ericsson.net/"
-    },
-    {
-      id: "5gc-fa",
-      title: "5GC FA Agent", 
-      description: "Use GenAI to perform 5GC fault analysis from network PCAP logs",
-      category: "Fault Analysis",
-      status: "Active",
-      features: [
-        "PCAP log processing",
-        "5G Core fault detection",
-        "Performance analysis",
-        "Predictive insights"
-      ],
-      link: "https://5gcfa-csstip.msts.ericsson.net/login.html"
-    },
-    {
-      id: "mop",
-      title: "MoP Agent",
-      description: "Use GenAI to create base MoPs for delivery teams",
-      category: "Documentation",
-      status: "Active", 
-      features: [
-        "Automated MoP generation",
-        "Best practice integration",
-        "Template customization",
-        "Quality assurance"
-      ],
-      link: "https://mop.cram066.rnd.gic.ericsson.se/mop-gui/mop-agent"
-    },
-    {
-      id: "palle",
-      title: "PALLE",
-      description: "Use GenAI to provide lessons learned from all projects",
-      category: "Learning",
-      status: "Coming Soon",
-      features: [
-        "Project knowledge extraction",
-        "Lessons learned database",
-        "Best practice recommendations",
-        "Historical insights"
-      ],
-      link: null
-    },
-    {
-      id: "ml4sec",
-      title: "ML4SEC",
-      description: "Use GenAI to execute SRM (Security Reliability Model)",
-      category: "Security",
-      status: "Coming Soon",
-      features: [
-        "Security reliability modeling",
-        "Risk assessment automation",
-        "Compliance monitoring",
-        "Threat analysis"
-      ],
-      link: null
-    },
-    {
-      id: "henka",
-      title: "Henka",
-      description: "GenAI based utility to improve Change Request (CR) - Henka",
-      category: "Change Management",
-      status: "Coming Soon",
-      features: [
-        "Change request optimization",
-        "Impact analysis",
-        "Automated workflows",
-        "Risk mitigation"
-      ],
-      link: null
-    },
-    {
-      id: "swift",
-      title: "SWIFT",
-      description: "GenAI based chatbot for end-use issue resolution (STWFT)",
-      category: "Support",
-      status: "Coming Soon",
-      features: [
-        "End-user issue resolution",
-        "Automated troubleshooting",
-        "Knowledge base integration",
-        "Real-time support"
-      ],
-      link: null
-    },
-    {
-      id: "nexus",
-      title: "Nexus",
-      description: "GenAI based handover from Project to Delivery (CNS)",
-      category: "Project Management",
-      status: "Coming Soon",
-      features: [
-        "Project handover automation",
-        "Documentation generation",
-        "Knowledge transfer",
-        "Delivery optimization"
-      ],
-      link: null
-    },
-    {
-      id: "stlc",
-      title: "STLC",
-      description: "Use GenAI to create full software test life cycle",
-      category: "Testing",
-      status: "Coming Soon",
-      features: [
-        "Test case generation",
-        "Automated test planning",
-        "Coverage analysis",
-        "Quality assurance"
-      ],
-      link: null
-    }
-  ];
-
-  // Fetch & Loading State
-  const [agents, setAgents] = useState<Agent[]>(DEFAULT_AGENTS);
-  const [loading, setLoading] = useState(true);
-
-  // Backend API call
-  useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        const pageSize = showAll ? 100 : 12;
-        const response = await fetch(`/api/agents?page=${page}&page_size=${pageSize}`);
-        if (response.ok) {
-          const data = await response.json();
-          setAgents(data.items || data);
-          if (data.total) {
-            setTotalPages(Math.ceil(data.total / 12));
-          }
-        } else {
-          setAgents(DEFAULT_AGENTS);
-        }
-      } catch (error) {
-        console.error('Failed to fetch agents:', error);
-        setAgents(DEFAULT_AGENTS);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAgents();
-  }, [page, showAll]);
+  // Auth and Data Hooks
+  const { user, isAdmin, isSuperAdmin } = useAuth();
+  const { agents, loading, error, totalPages, updateAgentStatus, deleteAgent } = useAgents(page, 12, showAll);
 
   // Search filtering
   const filteredAgents = agents.filter(agent =>
-    agent.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agent.features.some(feature => feature.toLowerCase().includes(searchTerm.toLowerCase()))
+    agent.key_features.some(feature => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Reset page when search changes
@@ -234,21 +53,20 @@ const Agents = () => {
     setPage(1);
   };
 
-  const handleStatusChange = (agentId: string, newStatus: AgentStatus) => {
+  const handleStatusChange = async (agentId: string, newStatus: AgentStatus) => {
     console.log('Toggle', agentId, newStatus);
-    setAgents(prev => 
-      prev.map(agent => 
-        agent.id === agentId ? { ...agent, status: newStatus } : agent
-      )
-    );
+    await updateAgentStatus(agentId, newStatus);
   };
 
   const handleEdit = (agentId: string) => {
     console.log('Edit agent:', agentId);
   };
 
-  const handleDelete = (agentId: string) => {
-    console.log('Delete agent:', agentId);
+  const handleDelete = async (agentId: string) => {
+    if (confirm('Are you sure you want to delete this agent?')) {
+      console.log('Delete agent:', agentId);
+      await deleteAgent(agentId);
+    }
   };
 
   const toggleCardExpansion = (agentId: string) => {
@@ -265,11 +83,11 @@ const Agents = () => {
 
   const getCardStyles = (status: AgentStatus) => {
     switch (status) {
-      case "Active":
+      case "active":
         return "border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer";
-      case "Coming Soon":
+      case "coming_soon":
         return "opacity-70 bg-muted/30 border-2 border-muted hover:border-muted/70 hover:shadow-md hover:scale-[1.01] transition-all duration-300 cursor-pointer";
-      case "Inactive":
+      case "inactive":
         return "opacity-50 bg-gray-100 border-2 border-gray-300 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] transition-all duration-300 cursor-pointer";
       default:
         return "hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer";
@@ -278,11 +96,11 @@ const Agents = () => {
 
   const getStatusBadgeColor = (status: AgentStatus) => {
     switch (status) {
-      case "Active":
+      case "active":
         return "bg-green-100 text-green-800 hover:bg-green-100";
-      case "Coming Soon":
+      case "coming_soon":
         return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100";
-      case "Inactive":
+      case "inactive":
         return "bg-gray-100 text-gray-800 hover:bg-gray-100";
       default:
         return "bg-gray-100 text-gray-800 hover:bg-gray-100";
@@ -331,6 +149,13 @@ const Agents = () => {
           </p>
         </div>
 
+        {/* Error Banner */}
+        {error && (
+          <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+            {error}
+          </div>
+        )}
+
         {/* Search Bar */}
         <div className="max-w-2xl mx-auto mb-12">
           <div className="relative">
@@ -361,7 +186,7 @@ const Agents = () => {
                 >
                   {/* Admin Controls */}
                   <div className="absolute top-2 right-2 z-20 flex gap-1">
-                    {user?.roles?.includes('admin') && (
+                    {isAdmin && (
                       <>
                         <Button
                           size="sm"
@@ -379,14 +204,14 @@ const Agents = () => {
                             <Settings className="w-4 h-4" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Active">Active</SelectItem>
-                            <SelectItem value="Coming Soon">Coming Soon</SelectItem>
-                            <SelectItem value="Inactive">Inactive</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="coming_soon">Coming Soon</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
                           </SelectContent>
                         </Select>
                       </>
                     )}
-                    {user?.roles?.includes('super_admin') && (
+                    {isSuperAdmin && (
                       <Button
                         size="sm"
                         variant="destructive"
@@ -403,7 +228,7 @@ const Agents = () => {
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <CardTitle className="text-xl">
-                            {agent.title}
+                            {agent.name}
                           </CardTitle>
                           <button
                             onClick={() => toggleCardExpansion(agent.id)}
@@ -425,7 +250,7 @@ const Agents = () => {
                         variant="secondary"
                         className={getStatusBadgeColor(agent.status)}
                       >
-                        {agent.status}
+                        {agent.status === "coming_soon" ? "Coming Soon" : agent.status}
                       </Badge>
                     </div>
                     <CardDescription className="text-sm leading-relaxed">
@@ -438,7 +263,7 @@ const Agents = () => {
                     <div className="px-6 pb-4 border-t border-gray-100">
                       <h4 className="font-semibold text-sm text-foreground mb-3 mt-4">Key Features:</h4>
                       <ul className="space-y-2">
-                        {agent.features.map((feature, index) => (
+                        {agent.key_features.map((feature, index) => (
                           <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
                             <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
                             {feature}
@@ -449,7 +274,7 @@ const Agents = () => {
                   )}
                   
                   <CardContent className="space-y-6">
-                    {agent.status === "Active" ? (
+                    {agent.status === "active" ? (
                       agent.id === "devmate" ? (
                         <Popover>
                           <PopoverTrigger asChild>
@@ -484,8 +309,8 @@ const Agents = () => {
                           className="w-full"
                           variant="outline"
                           onClick={() => {
-                            if (agent.link) {
-                              window.open(agent.link, '_blank');
+                            if (agent.access_link) {
+                              window.open(agent.access_link, '_blank');
                             }
                           }}
                         >
@@ -498,7 +323,7 @@ const Agents = () => {
                         variant="outline"
                         disabled
                       >
-                        {agent.status === "Coming Soon" ? "Coming Soon" : "Access Agent"}
+                        {agent.status === "coming_soon" ? "Coming Soon" : "Access Agent"}
                       </Button>
                     )}
                   </CardContent>
