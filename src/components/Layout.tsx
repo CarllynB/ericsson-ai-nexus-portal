@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 export const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
-  const [superAdminPanelOpen, setSuperAdminPanelOpen] = useState(false);
+  const [dashboardManagementOpen, setDashboardManagementOpen] = useState(false);
+  const [roleManagementOpen, setRoleManagementOpen] = useState(false);
   const [agentManagementOpen, setAgentManagementOpen] = useState(false);
   const { currentUserRole } = useRoles();
   const { user } = useAuth();
@@ -179,18 +180,39 @@ export const Layout = () => {
                 </DialogContent>
               </Dialog>
 
-              <Dialog open={superAdminPanelOpen} onOpenChange={setSuperAdminPanelOpen}>
+              <Dialog open={dashboardManagementOpen} onOpenChange={setDashboardManagementOpen}>
                 <DialogTrigger asChild>
                   <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left">
-                    <Shield className="w-4 h-4" />
-                    <span className="font-medium">Manage Dashboard & Roles</span>
+                    <ExternalLink className="w-4 h-4" />
+                    <span className="font-medium">Manage Dashboard</span>
                   </button>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl">
                   <DialogHeader>
-                    <DialogTitle>Super Admin Panel</DialogTitle>
+                    <DialogTitle>Dashboard Management</DialogTitle>
                   </DialogHeader>
-                  <SuperAdminPanel />
+                  <div className="space-y-4">
+                    {/* Dashboard Management content from SuperAdminPanel */}
+                    <SuperAdminPanel />
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={roleManagementOpen} onOpenChange={setRoleManagementOpen}>
+                <DialogTrigger asChild>
+                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left">
+                    <Shield className="w-4 h-4" />
+                    <span className="font-medium">Manage Roles</span>
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>Role Management</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {/* Role Management content from SuperAdminPanel */}
+                    <SuperAdminPanel />
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>
