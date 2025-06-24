@@ -12,13 +12,6 @@ export interface UserWithRole {
   assigned_at: string;
 }
 
-// Temporary hardcoded roles until user_roles table is available
-const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
-const TEMP_USER_ROLES: Record<string, UserRole> = {
-  'muhammad.mahmood@ericsson.com': 'super_admin',
-  'carllyn.barfi@ericsson.com': 'super_admin',
-};
-
 export const useRoles = () => {
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
   const [users, setUsers] = useState<UserWithRole[]>([]);
@@ -28,24 +21,46 @@ export const useRoles = () => {
   const fetchCurrentUserRole = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) return;
+      if (!user?.email) {
+        setCurrentUserRole('viewer');
+        return;
+      }
 
-      // Use hardcoded roles for now
-      const role = TEMP_USER_ROLES[user.email] || 'viewer';
-      setCurrentUserRole(role);
+      // Use the database function to get the user's role
+      const { data, error } = await supabase.rpc('get_user_role', {
+        user_email: user.email
+      });
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        setCurrentUserRole('viewer');
+        return;
+      }
+
+      setCurrentUserRole(data as UserRole);
     } catch (error) {
       console.error('Error in fetchCurrentUserRole:', error);
+      setCurrentUserRole('viewer');
     }
   };
 
   const fetchAllUsers = async () => {
     try {
-      // For now, return the hardcoded super admins
-      const formattedUsers: UserWithRole[] = SUPER_ADMINS.map(email => ({
-        id: email.includes('muhammad') ? 'cfd87936-7cef-4ddb-bea6-88cf29f6c399' : 'temp-carllyn-id',
-        email,
-        role: 'super_admin' as UserRole,
-        assigned_at: new Date().toISOString()
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('*')
+        .order('assigned_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching users:', error);
+        return;
+      }
+
+      const formattedUsers: UserWithRole[] = data.map(user => ({
+        id: user.user_id,
+        email: user.email,
+        role: user.role as UserRole,
+        assigned_at: user.assigned_at
       }));
 
       setUsers(formattedUsers);
@@ -54,18 +69,40 @@ export const useRoles = () => {
     }
   };
 
-  const assignRole = async (userId: string, role: UserRole) => {
+  const assignRole = async (userEmail: string, role: UserRole) => {
     try {
-      // For now, just update local state
-      setUsers(prev => 
-        prev.map(user => 
-          user.id === userId ? { ...user, role } : user
-        )
-      );
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      // First, check if user exists in auth.users by trying to find them
+      // Since we can't directly query auth.users, we'll insert and let the foreign key constraint handle validation
+      const { error } = await supabase
+        .from('user_roles')
+        .upsert({
+          user_id: `temp-${Date.now()}`, // This will be updated when the user signs up
+          email: userEmail,
+          role,
+          assigned_by: currentUser?.id
+        }, {
+          onConflict: 'email',
+          ignoreDuplicates: false
+        });
+
+      if (error) {
+        console.error('Error assigning role:', error);
+        toast({
+          title: "Error",
+          description: "Failed to assign role",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      // Refresh the users list
+      await fetchAllUsers();
 
       toast({
         title: "Success",
-        description: "Role assigned successfully (temporary implementation)"
+        description: `Role ${role} assigned to ${userEmail}`
       });
 
       return true;
@@ -74,6 +111,49 @@ export const useRoles = () => {
       toast({
         title: "Error",
         description: "Failed to assign role",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
+  const updateUserRole = async (userId: string, newRole: UserRole) => {
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      const { error } = await supabase
+        .from('user_roles')
+        .update({
+          role: newRole,
+          assigned_by: currentUser?.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error updating user role:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update role",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      // Refresh the users list
+      await fetchAllUsers();
+
+      toast({
+        title: "Success",
+        description: "Role updated successfully"
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update role",
         variant: "destructive"
       });
       return false;
@@ -102,6 +182,7 @@ export const useRoles = () => {
     users,
     loading,
     assignRole,
+    updateUserRole,
     fetchCurrentUserRole,
     fetchAllUsers
   };

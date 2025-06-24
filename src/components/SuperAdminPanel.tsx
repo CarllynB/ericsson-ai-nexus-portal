@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,17 +10,17 @@ import { useRoles, UserRole } from '@/hooks/useRoles';
 import { useToast } from '@/components/ui/use-toast';
 
 export const SuperAdminPanel = () => {
-  const { users, assignRole } = useRoles();
+  const { users, assignRole, updateUserRole } = useRoles();
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<UserRole>('admin');
   const { toast } = useToast();
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
-    const success = await assignRole(userId, newRole);
+    const success = await updateUserRole(userId, newRole);
     if (success) {
       toast({
         title: "Role Updated",
-        description: `User role updated to ${newRole} and saved to database`,
+        description: `User role updated to ${newRole}`,
       });
     }
   };
@@ -34,26 +35,25 @@ export const SuperAdminPanel = () => {
       return;
     }
 
-    // For now, we'll simulate adding a user by creating a mock user ID
-    // In a real system, this would integrate with Supabase auth
-    const mockUserId = `user-${Date.now()}`;
-    
-    try {
-      const success = await assignRole(mockUserId, newUserRole);
-      if (success) {
-        toast({
-          title: "Success",
-          description: `User ${newUserEmail} has been assigned ${newUserRole} role. They can now sign up and will automatically have this role.`,
-        });
-        setNewUserEmail('');
-        setNewUserRole('admin');
-      }
-    } catch (error) {
+    // Check if user already exists
+    const existingUser = users.find(user => user.email.toLowerCase() === newUserEmail.toLowerCase());
+    if (existingUser) {
       toast({
         title: "Error",
-        description: "Failed to assign role to user",
+        description: "User with this email already has a role assigned",
         variant: "destructive"
       });
+      return;
+    }
+
+    const success = await assignRole(newUserEmail, newUserRole);
+    if (success) {
+      toast({
+        title: "Success",
+        description: `${newUserRole} role assigned to ${newUserEmail}`,
+      });
+      setNewUserEmail('');
+      setNewUserRole('admin');
     }
   };
 
@@ -75,7 +75,7 @@ export const SuperAdminPanel = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5" />
-            Assign Admin Role
+            Assign Role
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -105,7 +105,7 @@ export const SuperAdminPanel = () => {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Assign a role to a user by their email. When they sign up, they'll automatically have this role.
+              Assign a role to a user by their email. When they sign up with this email, they'll automatically have this role.
             </p>
           </div>
         </CardContent>
@@ -122,7 +122,7 @@ export const SuperAdminPanel = () => {
         <CardContent>
           <div className="space-y-4">
             {users.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={`${user.id}-${user.email}`} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <Mail className="w-4 h-4 text-muted-foreground" />
                   <div>
