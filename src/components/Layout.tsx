@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { X, LogIn, Settings, Shield, UserPlus } from "lucide-react";
@@ -25,21 +24,13 @@ export const Layout = () => {
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            {/* Ericsson Logo Button with custom menu icon */}
+            {/* Menu button with custom icon only */}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="flex items-center gap-2 hover:bg-primary/10"
+              className="flex items-center justify-center hover:bg-primary/10"
             >
-              <div className="w-8 h-8 flex items-center justify-center">
-                <img 
-                  src="/lovable-uploads/a0c9376e-fd07-4f06-aae2-04764228ec6e.png" 
-                  alt="Ericsson Logo" 
-                  className="w-6 h-6 object-contain"
-                />
-              </div>
-              {/* Custom menu icon */}
               <div className="w-6 h-6 flex items-center justify-center">
                 <img 
                   src="/lovable-uploads/ead09f29-c601-44f5-8578-508b00189e3e.png" 
