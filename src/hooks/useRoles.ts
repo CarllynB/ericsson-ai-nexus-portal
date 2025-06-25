@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 export type UserRole = 'super_admin' | 'admin' | 'viewer';
 
@@ -19,11 +20,19 @@ export const useRoles = () => {
 
   const fetchCurrentUserRole = async () => {
     try {
-      // Use the new database function to get current user role
-      const { data, error } = await supabase.rpc('get_current_user_role');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) {
+        setCurrentUserRole('viewer');
+        return;
+      }
+
+      // Use the database function to get the user's role
+      const { data, error } = await supabase.rpc('get_user_role', {
+        user_email: user.email
+      });
 
       if (error) {
-        console.error('Error fetching current user role:', error);
+        console.error('Error fetching user role:', error);
         setCurrentUserRole('viewer');
         return;
       }
@@ -43,17 +52,12 @@ export const useRoles = () => {
         .order('assigned_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching user roles:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch user roles: " + error.message,
-          variant: "destructive"
-        });
+        console.error('Error fetching users:', error);
         return;
       }
 
       const formattedUsers: UserWithRole[] = data.map(user => ({
-        id: user.id,
+        id: user.user_id,
         email: user.email,
         role: user.role as UserRole,
         assigned_at: user.assigned_at
@@ -62,117 +66,38 @@ export const useRoles = () => {
       setUsers(formattedUsers);
     } catch (error) {
       console.error('Error in fetchAllUsers:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch user roles",
-        variant: "destructive"
-      });
     }
   };
 
   const assignRole = async (userEmail: string, role: UserRole) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
       
-      if (!session?.user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to assign roles",
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      // Check if user already exists in user_roles table
-      const { data: existingUsers, error: fetchError } = await supabase
+      // Generate a temporary user ID for the assignment
+      const tempUserId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      const { error } = await supabase
         .from('user_roles')
-        .select('email')
-        .eq('email', userEmail.toLowerCase());
+        .insert({
+          user_id: tempUserId,
+          email: userEmail,
+          role,
+          assigned_by: currentUser?.id
+        });
 
-      if (fetchError) {
-        console.error('Error checking existing user:', fetchError);
+      if (error) {
+        console.error('Error assigning role:', error);
         toast({
           title: "Error",
-          description: "Failed to check existing users",
+          description: "Failed to assign role",
           variant: "destructive"
         });
         return false;
       }
 
-      if (existingUsers && existingUsers.length > 0) {
-        toast({
-          title: "Error",
-          description: "User with this email already has a role assigned",
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(userEmail)) {
-        toast({
-          title: "Error",
-          description: "Please enter a valid email address",
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      // First, check if the user exists in auth.users by email
-      const { data: authResponse, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) {
-        console.error('Error fetching auth users:', authError);
-        // If we can't fetch auth users, we'll use a placeholder UUID
-        // and update it later when the user signs up
-        const placeholderUserId = `pending-${crypto.randomUUID()}`;
-        
-        const { error: insertError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: placeholderUserId,
-            email: userEmail.toLowerCase(),
-            role,
-            assigned_by: session.user.id
-          });
-
-        if (insertError) {
-          console.error('Error assigning role:', insertError);
-          toast({
-            title: "Error",
-            description: "Failed to assign role: " + insertError.message,
-            variant: "destructive"
-          });
-          return false;
-        }
-      } else {
-        // Find the user by email - properly type the users array
-        const existingUser = authResponse.users?.find((u: any) => u.email === userEmail.toLowerCase());
-        
-        const userIdToUse = existingUser?.id || `pending-${crypto.randomUUID()}`;
-        
-        const { error: insertError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: userIdToUse,
-            email: userEmail.toLowerCase(),
-            role,
-            assigned_by: session.user.id
-          });
-
-        if (insertError) {
-          console.error('Error assigning role:', insertError);
-          toast({
-            title: "Error",
-            description: "Failed to assign role: " + insertError.message,
-            variant: "destructive"
-          });
-          return false;
-        }
-      }
-
+      // Refresh the users list
       await fetchAllUsers();
+
       toast({
         title: "Success",
         description: `Role ${role} assigned to ${userEmail}`
@@ -192,37 +117,30 @@ export const useRoles = () => {
 
   const updateUserRole = async (userId: string, newRole: UserRole) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
       
-      if (!session?.user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to update roles",
-          variant: "destructive"
-        });
-        return false;
-      }
-
       const { error } = await supabase
         .from('user_roles')
         .update({
           role: newRole,
-          assigned_by: session.user.id,
+          assigned_by: currentUser?.id,
           updated_at: new Date().toISOString()
         })
-        .eq('id', userId);
+        .eq('user_id', userId);
 
       if (error) {
         console.error('Error updating user role:', error);
         toast({
           title: "Error",
-          description: "Failed to update role: " + error.message,
+          description: "Failed to update role",
           variant: "destructive"
         });
         return false;
       }
 
+      // Refresh the users list
       await fetchAllUsers();
+
       toast({
         title: "Success",
         description: "Role updated successfully"
@@ -234,52 +152,6 @@ export const useRoles = () => {
       toast({
         title: "Error",
         description: "Failed to update role",
-        variant: "destructive"
-      });
-      return false;
-    }
-  };
-
-  const deleteUserRole = async (userId: string) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to delete roles",
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('id', userId);
-
-      if (error) {
-        console.error('Error deleting user role:', error);
-        toast({
-          title: "Error",
-          description: "Failed to delete role: " + error.message,
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      await fetchAllUsers();
-      toast({
-        title: "Success",
-        description: "Role deleted successfully"
-      });
-
-      return true;
-    } catch (error) {
-      console.error('Error deleting user role:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete role",
         variant: "destructive"
       });
       return false;
@@ -309,7 +181,6 @@ export const useRoles = () => {
     loading,
     assignRole,
     updateUserRole,
-    deleteUserRole,
     fetchCurrentUserRole,
     fetchAllUsers
   };

@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { Agent, getAgents, updateAgent, deleteAgent } from '@/services/api';
 
 export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -182,36 +181,30 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     }
   ];
 
-  useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        console.log('Fetching agents...');
-        
-        const response = await getAgents();
-        
-        if (Array.isArray(response) && response.length > 0) {
-          console.log('Fetched agents from API:', response.length);
-          setAgents(response);
-        } else {
-          console.log('Using default agents');
-          setAgents(DEFAULT_AGENTS);
-        }
-      } catch (err) {
-        console.error('Failed to fetch agents:', err);
-        console.log('Using default agents due to error');
+  const fetchAgents = async () => {
+    try {
+      setLoading(true);
+      const response = await getAgents();
+      
+      if (Array.isArray(response)) {
+        setAgents(response);
+      } else {
         setAgents(DEFAULT_AGENTS);
-        setError('Using cached data - could not connect to server');
-      } finally {
-        setLoading(false);
       }
-    };
+      
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch agents:', err);
+      setAgents(DEFAULT_AGENTS);
+      setError('Failed to load agents from server, showing cached data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Set default agents immediately, then try to fetch from API
-    setAgents(DEFAULT_AGENTS);
+  useEffect(() => {
     fetchAgents();
-  }, []); // Only run once on mount
+  }, [page, pageSize, showAll]);
 
   const updateAgentStatus = async (id: string, status: Agent['status']) => {
     try {
@@ -237,24 +230,6 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     }
   };
 
-  const refetch = async () => {
-    setLoading(true);
-    try {
-      const response = await getAgents();
-      if (Array.isArray(response) && response.length > 0) {
-        setAgents(response);
-      } else {
-        setAgents(DEFAULT_AGENTS);
-      }
-    } catch (err) {
-      console.error('Failed to refetch agents:', err);
-      setAgents(DEFAULT_AGENTS);
-      setError('Using cached data - could not connect to server');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return {
     agents,
     loading,
@@ -262,6 +237,6 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     totalPages,
     updateAgentStatus,
     deleteAgent: deleteAgentById,
-    refetch,
+    refetch: fetchAgents,
   };
 };

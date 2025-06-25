@@ -33,43 +33,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const getUserRole = async (userId: string): Promise<'super_admin' | 'admin' | 'viewer'> => {
-    try {
-      console.log('Fetching role for user:', userId);
-      const { data, error } = await supabase.rpc('get_current_user_role');
-      
-      if (error) {
-        console.error('Error fetching user role:', error);
-        return 'viewer';
-      }
-      
-      console.log('User role fetched:', data);
-      return data || 'viewer';
-    } catch (error) {
-      console.error('Error in getUserRole:', error);
-      return 'viewer';
-    }
-  };
-
-  const createUserFromSession = async (session: any): Promise<User> => {
-    try {
-      const role = await getUserRole(session.user.id);
-      return {
-        id: session.user.id,
-        email: session.user.email || '',
-        role,
-        created_at: session.user.created_at || new Date().toISOString(),
-      };
-    } catch (error) {
-      console.error('Error creating user from session:', error);
-      return {
-        id: session.user.id,
-        email: session.user.email || '',
-        role: 'viewer',
-        created_at: session.user.created_at || new Date().toISOString(),
-      };
-    }
-  };
+  // Default super admin users
+  const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
 
   useEffect(() => {
     let isMounted = true;
@@ -78,30 +43,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         console.log('Initializing auth...');
         
+        // Check for existing session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error('Session error:', sessionError);
+          return;
         }
-
-        if (session?.user && isMounted) {
+        
+        if (isMounted && session?.user) {
           console.log('Found existing session for:', session.user.email);
-          const userData = await createUserFromSession(session);
-          setUser(userData);
-        } else {
-          console.log('No existing session found');
-          setUser(null);
+          const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'viewer';
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            role,
+            created_at: session.user.created_at || new Date().toISOString(),
+          });
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
       } finally {
         if (isMounted) {
-          console.log('Auth initialization complete, setting loading to false');
           setLoading(false);
         }
       }
     };
 
+    initializeAuth();
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
@@ -109,39 +80,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (!isMounted) return;
 
         if (session?.user) {
-          try {
-            const userData = await createUserFromSession(session);
-            setUser(userData);
-          } catch (error) {
-            console.error('Error handling auth state change:', error);
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              role: 'viewer',
-              created_at: session.user.created_at || new Date().toISOString(),
-            });
-          }
+          const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'viewer';
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            role,
+            created_at: session.user.created_at || new Date().toISOString(),
+          });
         } else {
           setUser(null);
         }
         
-        // Always set loading to false after handling auth state change
-        setLoading(false);
+        if (loading) {
+          setLoading(false);
+        }
       }
     );
-
-    initializeAuth();
 
     return () => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [loading]);
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
       console.log('Attempting login for:', email);
-      setLoading(true);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -153,22 +117,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw error;
       }
 
-      console.log('Login successful for:', data.user?.email);
+      if (data.user) {
+        console.log('Login successful for:', data.user.email);
+        const role = SUPER_ADMINS.includes(data.user.email || '') ? 'super_admin' : 'viewer';
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          role,
+          created_at: data.user.created_at || new Date().toISOString(),
+        });
+      }
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
   const logout = async (): Promise<void> => {
     try {
       console.log('Logging out...');
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Logout error:', error);
-      }
+      await supabase.auth.signOut();
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);

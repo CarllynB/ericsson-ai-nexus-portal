@@ -1,23 +1,33 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Search, Mail, User, Info } from "lucide-react";
+import { ArrowRight, Search, Mail, User, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useAuth } from "@/hooks/useAuth";
-import { useAgents } from "@/hooks/useAgents";
+import { useRoles } from "@/hooks/useRoles";
+import { getAgents } from "@/services/api";
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
-  const { user, isSuperAdmin, loading: authLoading } = useAuth();
-  const { agents, loading: agentsLoading, error } = useAgents();
+  const [agents, setAgents] = useState<any[]>([]);
+  const { currentUserRole } = useRoles();
 
-  console.log('Home render - Auth loading:', authLoading, 'User:', user?.email, 'Agents loading:', agentsLoading, 'Agents count:', agents.length);
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const agentsData = await getAgents();
+        setAgents(agentsData);
+      } catch (error) {
+        console.error('Error fetching agents:', error);
+      }
+    };
+
+    fetchAgents();
+  }, []);
 
   const filteredAgents = agents.filter(agent =>
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -26,67 +36,38 @@ const Home = () => {
     agent.key_features.some((feature: string) => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const showStatusBadges = isSuperAdmin;
-
-  // Only show loading when auth is actually loading AND we don't have a user yet
-  if (authLoading && !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading application...</p>
-        </div>
-      </div>
-    );
-  }
+  // Only show status badges for super admins, not regular admins
+  const showStatusBadges = currentUserRole === 'super_admin';
 
   return (
     <div className="min-h-screen px-6 py-12">
-      {/* Welcome Dialog */}
+      {/* Welcome Popup */}
       <Dialog open={showWelcome} onOpenChange={(open) => !open && setShowWelcome(false)}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-center mb-4">
-              Welcome to AI-DU Agent Portal
+              Welcome to the AI-DU Agent Portal
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            <div className="text-center space-y-4">
-              <p className="text-lg text-muted-foreground">
-                Your centralized hub for GenAI agents designed to streamline operations and enhance productivity.
-              </p>
-              <div className="grid md:grid-cols-3 gap-4 mt-6">
-                <div className="p-4 bg-primary/5 rounded-lg">
-                  <h4 className="font-semibold text-sm mb-2">Discover Agents</h4>
-                  <p className="text-xs text-muted-foreground">Browse our collection of specialized AI agents</p>
-                </div>
-                <div className="p-4 bg-secondary/5 rounded-lg">
-                  <h4 className="font-semibold text-sm mb-2">Quick Access</h4>
-                  <p className="text-xs text-muted-foreground">Direct links to operational tools</p>
-                </div>
-                <div className="p-4 bg-accent/5 rounded-lg">
-                  <h4 className="font-semibold text-sm mb-2">Smart Features</h4>
-                  <p className="text-xs text-muted-foreground">Enhanced search and filtering</p>
-                </div>
-              </div>
-            </div>
+            <p className="text-lg text-muted-foreground text-center">
+              Our centralized gateway to access and interact with GenAI agents. 
+              Streamline operations with intelligent automation.
+            </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
                 className="text-lg px-8"
                 onClick={() => setShowWelcome(false)}
               >
-                Get Started
+                Explore Agents
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
                 className="text-lg px-8"
-                onClick={() => {
-                  setShowWelcome(false);
-                  window.location.href = '/dashboard';
-                }}
+                onClick={() => window.location.href = '/dashboard'}
               >
                 View Dashboard
               </Button>
@@ -120,162 +101,133 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="max-w-2xl mx-auto mb-8">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-yellow-800 text-sm">{error}</p>
+        {/* Agents Grid */}
+        <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-8 mb-12">
+          {filteredAgents.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
             </div>
-          </div>
-        )}
-
-        {/* Loading state for agents only */}
-        {agentsLoading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading agents...</p>
-          </div>
-        ) : (
-          <>
-            {/* Agents Grid */}
-            <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-8 mb-12">
-              {filteredAgents.length === 0 ? (
-                <div className="col-span-full text-center py-12">
-                  <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
+          ) : (
+            filteredAgents.map((agent) => (
+              <Card 
+                key={agent.id} 
+                className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
+                  agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
+                }`}
+              >
+                {/* Features Overlay on Hover */}
+                <div className="absolute inset-0 bg-background/95 p-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-center">
+                  <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
+                  <ul className="space-y-2">
+                    {agent.key_features.map((feature: string, index: number) => (
+                      <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              ) : (
-                filteredAgents.map((agent) => (
-                  <Card 
-                    key={agent.id} 
-                    className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
-                      agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
-                    }`}
-                  >
-                    <CardHeader className="space-y-4">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2">
-                          <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                            {agent.name}
-                          </CardTitle>
-                          <Badge variant="secondary" className="text-xs">
-                            {agent.category}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {showStatusBadges && (
-                            <Badge 
-                              variant={agent.status === "active" ? "default" : "secondary"}
-                              className={agent.status === "active" 
-                                ? "bg-green-100 text-green-800 hover:bg-green-100" 
-                                : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                              }
-                            >
-                              {agent.status.replace('_', ' ')}
-                            </Badge>
-                          )}
-                          {/* Key Features HoverCard */}
-                          <HoverCard>
-                            <HoverCardTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <Info className="w-4 h-4" />
-                              </Button>
-                            </HoverCardTrigger>
-                            <HoverCardContent className="w-80">
-                              <div className="space-y-3">
-                                <h4 className="font-semibold text-sm">Key Features:</h4>
-                                <ul className="space-y-2">
-                                  {agent.key_features.map((feature: string, index: number) => (
-                                    <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                      <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
-                                      {feature}
-                                    </li>  
-                                  ))}
-                                </ul>
-                              </div>
-                            </HoverCardContent>
-                          </HoverCard>
-                        </div>
-                      </div>
-                      <CardDescription className="text-sm leading-relaxed">
-                        {agent.description}
-                      </CardDescription>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-6">
-                      {agent.status === "coming_soon" ? (
-                        <Button 
-                          className="w-full"
-                          variant="outline"
-                          disabled
-                        >
-                          Coming Soon
-                        </Button>
-                      ) : agent.id === "devmate" ? (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button 
-                              className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                              variant="outline"
-                            >
-                              Access Agent
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-80 p-4">
-                            <div className="space-y-3">
-                              <h4 className="font-semibold text-sm">Onboarding Required</h4>
-                              <p className="text-sm text-muted-foreground">
-                                To access this agent, you need to go through an onboarding process.
-                              </p>
-                              <div className="flex items-center gap-2 p-2 bg-muted rounded">
-                                <User className="w-4 h-4" />
-                                <div className="text-sm">
-                                  <p className="font-medium">Contact: Nitin Goel</p>
-                                  <div className="flex items-center gap-1 text-muted-foreground">
-                                    <Mail className="w-3 h-3" />
-                                    <span>nitin.goel@ericsson.com</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      ) : (
+
+                <CardHeader className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                        {agent.name}
+                      </CardTitle>
+                      <Badge variant="secondary" className="text-xs">
+                        {agent.category}
+                      </Badge>
+                    </div>
+                    {showStatusBadges && (
+                      <Badge 
+                        variant={agent.status === "active" ? "default" : "secondary"}
+                        className={agent.status === "active" 
+                          ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                          : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+                        }
+                      >
+                        {agent.status.replace('_', ' ')}
+                      </Badge>
+                    )}
+                  </div>
+                  <CardDescription className="text-sm leading-relaxed">
+                    {agent.description}
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent className="space-y-6">
+                  {agent.status === "coming_soon" ? (
+                    <Button 
+                      className="w-full"
+                      variant="outline"
+                      disabled
+                    >
+                      Coming Soon
+                    </Button>
+                  ) : agent.id === "devmate" ? (
+                    <Popover>
+                      <PopoverTrigger asChild>
                         <Button 
                           className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                           variant="outline"
-                          onClick={() => {
-                            if (agent.access_link) {
-                              window.open(agent.access_link, '_blank');
-                            }
-                          }}
                         >
                           Access Agent
                         </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 p-4">
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-sm">Onboarding Required</h4>
+                          <p className="text-sm text-muted-foreground">
+                            To access this agent, you need to go through an onboarding process.
+                          </p>
+                          <div className="flex items-center gap-2 p-2 bg-muted rounded">
+                            <User className="w-4 h-4" />
+                            <div className="text-sm">
+                              <p className="font-medium">Contact: Nitin Goel</p>
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Mail className="w-3 h-3" />
+                                <span>nitin.goel@ericsson.com</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    <Button 
+                      className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                      variant="outline"
+                      onClick={() => {
+                        if (agent.access_link) {
+                          window.open(agent.access_link, '_blank');
+                        }
+                      }}
+                    >
+                      Access Agent
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
 
-            {/* Pitch Section */}
-            <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 text-center">
-              <h2 className="text-2xl font-bold text-foreground mb-4">
-                Got an Idea? Pitch It!
-              </h2>
-              <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                Use our AI-DU PitchBox to submit smart, tailored pitches. Get funding. Lead the project. Make it real.
-              </p>
-              <Button 
-                size="lg" 
-                variant="outline"
-                onClick={() => window.open('https://apps.powerapps.com/play/e/default-92e84ceb-fbfd-47ab-be52-080c6b87953f/a/549a8af5-f6ba-4b8b-824c-dfdfcf6f3740?tenantId=92e84ceb-fbfd-47ab-be52-080c6b87953f&hint=ec5023c9-376e-41fb-9280-10bd9f925919&source=sharebutton&sourcetime=1750260233474', '_blank')}
-              >
-                Submit a Pitch
-              </Button>
-            </div>
-          </>
-        )}
+        {/* Pitch Section */}
+        <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 text-center">
+          <h2 className="text-2xl font-bold text-foreground mb-4">
+            Got an Idea? Pitch It!
+          </h2>
+          <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+            Use our AI-DU PitchBox to submit smart, tailored pitches. Get funding. Lead the project. Make it real.
+          </p>
+          <Button 
+            size="lg" 
+            variant="outline"
+            onClick={() => window.open('https://apps.powerapps.com/play/e/default-92e84ceb-fbfd-47ab-be52-080c6b87953f/a/549a8af5-f6ba-4b8b-824c-dfdfcf6f3740?tenantId=92e84ceb-fbfd-47ab-be52-080c6b87953f&hint=ec5023c9-376e-41fb-9280-10bd9f925919&source=sharebutton&sourcetime=1750260233474', '_blank')}
+          >
+            Submit a Pitch
+          </Button>
+        </div>
       </div>
     </div>
   );

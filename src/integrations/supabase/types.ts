@@ -317,17 +317,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: Database["public"]["Enums"]["app_role"]
-      }
       get_user_role: {
         Args: { user_email: string }
         Returns: Database["public"]["Enums"]["app_role"]
-      }
-      is_admin_or_super: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
       }
     }
     Enums: {
