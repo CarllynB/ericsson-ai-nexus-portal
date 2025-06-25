@@ -33,8 +33,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Default super admin users
-  const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
+  const getUserRole = async (userId: string): Promise<'super_admin' | 'admin' | 'viewer'> => {
+    try {
+      const { data, error } = await supabase.rpc('get_current_user_role');
+      
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return 'viewer';
+      }
+      
+      return data || 'viewer';
+    } catch (error) {
+      console.error('Error in getUserRole:', error);
+      return 'viewer';
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -53,7 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (isMounted && session?.user) {
           console.log('Found existing session for:', session.user.email);
-          const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'viewer';
+          const role = await getUserRole(session.user.id);
           setUser({
             id: session.user.id,
             email: session.user.email || '',
@@ -80,7 +93,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (!isMounted) return;
 
         if (session?.user) {
-          const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'viewer';
+          const role = await getUserRole(session.user.id);
           setUser({
             id: session.user.id,
             email: session.user.email || '',
@@ -119,7 +132,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (data.user) {
         console.log('Login successful for:', data.user.email);
-        const role = SUPER_ADMINS.includes(data.user.email || '') ? 'super_admin' : 'viewer';
+        const role = await getUserRole(data.user.id);
         setUser({
           id: data.user.id,
           email: data.user.email || '',

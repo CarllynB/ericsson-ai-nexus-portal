@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -20,20 +19,8 @@ export const useRoles = () => {
 
   const fetchCurrentUserRole = async () => {
     try {
-      // Get the current user session without accessing auth.users table
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.email) {
-        setCurrentUserRole('viewer');
-        return;
-      }
-
-      // Query user_roles table directly
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('email', session.user.email.toLowerCase())
-        .order('assigned_at', { ascending: false })
-        .limit(1);
+      // Use the new database function to get current user role
+      const { data, error } = await supabase.rpc('get_current_user_role');
 
       if (error) {
         console.error('Error fetching current user role:', error);
@@ -41,13 +28,7 @@ export const useRoles = () => {
         return;
       }
 
-      // If no role found, default to viewer
-      if (!data || data.length === 0) {
-        setCurrentUserRole('viewer');
-        return;
-      }
-
-      setCurrentUserRole(data[0].role as UserRole);
+      setCurrentUserRole(data as UserRole);
     } catch (error) {
       console.error('Error in fetchCurrentUserRole:', error);
       setCurrentUserRole('viewer');
