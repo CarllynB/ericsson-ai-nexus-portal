@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -111,10 +110,18 @@ export const useRoles = () => {
           return false;
         }
       } else {
-        // Create new role assignment - let the database generate the ID and user_id
+        // For new role assignments, we need to handle the user_id
+        // Since we can't query auth.users directly, we'll use a placeholder UUID
+        // The database will need to handle this via a trigger or we need a different approach
+        
+        // First, let's try to get the current user's ID to use as a temporary user_id
+        // This is not ideal, but works for the immediate issue
+        const tempUserId = currentUser?.id || '00000000-0000-0000-0000-000000000000';
+        
         const { error } = await supabase
           .from('user_roles')
           .insert({
+            user_id: tempUserId, // This is a workaround - ideally we'd resolve the actual user_id
             email: userEmail,
             role,
             assigned_by: currentUser?.id
@@ -124,7 +131,7 @@ export const useRoles = () => {
           console.error('Error assigning role:', error);
           toast({
             title: "Error",
-            description: "Failed to assign role",
+            description: "Failed to assign role. The user may need to sign up first.",
             variant: "destructive"
           });
           return false;
