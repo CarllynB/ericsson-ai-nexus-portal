@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -73,12 +72,22 @@ export const useRoles = () => {
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       
-      // Check if user already exists
-      const { data: existingUser } = await supabase
+      // Check if user already exists - use maybeSingle() instead of single()
+      const { data: existingUser, error: checkError } = await supabase
         .from('user_roles')
         .select('*')
         .eq('email', userEmail)
-        .single();
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking existing user:', checkError);
+        toast({
+          title: "Error",
+          description: "Failed to check existing user",
+          variant: "destructive"
+        });
+        return false;
+      }
 
       if (existingUser) {
         // Update existing user's role
