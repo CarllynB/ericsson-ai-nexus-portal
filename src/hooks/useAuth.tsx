@@ -88,6 +88,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('Found existing session for:', session.user.email);
           const userData = await createUserFromSession(session);
           setUser(userData);
+        } else {
+          console.log('No existing session found');
+          setUser(null);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -122,6 +125,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(null);
         }
         
+        // Always set loading to false after handling auth state change
         setLoading(false);
       }
     );
@@ -137,6 +141,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string): Promise<void> => {
     try {
       console.log('Attempting login for:', email);
+      setLoading(true);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -152,6 +157,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 

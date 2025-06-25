@@ -28,8 +28,8 @@ const Home = () => {
 
   const showStatusBadges = isSuperAdmin;
 
-  // Show loading only when auth is loading
-  if (authLoading) {
+  // Only show loading when auth is actually loading AND we don't have a user yet
+  if (authLoading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -42,7 +42,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen px-6 py-12">
-      {/* New Welcome Popup */}
+      {/* Welcome Dialog */}
       <Dialog open={showWelcome} onOpenChange={(open) => !open && setShowWelcome(false)}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -173,7 +173,7 @@ const Home = () => {
                               {agent.status.replace('_', ' ')}
                             </Badge>
                           )}
-                          {/* Key Features Dropdown */}
+                          {/* Key Features HoverCard */}
                           <HoverCard>
                             <HoverCardTrigger asChild>
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
