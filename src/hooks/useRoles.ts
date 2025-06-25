@@ -110,13 +110,24 @@ export const useRoles = () => {
           return false;
         }
       } else {
-        // Create new role assignment
-        const tempUserId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        // Create new role assignment with a proper UUID
+        const { data: uuidData, error: uuidError } = await supabase
+          .rpc('gen_random_uuid');
+
+        if (uuidError) {
+          console.error('Error generating UUID:', uuidError);
+          toast({
+            title: "Error",
+            description: "Failed to generate user ID",
+            variant: "destructive"
+          });
+          return false;
+        }
         
         const { error } = await supabase
           .from('user_roles')
           .insert({
-            user_id: tempUserId,
+            user_id: uuidData,
             email: userEmail,
             role,
             assigned_by: currentUser?.id
