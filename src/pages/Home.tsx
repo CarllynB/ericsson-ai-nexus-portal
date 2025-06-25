@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,8 +50,7 @@ const Home = () => {
           </DialogHeader>
           <div className="space-y-6 py-4">
             <p className="text-lg text-muted-foreground text-center">
-              Our centralized gateway to access and interact with GenAI agents. 
-              Streamline operations with intelligent automation.
+              A centralized space to access and interact with GenAI agents. Empowering intelligent automation across teams.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -83,7 +81,7 @@ const Home = () => {
             AI Agents
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Access and interact with our specialized GenAI agents designed to enhance your operational efficiency
+            A centralized space to access and interact with GenAI agents. Empowering intelligent automation across teams.
           </p>
         </div>
 
