@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,26 +8,13 @@ import { ArrowRight, Search, Mail, User, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRoles } from "@/hooks/useRoles";
-import { getAgents } from "@/services/api";
+import { useAgents } from "@/hooks/useAgents";
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
-  const [agents, setAgents] = useState<any[]>([]);
   const { currentUserRole } = useRoles();
-
-  useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        const agentsData = await getAgents();
-        setAgents(agentsData);
-      } catch (error) {
-        console.error('Error fetching agents:', error);
-      }
-    };
-
-    fetchAgents();
-  }, []);
+  const { agents, loading, error } = useAgents();
 
   const filteredAgents = agents.filter(agent =>
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -38,6 +25,21 @@ const Home = () => {
 
   // Only show status badges for super admins, not regular admins
   const showStatusBadges = currentUserRole === 'super_admin';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading agents...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.log('Agents loading error:', error);
+  }
 
   return (
     <div className="min-h-screen px-6 py-12">
@@ -100,6 +102,15 @@ const Home = () => {
             />
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="max-w-2xl mx-auto mb-8">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-yellow-800 text-sm">{error}</p>
+            </div>
+          </div>
+        )}
 
         {/* Agents Grid */}
         <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-8 mb-12">
