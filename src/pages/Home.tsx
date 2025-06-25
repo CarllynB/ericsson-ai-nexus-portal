@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Search, Mail, User } from "lucide-react";
+import { ArrowRight, Search, Mail, User, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgents } from "@/hooks/useAgents";
@@ -41,33 +42,51 @@ const Home = () => {
 
   return (
     <div className="min-h-screen px-6 py-12">
-      {/* Welcome Popup */}
+      {/* New Welcome Popup */}
       <Dialog open={showWelcome} onOpenChange={(open) => !open && setShowWelcome(false)}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-center mb-4">
-              Welcome to the AI-DU Agent Portal
+              Welcome to AI-DU Agent Portal
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            <p className="text-lg text-muted-foreground text-center">
-              Our centralized gateway to access and interact with GenAI agents. 
-              Streamline operations with intelligent automation.
-            </p>
+            <div className="text-center space-y-4">
+              <p className="text-lg text-muted-foreground">
+                Your centralized hub for GenAI agents designed to streamline operations and enhance productivity.
+              </p>
+              <div className="grid md:grid-cols-3 gap-4 mt-6">
+                <div className="p-4 bg-primary/5 rounded-lg">
+                  <h4 className="font-semibold text-sm mb-2">Discover Agents</h4>
+                  <p className="text-xs text-muted-foreground">Browse our collection of specialized AI agents</p>
+                </div>
+                <div className="p-4 bg-secondary/5 rounded-lg">
+                  <h4 className="font-semibold text-sm mb-2">Quick Access</h4>
+                  <p className="text-xs text-muted-foreground">Direct links to operational tools</p>
+                </div>
+                <div className="p-4 bg-accent/5 rounded-lg">
+                  <h4 className="font-semibold text-sm mb-2">Smart Features</h4>
+                  <p className="text-xs text-muted-foreground">Enhanced search and filtering</p>
+                </div>
+              </div>
+            </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
                 className="text-lg px-8"
                 onClick={() => setShowWelcome(false)}
               >
-                Explore Agents
+                Get Started
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
                 className="text-lg px-8"
-                onClick={() => window.location.href = '/dashboard'}
+                onClick={() => {
+                  setShowWelcome(false);
+                  window.location.href = '/dashboard';
+                }}
               >
                 View Dashboard
               </Button>
@@ -132,19 +151,6 @@ const Home = () => {
                       agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
                     }`}
                   >
-                    {/* Features Overlay on Hover */}
-                    <div className="absolute inset-0 bg-background/95 p-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-center">
-                      <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
-                      <ul className="space-y-2">
-                        {agent.key_features.map((feature: string, index: number) => (
-                          <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                            {feature}
-                          </li>  
-                        ))}
-                      </ul>
-                    </div>
-
                     <CardHeader className="space-y-4">
                       <div className="flex items-start justify-between">
                         <div className="space-y-2">
@@ -155,17 +161,40 @@ const Home = () => {
                             {agent.category}
                           </Badge>
                         </div>
-                        {showStatusBadges && (
-                          <Badge 
-                            variant={agent.status === "active" ? "default" : "secondary"}
-                            className={agent.status === "active" 
-                              ? "bg-green-100 text-green-800 hover:bg-green-100" 
-                              : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                            }
-                          >
-                            {agent.status.replace('_', ' ')}
-                          </Badge>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {showStatusBadges && (
+                            <Badge 
+                              variant={agent.status === "active" ? "default" : "secondary"}
+                              className={agent.status === "active" 
+                                ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                                : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+                              }
+                            >
+                              {agent.status.replace('_', ' ')}
+                            </Badge>
+                          )}
+                          {/* Key Features Dropdown */}
+                          <HoverCard>
+                            <HoverCardTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <Info className="w-4 h-4" />
+                              </Button>
+                            </HoverCardTrigger>
+                            <HoverCardContent className="w-80">
+                              <div className="space-y-3">
+                                <h4 className="font-semibold text-sm">Key Features:</h4>
+                                <ul className="space-y-2">
+                                  {agent.key_features.map((feature: string, index: number) => (
+                                    <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
+                                      {feature}
+                                    </li>  
+                                  ))}
+                                </ul>
+                              </div>
+                            </HoverCardContent>
+                          </HoverCard>
+                        </div>
                       </div>
                       <CardDescription className="text-sm leading-relaxed">
                         {agent.description}
