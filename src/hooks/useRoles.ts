@@ -20,17 +20,18 @@ export const useRoles = () => {
 
   const fetchCurrentUserRole = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) {
+      // Get the current user session without accessing auth.users table
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.email) {
         setCurrentUserRole('viewer');
         return;
       }
 
-      // Query user_roles table directly instead of using the RPC function
+      // Query user_roles table directly
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('email', user.email.toLowerCase())
+        .eq('email', session.user.email.toLowerCase())
         .order('assigned_at', { ascending: false })
         .limit(1);
 
@@ -90,9 +91,9 @@ export const useRoles = () => {
 
   const assignRole = async (userEmail: string, role: UserRole) => {
     try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!currentUser) {
+      if (!session?.user) {
         toast({
           title: "Error",
           description: "You must be logged in to assign roles",
@@ -146,7 +147,7 @@ export const useRoles = () => {
           user_id: tempUserId,
           email: userEmail.toLowerCase(),
           role,
-          assigned_by: currentUser.id
+          assigned_by: session.user.id
         });
 
       if (error) {
@@ -179,9 +180,9 @@ export const useRoles = () => {
 
   const updateUserRole = async (userId: string, newRole: UserRole) => {
     try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!currentUser) {
+      if (!session?.user) {
         toast({
           title: "Error",
           description: "You must be logged in to update roles",
@@ -194,7 +195,7 @@ export const useRoles = () => {
         .from('user_roles')
         .update({
           role: newRole,
-          assigned_by: currentUser.id,
+          assigned_by: session.user.id,
           updated_at: new Date().toISOString()
         })
         .eq('id', userId);
@@ -229,9 +230,9 @@ export const useRoles = () => {
 
   const deleteUserRole = async (userId: string) => {
     try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!currentUser) {
+      if (!session?.user) {
         toast({
           title: "Error",
           description: "You must be logged in to delete roles",
