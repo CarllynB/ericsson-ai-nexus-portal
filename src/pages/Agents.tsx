@@ -9,13 +9,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useAuth } from "@/hooks/useAuth";
 import { useAgents } from "@/hooks/useAgents";
 import { Agent } from "@/services/api";
+import { useRoles } from "@/hooks/useRoles";
 
 const Agents = () => {
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState("");
   
   // Pagination & Display
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   
@@ -24,9 +25,12 @@ const Agents = () => {
   
   // Auth and Data Hooks
   const { user } = useAuth();
-  const { agents, loading, error, totalPages } = useAgents(page, 12, showAll);
+  const { agents, loading, error } = useAgents();
+  const { currentUserRole } = useRoles();
 
-  // Search filtering - now includes owner
+  const ITEMS_PER_PAGE = 12;
+
+  // Search filtering - includes owner but doesn't show it
   const filteredAgents = agents.filter(agent =>
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -35,36 +39,38 @@ const Agents = () => {
     agent.key_features.some(feature => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Reset page when search changes
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAgents.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = showAll ? filteredAgents.length : startIndex + ITEMS_PER_PAGE;
+  const displayedAgents = filteredAgents.slice(startIndex, endIndex);
+
+  // Reset pagination when search changes
   useEffect(() => {
-    setPage(1);
+    setCurrentPage(1);
+    setShowAll(false);
   }, [searchTerm]);
 
-  const handleNext = () => {
-    if (page < totalPages) {
-      setPage(prev => prev + 1);
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
     }
   };
 
   const handleShowAll = () => {
     setShowAll(true);
-    setPage(1);
   };
 
   const toggleCardExpansion = (agentId: string, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    console.log('Toggling expansion for agent:', agentId);
     setExpandedCards(prev => {
       const newSet = new Set(prev);
       if (newSet.has(agentId)) {
         newSet.delete(agentId);
-        console.log('Removed from expanded:', agentId);
       } else {
         newSet.add(agentId);
-        console.log('Added to expanded:', agentId);
       }
-      console.log('New expanded set:', Array.from(newSet));
       return newSet;
     });
   };
@@ -157,17 +163,16 @@ const Agents = () => {
 
         {/* Agents Grid */}
         <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-8 mb-12">
-          {filteredAgents.length === 0 ? (
+          {displayedAgents.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
             </div>
           ) : (
-            filteredAgents.map((agent) => {
+            displayedAgents.map((agent) => {
               const isExpanded = expandedCards.has(agent.id);
-              console.log(`Agent ${agent.id} isExpanded:`, isExpanded);
               return (
                 <Card 
-                  key={`agents-page-${agent.id}`}
+                  key={agent.id}
                   className={`relative ${getCardStyles(agent.status)}`}
                 >
                   <CardHeader className="space-y-4">
@@ -178,10 +183,7 @@ const Agents = () => {
                             {agent.name}
                           </CardTitle>
                           <button
-                            onClick={(e) => {
-                              console.log(`Toggle button clicked for agent: ${agent.id}`);
-                              toggleCardExpansion(agent.id, e);
-                            }}
+                            onClick={(e) => toggleCardExpansion(agent.id, e)}
                             className="p-1 hover:bg-gray-100 rounded transition-colors"
                             aria-label={isExpanded ? "Hide features" : "Show features"}
                           >
@@ -214,15 +216,12 @@ const Agents = () => {
                       <h4 className="font-semibold text-sm text-foreground mb-3 mt-4">Key Features:</h4>
                       <ul className="space-y-2">
                         {agent.key_features.map((feature, index) => (
-                          <li key={`${agent.id}-expanded-feature-${index}`} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
                             <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
                             {feature}
                           </li>
                         ))}
                       </ul>
-                      <p className="text-xs text-muted-foreground mt-3">
-                        <strong>Owner:</strong> {agent.owner}
-                      </p>
                     </div>
                   )}
                   
@@ -287,11 +286,11 @@ const Agents = () => {
         </div>
 
         {/* Pagination Controls */}
-        {!loading && !showAll && totalPages > 1 && (
+        {!showAll && filteredAgents.length > ITEMS_PER_PAGE && (
           <div className="flex justify-center gap-4 mb-12">
-            {page < totalPages && (
+            {currentPage < totalPages && (
               <Button 
-                onClick={handleNext}
+                onClick={handleNextPage}
                 variant="outline" 
                 size="lg"
                 className="px-6"

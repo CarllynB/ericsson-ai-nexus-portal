@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Search, Mail, User } from "lucide-react";
+import { ArrowRight, Search, Mail, User, ChevronRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRoles } from "@/hooks/useRoles";
@@ -15,7 +15,11 @@ const Home = () => {
   const [showWelcome, setShowWelcome] = useState(true);
   const [agents, setAgents] = useState<any[]>([]);
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showAll, setShowAll] = useState(false);
   const { currentUserRole } = useRoles();
+
+  const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     const fetchAgents = async () => {
@@ -44,18 +48,35 @@ const Home = () => {
     agent.key_features.some((feature: string) => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAgents.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = showAll ? filteredAgents.length : startIndex + ITEMS_PER_PAGE;
+  const displayedAgents = filteredAgents.slice(startIndex, endIndex);
+
+  // Reset pagination when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setShowAll(false);
+  }, [searchTerm]);
+
   // Only show status badges for super admins, not regular admins
   const showStatusBadges = currentUserRole === 'super_admin';
 
   const toggleAgentExpansion = (agentId: string, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    console.log('Toggling agent expansion for:', agentId);
-    setExpandedAgent(prev => {
-      const newValue = prev === agentId ? null : agentId;
-      console.log('New expanded agent:', newValue);
-      return newValue;
-    });
+    setExpandedAgent(prev => prev === agentId ? null : agentId);
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const handleShowAll = () => {
+    setShowAll(true);
   };
 
   return (
@@ -118,17 +139,16 @@ const Home = () => {
 
         {/* Agents Grid */}
         <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-8 mb-12">
-          {filteredAgents.length === 0 ? (
+          {displayedAgents.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
             </div>
           ) : (
-            filteredAgents.map((agent) => {
+            displayedAgents.map((agent) => {
               const isExpanded = expandedAgent === agent.id;
-              console.log(`Agent ${agent.id} isExpanded:`, isExpanded);
               return (
                 <Card 
-                  key={`home-agent-${agent.id}`}
+                  key={agent.id}
                   className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
                     agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
                   }`}
@@ -139,7 +159,7 @@ const Home = () => {
                       <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
                       <ul className="space-y-2">
                         {agent.key_features.map((feature: string, index: number) => (
-                          <li key={`${agent.id}-hover-feature-${index}`} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
                             <div className="w-1.5 h-1.5 bg-primary rounded-full" />
                             {feature}
                           </li>
@@ -166,10 +186,7 @@ const Home = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={(e) => {
-                              console.log(`Button clicked for agent: ${agent.id}`);
-                              toggleAgentExpansion(agent.id, e);
-                            }}
+                            onClick={(e) => toggleAgentExpansion(agent.id, e)}
                             className="p-1 h-6 w-6"
                           >
                             {isExpanded ? '−' : '+'}
@@ -201,15 +218,12 @@ const Home = () => {
                         <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
                         <ul className="space-y-2">
                           {agent.key_features.map((feature: string, index: number) => (
-                            <li key={`${agent.id}-expanded-feature-${index}`} className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
                               <div className="w-1.5 h-1.5 bg-primary rounded-full" />
                               {feature}
                             </li>
                           ))}
                         </ul>
-                        <p className="text-xs text-muted-foreground mt-3">
-                          <strong>Owner:</strong> {agent.owner}
-                        </p>
                       </div>
                     )}
                   </CardHeader>
@@ -271,6 +285,31 @@ const Home = () => {
             })
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {!showAll && filteredAgents.length > ITEMS_PER_PAGE && (
+          <div className="flex justify-center gap-4 mb-12">
+            {currentPage < totalPages && (
+              <Button 
+                onClick={handleNextPage}
+                variant="outline" 
+                size="lg"
+                className="px-6"
+              >
+                Next
+                <ChevronRight className="ml-2 w-4 h-4" />
+              </Button>
+            )}
+            <Button 
+              onClick={handleShowAll}
+              variant="default" 
+              size="lg"
+              className="px-6"
+            >
+              Show All
+            </Button>
+          </div>
+        )}
 
         {/* Pitch Section */}
         <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 text-center">
