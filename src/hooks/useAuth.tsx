@@ -35,6 +35,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const getUserRole = async (userId: string): Promise<'super_admin' | 'admin' | 'viewer'> => {
     try {
+      console.log('Fetching role for user:', userId);
       const { data, error } = await supabase.rpc('get_current_user_role');
       
       if (error) {
@@ -42,10 +43,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return 'viewer';
       }
       
+      console.log('User role fetched:', data);
       return data || 'viewer';
     } catch (error) {
       console.error('Error in getUserRole:', error);
       return 'viewer';
+    }
+  };
+
+  const createUserFromSession = async (session: any): Promise<User> => {
+    try {
+      const role = await getUserRole(session.user.id);
+      return {
+        id: session.user.id,
+        email: session.user.email || '',
+        role,
+        created_at: session.user.created_at || new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error('Error creating user from session:', error);
+      // Return user with default role if role fetching fails
+      return {
+        id: session.user.id,
+        email: session.user.email || '',
+        role: 'viewer',
+        created_at: session.user.created_at || new Date().toISOString(),
+      };
     }
   };
 
@@ -69,24 +92,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (isMounted && session?.user) {
           console.log('Found existing session for:', session.user.email);
-          try {
-            const role = await getUserRole(session.user.id);
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              role,
-              created_at: session.user.created_at || new Date().toISOString(),
-            });
-          } catch (roleError) {
-            console.error('Error fetching role for existing session:', roleError);
-            // Don't clear user session if role fetching fails, just set default role
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              role: 'viewer',
-              created_at: session.user.created_at || new Date().toISOString(),
-            });
-          }
+          const userData = await createUserFromSession(session);
+          setUser(userData);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -107,24 +114,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (!isMounted) return;
 
         if (session?.user) {
-          try {
-            const role = await getUserRole(session.user.id);
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              role,
-              created_at: session.user.created_at || new Date().toISOString(),
-            });
-          } catch (roleError) {
-            console.error('Error fetching role on auth change:', roleError);
-            // Don't clear the session if role fetching fails
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              role: 'viewer',
-              created_at: session.user.created_at || new Date().toISOString(),
-            });
-          }
+          const userData = await createUserFromSession(session);
+          setUser(userData);
         } else {
           setUser(null);
         }
@@ -155,24 +146,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (data.user) {
         console.log('Login successful for:', data.user.email);
-        try {
-          const role = await getUserRole(data.user.id);
-          setUser({
-            id: data.user.id,
-            email: data.user.email || '',
-            role,
-            created_at: data.user.created_at || new Date().toISOString(),
-          });
-        } catch (roleError) {
-          console.error('Error fetching role after login:', roleError);
-          // Don't fail login if role fetching fails
-          setUser({
-            id: data.user.id,
-            email: data.user.email || '',
-            role: 'viewer',
-            created_at: data.user.created_at || new Date().toISOString(),
-          });
-        }
+        const userData = await createUserFromSession(data);
+        setUser(userData);
       }
     } catch (error) {
       console.error('Login failed:', error);
