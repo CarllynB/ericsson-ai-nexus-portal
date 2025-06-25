@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Agent, getAgents, updateAgent, deleteAgent } from '@/services/api';
 
@@ -9,23 +10,6 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
 
   // Default agents as fallback
   const DEFAULT_AGENTS: Agent[] = [
-    {
-      id: "devmate",
-      name: "DevMate",
-      description: "Accelerate the delivery of upgrades and patches on Ericsson-developed tools and systems.",
-      category: "Dev Tools",
-      status: "active",
-      key_features: [
-        "VS Code extension for efficient patch releases",
-        "Automated upgrade workflows",
-        "License management integration",
-        "Usage analytics"
-      ],
-      access_link: undefined,
-      owner: "system",
-      last_updated: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-    },
     {
       id: "smart-error-detect",
       name: "Smart Error Detect",
@@ -73,6 +57,23 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
         "Quality assurance"
       ],
       access_link: "https://mop.cram066.rnd.gic.ericsson.se/mop-gui/mop-agent",
+      owner: "system",
+      last_updated: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "devmate",
+      name: "DevMate",
+      description: "Accelerate the delivery of upgrades and patches on Ericsson-developed tools and systems.",
+      category: "Dev Tools",
+      status: "active",
+      key_features: [
+        "VS Code extension for efficient patch releases",
+        "Automated upgrade workflows",
+        "License management integration",
+        "Usage analytics"
+      ],
+      access_link: undefined,
       owner: "system",
       last_updated: new Date().toISOString(),
       created_at: new Date().toISOString(),
@@ -181,21 +182,31 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     }
   ];
 
+  const sortAgents = (agentList: Agent[]) => {
+    return agentList.sort((a, b) => {
+      // Active agents first
+      if (a.status === 'active' && b.status !== 'active') return -1;
+      if (a.status !== 'active' && b.status === 'active') return 1;
+      // Then sort by name
+      return a.name.localeCompare(b.name);
+    });
+  };
+
   const fetchAgents = async () => {
     try {
       setLoading(true);
       const response = await getAgents();
       
       if (Array.isArray(response)) {
-        setAgents(response);
+        setAgents(sortAgents(response));
       } else {
-        setAgents(DEFAULT_AGENTS);
+        setAgents(sortAgents(DEFAULT_AGENTS));
       }
       
       setError(null);
     } catch (err) {
       console.error('Failed to fetch agents:', err);
-      setAgents(DEFAULT_AGENTS);
+      setAgents(sortAgents(DEFAULT_AGENTS));
       setError('Failed to load agents from server, showing cached data');
     } finally {
       setLoading(false);
@@ -210,9 +221,9 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     try {
       await updateAgent(id, { status });
       setAgents(prev => 
-        prev.map(agent => 
+        sortAgents(prev.map(agent => 
           agent.id === id ? { ...agent, status, last_updated: new Date().toISOString() } : agent
-        )
+        ))
       );
     } catch (err) {
       console.error('Failed to update agent status:', err);

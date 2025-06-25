@@ -38,7 +38,13 @@ export const AgentManagement = () => {
   const fetchAgentsList = async () => {
     try {
       const data = await getAgents();
-      setAgents(data);
+      // Sort agents: active first, then by name
+      const sortedAgents = data.sort((a, b) => {
+        if (a.status === 'active' && b.status !== 'active') return -1;
+        if (a.status !== 'active' && b.status === 'active') return 1;
+        return a.name.localeCompare(b.name);
+      });
+      setAgents(sortedAgents);
     } catch (error) {
       console.error('Error fetching agents:', error);
     }
@@ -49,14 +55,32 @@ export const AgentManagement = () => {
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agent.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.key_features.some(feature => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const totalPages = Math.ceil(filteredAgents.length / pageSize);
   const paginatedAgents = filteredAgents.slice((page - 1) * pageSize, page * pageSize);
 
+  const checkDuplicateName = (name: string, excludeId?: string) => {
+    return agents.some(agent => 
+      agent.name.toLowerCase() === name.toLowerCase() && 
+      (!excludeId || agent.id !== excludeId)
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check for duplicate names
+    if (checkDuplicateName(formData.name, editingAgent?.id)) {
+      toast({
+        title: "Error",
+        description: "An agent with this name already exists. Please choose a different name.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const agentData = {
       name: formData.name,
@@ -268,7 +292,7 @@ export const AgentManagement = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
             type="search"
-            placeholder="Search agents by name, description, category, or features..."
+            placeholder="Search agents by name, description, category, owner, or features..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"

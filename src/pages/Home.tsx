@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,13 +14,20 @@ const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
   const [agents, setAgents] = useState<any[]>([]);
+  const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
   const { currentUserRole } = useRoles();
 
   useEffect(() => {
     const fetchAgents = async () => {
       try {
         const agentsData = await getAgents();
-        setAgents(agentsData);
+        // Sort agents: active first, then by name
+        const sortedAgents = agentsData.sort((a, b) => {
+          if (a.status === 'active' && b.status !== 'active') return -1;
+          if (a.status !== 'active' && b.status === 'active') return 1;
+          return a.name.localeCompare(b.name);
+        });
+        setAgents(sortedAgents);
       } catch (error) {
         console.error('Error fetching agents:', error);
       }
@@ -32,11 +40,16 @@ const Home = () => {
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agent.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.key_features.some((feature: string) => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Only show status badges for super admins, not regular admins
   const showStatusBadges = currentUserRole === 'super_admin';
+
+  const toggleAgentExpansion = (agentId: string) => {
+    setExpandedAgent(expandedAgent === agentId ? null : agentId);
+  };
 
   return (
     <div className="min-h-screen px-6 py-12">
@@ -80,9 +93,6 @@ const Home = () => {
           <h1 className="text-4xl md:text-5xl font-bold text-foreground">
             AI Agents
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            A centralized space to access and interact with GenAI agents. Empowering intelligent automation across teams.
-          </p>
         </div>
 
         {/* Search Bar */}
@@ -91,7 +101,7 @@ const Home = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               type="text"
-              placeholder="Search agents by name, description, category, or features..."
+              placeholder="Search agents by name, description, category, owner, or features..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 h-12 text-lg"
@@ -106,107 +116,152 @@ const Home = () => {
               <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
             </div>
           ) : (
-            filteredAgents.map((agent) => (
-              <Card 
-                key={agent.id} 
-                className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
-                  agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
-                }`}
-              >
-                {/* Features Overlay on Hover */}
-                <div className="absolute inset-0 bg-background/95 p-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-center">
-                  <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
-                  <ul className="space-y-2">
-                    {agent.key_features.map((feature: string, index: number) => (
-                      <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <CardHeader className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                        {agent.name}
-                      </CardTitle>
-                      <Badge variant="secondary" className="text-xs">
-                        {agent.category}
-                      </Badge>
-                    </div>
-                    {showStatusBadges && (
-                      <Badge 
-                        variant={agent.status === "active" ? "default" : "secondary"}
-                        className={agent.status === "active" 
-                          ? "bg-green-100 text-green-800 hover:bg-green-100" 
-                          : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                        }
+            filteredAgents.map((agent) => {
+              const isExpanded = expandedAgent === agent.id;
+              return (
+                <Card 
+                  key={agent.id} 
+                  className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
+                    agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
+                  }`}
+                >
+                  {/* Features Overlay on Hover - Only show when not expanded */}
+                  {!isExpanded && (
+                    <div className="absolute inset-0 bg-background/95 p-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-center">
+                      <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
+                      <ul className="space-y-2">
+                        {agent.key_features.map((feature: string, index: number) => (
+                          <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-4"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleAgentExpansion(agent.id);
+                        }}
                       >
-                        {agent.status.replace('_', ' ')}
-                      </Badge>
-                    )}
-                  </div>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {agent.description}
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  {agent.status === "coming_soon" ? (
-                    <Button 
-                      className="w-full"
-                      variant="outline"
-                      disabled
-                    >
-                      Coming Soon
-                    </Button>
-                  ) : agent.id === "devmate" ? (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button 
-                          className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                          variant="outline"
+                        Pin Features
+                      </Button>
+                    </div>
+                  )}
+
+                  <CardHeader className="space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                            {agent.name}
+                          </CardTitle>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleAgentExpansion(agent.id)}
+                            className="p-1 h-6 w-6"
+                          >
+                            {isExpanded ? '−' : '+'}
+                          </Button>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {agent.category}
+                        </Badge>
+                      </div>
+                      {showStatusBadges && (
+                        <Badge 
+                          variant={agent.status === "active" ? "default" : "secondary"}
+                          className={agent.status === "active" 
+                            ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                            : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+                          }
                         >
-                          Access Agent
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80 p-4">
-                        <div className="space-y-3">
-                          <h4 className="font-semibold text-sm">Onboarding Required</h4>
-                          <p className="text-sm text-muted-foreground">
-                            To access this agent, you need to go through an onboarding process.
-                          </p>
-                          <div className="flex items-center gap-2 p-2 bg-muted rounded">
-                            <User className="w-4 h-4" />
-                            <div className="text-sm">
-                              <p className="font-medium">Contact: Nitin Goel</p>
-                              <div className="flex items-center gap-1 text-muted-foreground">
-                                <Mail className="w-3 h-3" />
-                                <span>nitin.goel@ericsson.com</span>
+                          {agent.status.replace('_', ' ')}
+                        </Badge>
+                      )}
+                    </div>
+                    <CardDescription className="text-sm leading-relaxed">
+                      {agent.description}
+                    </CardDescription>
+
+                    {/* Expanded Features */}
+                    {isExpanded && (
+                      <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                        <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
+                        <ul className="space-y-2">
+                          {agent.key_features.map((feature: string, index: number) => (
+                            <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                        <p className="text-xs text-muted-foreground mt-3">
+                          <strong>Owner:</strong> {agent.owner}
+                        </p>
+                      </div>
+                    )}
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-6">
+                    {agent.status === "coming_soon" ? (
+                      <Button 
+                        className="w-full"
+                        variant="outline"
+                        disabled
+                      >
+                        Coming Soon
+                      </Button>
+                    ) : agent.id === "devmate" ? (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button 
+                            className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                            variant="outline"
+                          >
+                            Access Agent
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-4">
+                          <div className="space-y-3">
+                            <h4 className="font-semibold text-sm">Onboarding Required</h4>
+                            <p className="text-sm text-muted-foreground">
+                              To access this agent, you need to go through an onboarding process.
+                            </p>
+                            <div className="flex items-center gap-2 p-2 bg-muted rounded">
+                              <User className="w-4 h-4" />
+                              <div className="text-sm">
+                                <p className="font-medium">Contact: Nitin Goel</p>
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Mail className="w-3 h-3" />
+                                  <span>nitin.goel@ericsson.com</span>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  ) : (
-                    <Button 
-                      className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                      variant="outline"
-                      onClick={() => {
-                        if (agent.access_link) {
-                          window.open(agent.access_link, '_blank');
-                        }
-                      }}
-                    >
-                      Access Agent
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))
+                        </PopoverContent>
+                      </Popover>
+                    ) : (
+                      <Button 
+                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                        variant="outline"
+                        onClick={() => {
+                          if (agent.access_link) {
+                            window.open(agent.access_link, '_blank');
+                          }
+                        }}
+                      >
+                        Access Agent
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
 
