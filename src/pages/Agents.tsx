@@ -26,11 +26,12 @@ const Agents = () => {
   const { user } = useAuth();
   const { agents, loading, error, totalPages } = useAgents(page, 12, showAll);
 
-  // Search filtering
+  // Search filtering - now includes owner
   const filteredAgents = agents.filter(agent =>
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agent.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.key_features.some(feature => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -125,9 +126,6 @@ const Agents = () => {
           <h1 className="text-4xl md:text-5xl font-bold text-foreground">
             AI Agents
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Access and interact with our specialized GenAI agents designed to enhance your operational efficiency
-          </p>
         </div>
 
         {/* Error Banner */}
@@ -143,7 +141,7 @@ const Agents = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               type="search"
-              placeholder="Search agents by name, description, category, or features..."
+              placeholder="Search agents by name, description, category, owner, or features..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 h-12 text-lg"
@@ -173,7 +171,11 @@ const Agents = () => {
                             {agent.name}
                           </CardTitle>
                           <button
-                            onClick={() => toggleCardExpansion(agent.id)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleCardExpansion(agent.id);
+                            }}
                             className="p-1 hover:bg-gray-100 rounded transition-colors"
                             aria-label={isExpanded ? "Hide features" : "Show features"}
                           >
@@ -212,6 +214,9 @@ const Agents = () => {
                           </li>
                         ))}
                       </ul>
+                      <p className="text-xs text-muted-foreground mt-3">
+                        <strong>Owner:</strong> {agent.owner}
+                      </p>
                     </div>
                   )}
                   

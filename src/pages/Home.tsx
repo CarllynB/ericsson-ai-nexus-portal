@@ -162,7 +162,11 @@ const Home = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => toggleAgentExpansion(agent.id)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleAgentExpansion(agent.id);
+                            }}
                             className="p-1 h-6 w-6"
                           >
                             {isExpanded ? '−' : '+'}
