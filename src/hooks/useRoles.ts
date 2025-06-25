@@ -119,26 +119,57 @@ export const useRoles = () => {
         return false;
       }
 
-      // Generate a UUID for the user_id (this will be updated when the user actually signs up)
-      const tempUserId = crypto.randomUUID();
+      // First, check if the user exists in auth.users by email
+      const { data: authUser, error: authError } = await supabase.auth.admin.listUsers();
       
-      const { error } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: tempUserId,
-          email: userEmail.toLowerCase(),
-          role,
-          assigned_by: session.user.id
-        });
+      if (authError) {
+        console.error('Error fetching auth users:', authError);
+        // If we can't fetch auth users, we'll use a placeholder UUID
+        // and update it later when the user signs up
+        const placeholderUserId = `pending-${crypto.randomUUID()}`;
+        
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: placeholderUserId,
+            email: userEmail.toLowerCase(),
+            role,
+            assigned_by: session.user.id
+          });
 
-      if (error) {
-        console.error('Error assigning role:', error);
-        toast({
-          title: "Error",
-          description: "Failed to assign role: " + error.message,
-          variant: "destructive"
-        });
-        return false;
+        if (insertError) {
+          console.error('Error assigning role:', insertError);
+          toast({
+            title: "Error",
+            description: "Failed to assign role: " + insertError.message,
+            variant: "destructive"
+          });
+          return false;
+        }
+      } else {
+        // Find the user by email
+        const existingUser = authUser.users.find(u => u.email === userEmail.toLowerCase());
+        
+        const userIdToUse = existingUser?.id || `pending-${crypto.randomUUID()}`;
+        
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userIdToUse,
+            email: userEmail.toLowerCase(),
+            role,
+            assigned_by: session.user.id
+          });
+
+        if (insertError) {
+          console.error('Error assigning role:', insertError);
+          toast({
+            title: "Error",
+            description: "Failed to assign role: " + insertError.message,
+            variant: "destructive"
+          });
+          return false;
+        }
       }
 
       await fetchAllUsers();
