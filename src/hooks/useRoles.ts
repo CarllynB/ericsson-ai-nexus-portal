@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -56,7 +57,7 @@ export const useRoles = () => {
       }
 
       const formattedUsers: UserWithRole[] = data.map(user => ({
-        id: user.user_id,
+        id: user.id,
         email: user.email,
         role: user.role as UserRole,
         assigned_at: user.assigned_at
@@ -110,24 +111,10 @@ export const useRoles = () => {
           return false;
         }
       } else {
-        // Create new role assignment with a proper UUID
-        const { data: uuidData, error: uuidError } = await supabase
-          .rpc('gen_random_uuid');
-
-        if (uuidError) {
-          console.error('Error generating UUID:', uuidError);
-          toast({
-            title: "Error",
-            description: "Failed to generate user ID",
-            variant: "destructive"
-          });
-          return false;
-        }
-        
+        // Create new role assignment - let the database generate the ID and user_id
         const { error } = await supabase
           .from('user_roles')
           .insert({
-            user_id: uuidData,
             email: userEmail,
             role,
             assigned_by: currentUser?.id
@@ -175,7 +162,7 @@ export const useRoles = () => {
           assigned_by: currentUser?.id,
           updated_at: new Date().toISOString()
         })
-        .eq('user_id', userId);
+        .eq('id', userId);
 
       if (error) {
         console.error('Error updating user role:', error);
