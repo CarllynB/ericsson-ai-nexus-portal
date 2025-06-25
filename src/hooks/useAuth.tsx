@@ -62,7 +62,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
     } catch (error) {
       console.error('Error creating user from session:', error);
-      // Return user with default role if role fetching fails
       return {
         id: session.user.id,
         email: session.user.email || '',
@@ -79,12 +78,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         console.log('Initializing auth...');
         
-        // Check for existing session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error('Session error:', sessionError);
-        } else if (session?.user && isMounted) {
+        }
+
+        if (session?.user && isMounted) {
           console.log('Found existing session for:', session.user.email);
           const userData = await createUserFromSession(session);
           setUser(userData);
@@ -93,12 +93,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('Error initializing auth:', error);
       } finally {
         if (isMounted) {
+          console.log('Auth initialization complete, setting loading to false');
           setLoading(false);
         }
       }
     };
 
-    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
@@ -126,7 +126,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     );
 
-    // Then initialize
     initializeAuth();
 
     return () => {
@@ -149,10 +148,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw error;
       }
 
-      if (data.user) {
-        console.log('Login successful for:', data.user.email);
-        // Don't set user here, let the auth state change handler do it
-      }
+      console.log('Login successful for:', data.user?.email);
     } catch (error) {
       console.error('Login failed:', error);
       throw error;

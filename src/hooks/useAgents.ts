@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { Agent, getAgents, updateAgent, deleteAgent } from '@/services/api';
 
 export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -207,6 +208,8 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
       }
     };
 
+    // Set default agents immediately, then try to fetch from API
+    setAgents(DEFAULT_AGENTS);
     fetchAgents();
   }, []); // Only run once on mount
 

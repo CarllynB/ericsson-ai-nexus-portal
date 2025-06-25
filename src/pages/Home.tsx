@@ -16,7 +16,7 @@ const Home = () => {
   const { user, isSuperAdmin, loading: authLoading } = useAuth();
   const { agents, loading: agentsLoading, error } = useAgents();
 
-  console.log('Home component - Auth loading:', authLoading, 'Agents loading:', agentsLoading, 'User:', user?.email);
+  console.log('Home render - Auth loading:', authLoading, 'User:', user?.email, 'Agents loading:', agentsLoading, 'Agents count:', agents.length);
 
   const filteredAgents = agents.filter(agent =>
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -25,10 +25,9 @@ const Home = () => {
     agent.key_features.some((feature: string) => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Only show status badges for super admins
   const showStatusBadges = isSuperAdmin;
 
-  // Show loading only initially when both are loading
+  // Show loading only when auth is loading
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -111,7 +110,7 @@ const Home = () => {
           </div>
         )}
 
-        {/* Loading state for agents */}
+        {/* Loading state for agents only */}
         {agentsLoading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -141,7 +140,7 @@ const Home = () => {
                           <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
                             <div className="w-1.5 h-1.5 bg-primary rounded-full" />
                             {feature}
-                          </li>
+                          </li>  
                         ))}
                       </ul>
                     </div>
