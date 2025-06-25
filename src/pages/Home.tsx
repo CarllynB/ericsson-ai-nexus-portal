@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Search, Mail, User, X } from "lucide-react";
+import { ArrowRight, Search, Mail, User } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRoles } from "@/hooks/useRoles";
@@ -48,7 +48,12 @@ const Home = () => {
   const showStatusBadges = currentUserRole === 'super_admin';
 
   const toggleAgentExpansion = (agentId: string) => {
-    setExpandedAgent(expandedAgent === agentId ? null : agentId);
+    console.log('Toggling agent expansion for:', agentId);
+    setExpandedAgent(prev => {
+      const newValue = prev === agentId ? null : agentId;
+      console.log('New expanded agent:', newValue);
+      return newValue;
+    });
   };
 
   return (
@@ -118,6 +123,7 @@ const Home = () => {
           ) : (
             filteredAgents.map((agent) => {
               const isExpanded = expandedAgent === agent.id;
+              console.log(`Agent ${agent.id} isExpanded:`, isExpanded);
               return (
                 <Card 
                   key={agent.id} 
@@ -165,6 +171,7 @@ const Home = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
+                              console.log(`Button clicked for agent: ${agent.id}`);
                               toggleAgentExpansion(agent.id);
                             }}
                             className="p-1 h-6 w-6"

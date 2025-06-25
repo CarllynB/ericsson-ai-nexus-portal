@@ -52,13 +52,17 @@ const Agents = () => {
   };
 
   const toggleCardExpansion = (agentId: string) => {
+    console.log('Toggling expansion for agent:', agentId);
     setExpandedCards(prev => {
       const newSet = new Set(prev);
       if (newSet.has(agentId)) {
         newSet.delete(agentId);
+        console.log('Removed from expanded:', agentId);
       } else {
         newSet.add(agentId);
+        console.log('Added to expanded:', agentId);
       }
+      console.log('New expanded set:', Array.from(newSet));
       return newSet;
     });
   };
@@ -158,9 +162,10 @@ const Agents = () => {
           ) : (
             filteredAgents.map((agent) => {
               const isExpanded = expandedCards.has(agent.id);
+              console.log(`Agent ${agent.id} isExpanded:`, isExpanded);
               return (
                 <Card 
-                  key={agent.id} 
+                  key={`agent-${agent.id}`}
                   className={`relative ${getCardStyles(agent.status)}`}
                 >
                   <CardHeader className="space-y-4">
@@ -174,6 +179,7 @@ const Agents = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
+                              console.log(`Toggle button clicked for agent: ${agent.id}`);
                               toggleCardExpansion(agent.id);
                             }}
                             className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -208,7 +214,7 @@ const Agents = () => {
                       <h4 className="font-semibold text-sm text-foreground mb-3 mt-4">Key Features:</h4>
                       <ul className="space-y-2">
                         {agent.key_features.map((feature, index) => (
-                          <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <li key={`${agent.id}-feature-${index}`} className="flex items-start gap-2 text-sm text-muted-foreground">
                             <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
                             {feature}
                           </li>
