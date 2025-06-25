@@ -7,13 +7,13 @@ import { Input } from "@/components/ui/input";
 import { ArrowRight, Search, Mail, User, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useRoles } from "@/hooks/useRoles";
+import { useAuth } from "@/hooks/useAuth";
 import { useAgents } from "@/hooks/useAgents";
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
-  const { currentUserRole } = useRoles();
+  const { user, isSuperAdmin } = useAuth();
   const { agents, loading, error } = useAgents();
 
   const filteredAgents = agents.filter(agent =>
@@ -23,8 +23,8 @@ const Home = () => {
     agent.key_features.some((feature: string) => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Only show status badges for super admins, not regular admins
-  const showStatusBadges = currentUserRole === 'super_admin';
+  // Only show status badges for super admins
+  const showStatusBadges = isSuperAdmin;
 
   if (loading) {
     return (

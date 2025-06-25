@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             });
           } catch (roleError) {
             console.error('Error fetching role for existing session:', roleError);
-            // Don't log out the user if role fetching fails, just set default role
+            // Don't clear user session if role fetching fails, just set default role
             setUser({
               id: session.user.id,
               email: session.user.email || '',
@@ -117,7 +117,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             });
           } catch (roleError) {
             console.error('Error fetching role on auth change:', roleError);
-            // Don't clear the user if role fetching fails
+            // Don't clear the session if role fetching fails
             setUser({
               id: session.user.id,
               email: session.user.email || '',
@@ -129,9 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(null);
         }
         
-        if (loading) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     );
 
@@ -139,7 +137,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [loading]);
+  }, []);
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
