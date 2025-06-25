@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Search, Mail, User, X } from "lucide-react";
+import { ArrowRight, Search, Mail, User } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +16,8 @@ const Home = () => {
   const { user, isSuperAdmin, loading: authLoading } = useAuth();
   const { agents, loading: agentsLoading, error } = useAgents();
 
+  console.log('Home component - Auth loading:', authLoading, 'Agents loading:', agentsLoading, 'User:', user?.email);
+
   const filteredAgents = agents.filter(agent =>
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -26,20 +28,16 @@ const Home = () => {
   // Only show status badges for super admins
   const showStatusBadges = isSuperAdmin;
 
-  // Show loading only when both auth and agents are loading initially
-  if (authLoading && agentsLoading) {
+  // Show loading only initially when both are loading
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">Loading application...</p>
         </div>
       </div>
     );
-  }
-
-  if (error) {
-    console.log('Agents loading error:', error);
   }
 
   return (
@@ -113,8 +111,8 @@ const Home = () => {
           </div>
         )}
 
-        {/* Loading state for agents only when needed */}
-        {agentsLoading && agents.length === 0 ? (
+        {/* Loading state for agents */}
+        {agentsLoading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">Loading agents...</p>

@@ -84,13 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (sessionError) {
           console.error('Session error:', sessionError);
-          if (isMounted) {
-            setLoading(false);
-          }
-          return;
-        }
-        
-        if (isMounted && session?.user) {
+        } else if (session?.user && isMounted) {
           console.log('Found existing session for:', session.user.email);
           const userData = await createUserFromSession(session);
           setUser(userData);
@@ -104,9 +98,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    initializeAuth();
-
-    // Listen for auth changes
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
@@ -114,8 +106,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (!isMounted) return;
 
         if (session?.user) {
-          const userData = await createUserFromSession(session);
-          setUser(userData);
+          try {
+            const userData = await createUserFromSession(session);
+            setUser(userData);
+          } catch (error) {
+            console.error('Error handling auth state change:', error);
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              role: 'viewer',
+              created_at: session.user.created_at || new Date().toISOString(),
+            });
+          }
         } else {
           setUser(null);
         }
@@ -123,6 +125,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setLoading(false);
       }
     );
+
+    // Then initialize
+    initializeAuth();
 
     return () => {
       isMounted = false;
@@ -146,8 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (data.user) {
         console.log('Login successful for:', data.user.email);
-        const userData = await createUserFromSession(data);
-        setUser(userData);
+        // Don't set user here, let the auth state change handler do it
       }
     } catch (error) {
       console.error('Login failed:', error);
@@ -158,7 +162,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       console.log('Logging out...');
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error);
+      }
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
