@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { X, LogIn, Settings, Shield, UserPlus, ExternalLink } from "lucide-react";
+import { X, LogIn, Settings, Shield, UserPlus, ExternalLink, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
@@ -130,6 +130,17 @@ export const Layout = () => {
             <div className="w-2 h-2 bg-primary rounded-full" />
             <span className="font-medium">Dashboard</span>
           </a>
+          <button
+            onClick={() => {
+              window.open('https://apps.powerapps.com/play/e/default-92e84ceb-fbfd-47ab-be52-080c6b87953f/a/549a8af5-f6ba-4b8b-824c-dfdfcf6f3740?tenantId=92e84ceb-fbfd-47ab-be52-080c6b87953f&hint=ec5023c9-376e-41fb-9280-10bd9f925919&source=sharebutton&sourcetime=1750260233474', '_blank');
+              setSidebarOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left"
+          >
+            <Lightbulb className="w-4 h-4 text-yellow-500" />
+            <span className="font-medium">Pitch Box</span>
+            <ExternalLink className="w-3 h-3 ml-auto opacity-50" />
+          </button>
 
           {/* Admin Section - Only show for regular admin, not super admin */}
           {currentUserRole === 'admin' && (
