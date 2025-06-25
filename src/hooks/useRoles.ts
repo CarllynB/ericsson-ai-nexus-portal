@@ -73,26 +73,55 @@ export const useRoles = () => {
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       
-      // Generate a temporary user ID for the assignment
-      const tempUserId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
-      const { error } = await supabase
+      // Check if user already exists
+      const { data: existingUser } = await supabase
         .from('user_roles')
-        .insert({
-          user_id: tempUserId,
-          email: userEmail,
-          role,
-          assigned_by: currentUser?.id
-        });
+        .select('*')
+        .eq('email', userEmail)
+        .single();
 
-      if (error) {
-        console.error('Error assigning role:', error);
-        toast({
-          title: "Error",
-          description: "Failed to assign role",
-          variant: "destructive"
-        });
-        return false;
+      if (existingUser) {
+        // Update existing user's role
+        const { error } = await supabase
+          .from('user_roles')
+          .update({
+            role,
+            assigned_by: currentUser?.id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('email', userEmail);
+
+        if (error) {
+          console.error('Error updating role:', error);
+          toast({
+            title: "Error",
+            description: "Failed to update role",
+            variant: "destructive"
+          });
+          return false;
+        }
+      } else {
+        // Create new role assignment
+        const tempUserId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: tempUserId,
+            email: userEmail,
+            role,
+            assigned_by: currentUser?.id
+          });
+
+        if (error) {
+          console.error('Error assigning role:', error);
+          toast({
+            title: "Error",
+            description: "Failed to assign role",
+            variant: "destructive"
+          });
+          return false;
+        }
       }
 
       // Refresh the users list

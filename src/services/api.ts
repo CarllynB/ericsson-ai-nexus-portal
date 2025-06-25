@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Agent {
@@ -20,7 +19,7 @@ export const getAgents = async (): Promise<Agent[]> => {
     const { data, error } = await (supabase as any)
       .from('agents')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('last_updated', { ascending: false });
 
     if (error) {
       console.error('Error fetching agents:', error);
