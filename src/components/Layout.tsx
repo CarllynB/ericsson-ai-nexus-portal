@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { X, LogIn, Settings, Shield, UserPlus, ExternalLink, Lightbulb } from "lucide-react";
+import { X, LogIn, Settings, Shield, UserPlus, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
@@ -137,9 +136,8 @@ export const Layout = () => {
             }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left"
           >
-            <Lightbulb className="w-4 h-4 text-yellow-500" />
+            <div className="w-2 h-2 bg-primary rounded-full" />
             <span className="font-medium">Pitch Box</span>
-            <ExternalLink className="w-3 h-3 ml-auto opacity-50" />
           </button>
 
           {/* Admin Section - Only show for regular admin, not super admin */}
