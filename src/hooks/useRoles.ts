@@ -120,7 +120,7 @@ export const useRoles = () => {
       }
 
       // First, check if the user exists in auth.users by email
-      const { data: authUser, error: authError } = await supabase.auth.admin.listUsers();
+      const { data: authResponse, error: authError } = await supabase.auth.admin.listUsers();
       
       if (authError) {
         console.error('Error fetching auth users:', authError);
@@ -147,8 +147,8 @@ export const useRoles = () => {
           return false;
         }
       } else {
-        // Find the user by email
-        const existingUser = authUser.users.find(u => u.email === userEmail.toLowerCase());
+        // Find the user by email - properly type the users array
+        const existingUser = authResponse.users?.find((u: any) => u.email === userEmail.toLowerCase());
         
         const userIdToUse = existingUser?.id || `pending-${crypto.randomUUID()}`;
         
