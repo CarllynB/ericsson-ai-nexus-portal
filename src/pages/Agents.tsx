@@ -51,7 +51,9 @@ const Agents = () => {
     setPage(1);
   };
 
-  const toggleCardExpansion = (agentId: string) => {
+  const toggleCardExpansion = (agentId: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
     console.log('Toggling expansion for agent:', agentId);
     setExpandedCards(prev => {
       const newSet = new Set(prev);
@@ -165,7 +167,7 @@ const Agents = () => {
               console.log(`Agent ${agent.id} isExpanded:`, isExpanded);
               return (
                 <Card 
-                  key={`agent-${agent.id}`}
+                  key={`agents-page-${agent.id}`}
                   className={`relative ${getCardStyles(agent.status)}`}
                 >
                   <CardHeader className="space-y-4">
@@ -177,10 +179,8 @@ const Agents = () => {
                           </CardTitle>
                           <button
                             onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
                               console.log(`Toggle button clicked for agent: ${agent.id}`);
-                              toggleCardExpansion(agent.id);
+                              toggleCardExpansion(agent.id, e);
                             }}
                             className="p-1 hover:bg-gray-100 rounded transition-colors"
                             aria-label={isExpanded ? "Hide features" : "Show features"}
@@ -214,7 +214,7 @@ const Agents = () => {
                       <h4 className="font-semibold text-sm text-foreground mb-3 mt-4">Key Features:</h4>
                       <ul className="space-y-2">
                         {agent.key_features.map((feature, index) => (
-                          <li key={`${agent.id}-feature-${index}`} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <li key={`${agent.id}-expanded-feature-${index}`} className="flex items-start gap-2 text-sm text-muted-foreground">
                             <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
                             {feature}
                           </li>

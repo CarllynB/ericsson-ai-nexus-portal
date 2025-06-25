@@ -47,7 +47,9 @@ const Home = () => {
   // Only show status badges for super admins, not regular admins
   const showStatusBadges = currentUserRole === 'super_admin';
 
-  const toggleAgentExpansion = (agentId: string) => {
+  const toggleAgentExpansion = (agentId: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
     console.log('Toggling agent expansion for:', agentId);
     setExpandedAgent(prev => {
       const newValue = prev === agentId ? null : agentId;
@@ -126,7 +128,7 @@ const Home = () => {
               console.log(`Agent ${agent.id} isExpanded:`, isExpanded);
               return (
                 <Card 
-                  key={agent.id} 
+                  key={`home-agent-${agent.id}`}
                   className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
                     agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
                   }`}
@@ -137,7 +139,7 @@ const Home = () => {
                       <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
                       <ul className="space-y-2">
                         {agent.key_features.map((feature: string, index: number) => (
-                          <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <li key={`${agent.id}-hover-feature-${index}`} className="flex items-center gap-2 text-sm text-muted-foreground">
                             <div className="w-1.5 h-1.5 bg-primary rounded-full" />
                             {feature}
                           </li>
@@ -147,11 +149,7 @@ const Home = () => {
                         variant="outline"
                         size="sm"
                         className="mt-4"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleAgentExpansion(agent.id);
-                        }}
+                        onClick={(e) => toggleAgentExpansion(agent.id, e)}
                       >
                         Pin Features
                       </Button>
@@ -169,10 +167,8 @@ const Home = () => {
                             variant="ghost"
                             size="sm"
                             onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
                               console.log(`Button clicked for agent: ${agent.id}`);
-                              toggleAgentExpansion(agent.id);
+                              toggleAgentExpansion(agent.id, e);
                             }}
                             className="p-1 h-6 w-6"
                           >
@@ -205,7 +201,7 @@ const Home = () => {
                         <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
                         <ul className="space-y-2">
                           {agent.key_features.map((feature: string, index: number) => (
-                            <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <li key={`${agent.id}-expanded-feature-${index}`} className="flex items-center gap-2 text-sm text-muted-foreground">
                               <div className="w-1.5 h-1.5 bg-primary rounded-full" />
                               {feature}
                             </li>
