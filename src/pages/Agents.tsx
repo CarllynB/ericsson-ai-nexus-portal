@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, User, ChevronRight, X } from "lucide-react";
+import { Search, Mail, User, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgents } from "@/hooks/useAgents";
@@ -63,13 +62,13 @@ const Agents = () => {
   const getCardStyles = (status: Agent['status']) => {
     switch (status) {
       case "active":
-        return "border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group";
+        return "border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer";
       case "coming_soon":
-        return "opacity-70 bg-muted/30 border-2 border-muted hover:border-muted/70 hover:shadow-md hover:scale-[1.01] transition-all duration-300 cursor-pointer group";
+        return "opacity-70 bg-muted/30 border-2 border-muted hover:border-muted/70 hover:shadow-md hover:scale-[1.01] transition-all duration-300 cursor-pointer";
       case "inactive":
-        return "opacity-50 bg-gray-100 border-2 border-gray-300 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] transition-all duration-300 cursor-pointer group";
+        return "opacity-50 bg-gray-100 border-2 border-gray-300 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] transition-all duration-300 cursor-pointer";
       default:
-        return "hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group";
+        return "hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer";
     }
   };
 
@@ -152,23 +151,10 @@ const Agents = () => {
                   key={agent.id}
                   className={`relative ${getCardStyles(agent.status)}`}
                 >
-                  {/* Features Overlay on Hover */}
-                  <div className="absolute inset-0 bg-background/95 p-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-center">
-                    <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
-                    <ul className="space-y-2">
-                      {agent.key_features.map((feature, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
                   <CardHeader className="space-y-4">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
-                        <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                        <CardTitle className="text-xl">
                           {agent.name}
                         </CardTitle>
                         <Badge variant="secondary" className="text-xs">
@@ -193,7 +179,7 @@ const Agents = () => {
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button 
-                              className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                              className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
                               variant="outline"
                             >
                               Access Agent
@@ -220,7 +206,7 @@ const Agents = () => {
                         </Popover>
                       ) : (
                         <Button 
-                          className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                          className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
                           variant="outline"
                           onClick={() => {
                             if (agent.access_link) {
@@ -258,7 +244,6 @@ const Agents = () => {
                 className="px-6"
               >
                 Next
-                <ChevronRight className="ml-2 w-4 h-4" />
               </Button>
             )}
             <Button 

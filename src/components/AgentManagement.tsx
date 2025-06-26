@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Search, ChevronRight, ChevronDown, ChevronUp, User, Mail } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useRoles } from '@/hooks/useRoles';
 import { Agent, getAgents, createAgent, updateAgent, deleteAgent } from '@/services/api';
@@ -31,7 +30,6 @@ export const AgentManagement = () => {
     status: 'active' as Agent['status'],
     key_features: '',
     access_link: '',
-    contact_info: '',
     owner: ''
   });
 
@@ -89,7 +87,6 @@ export const AgentManagement = () => {
       status: formData.status,
       key_features: formData.key_features.split('\n').filter(f => f.trim()),
       access_link: formData.access_link || undefined,
-      contact_info: formData.contact_info || undefined,
       owner: formData.owner
     };
 
@@ -117,7 +114,6 @@ export const AgentManagement = () => {
         status: 'active',
         key_features: '',
         access_link: '',
-        contact_info: '',
         owner: ''
       });
       fetchAgentsList();
@@ -139,7 +135,6 @@ export const AgentManagement = () => {
       status: agent.status,
       key_features: agent.key_features.join('\n'),
       access_link: agent.access_link || '',
-      contact_info: (agent as any).contact_info || '',
       owner: agent.owner
     });
     setIsDialogOpen(true);
@@ -267,11 +262,6 @@ export const AgentManagement = () => {
                   onChange={(e) => setFormData({...formData, access_link: e.target.value})}
                 />
                 <Input
-                  placeholder="Contact Info (for agents without access link)"
-                  value={formData.contact_info}
-                  onChange={(e) => setFormData({...formData, contact_info: e.target.value})}
-                />
-                <Input
                   placeholder="Owner"
                   value={formData.owner}
                   onChange={(e) => setFormData({...formData, owner: e.target.value})}
@@ -286,7 +276,6 @@ export const AgentManagement = () => {
         )}
       </div>
 
-      {/* Search Bar */}
       <div className="max-w-2xl">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -300,7 +289,6 @@ export const AgentManagement = () => {
         </div>
       </div>
 
-      {/* Agents Grid */}
       <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-6">
         {paginatedAgents.length === 0 ? (
           <div className="col-span-full text-center py-12">
@@ -387,12 +375,6 @@ export const AgentManagement = () => {
                         </a>
                       </p>
                     )}
-                    {hasContactInfo && (
-                      <div className="flex items-center gap-2 p-2 bg-muted rounded">
-                        <User className="w-4 h-4" />
-                        <span className="text-sm">{(agent as any).contact_info}</span>
-                      </div>
-                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -401,7 +383,6 @@ export const AgentManagement = () => {
         )}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center gap-4">
           <Button 

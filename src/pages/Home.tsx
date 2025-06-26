@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Search, Mail, User, ChevronRight } from "lucide-react";
+import { ArrowRight, Search, Mail, User } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRoles } from "@/hooks/useRoles";
@@ -134,27 +134,14 @@ const Home = () => {
               return (
                 <Card 
                   key={agent.id}
-                  className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
+                  className={`hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
                     agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
                   }`}
                 >
-                  {/* Features Overlay on Hover */}
-                  <div className="absolute inset-0 bg-background/95 p-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-center">
-                    <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
-                    <ul className="space-y-2">
-                      {agent.key_features.map((feature: string, index: number) => (
-                        <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
                   <CardHeader className="space-y-4">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
-                        <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                        <CardTitle className="text-xl">
                           {agent.name}
                         </CardTitle>
                         <Badge variant="secondary" className="text-xs">
@@ -191,7 +178,7 @@ const Home = () => {
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button 
-                            className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                            className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
                             variant="outline"
                           >
                             Access Agent
@@ -218,7 +205,7 @@ const Home = () => {
                       </Popover>
                     ) : (
                       <Button 
-                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                        className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
                         variant="outline"
                         onClick={() => {
                           if (agent.access_link) {
@@ -247,7 +234,6 @@ const Home = () => {
                 className="px-6"
               >
                 Next
-                <ChevronRight className="ml-2 w-4 h-4" />
               </Button>
             )}
             <Button 
