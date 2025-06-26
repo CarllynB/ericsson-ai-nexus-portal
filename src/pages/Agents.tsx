@@ -22,6 +22,9 @@ const Agents = () => {
   // Welcome Banner
   const [showWelcome, setShowWelcome] = useState(true);
   
+  // Hover state for individual cards
+  const [hoveredAgent, setHoveredAgent] = useState<string | null>(null);
+  
   // Auth and Data Hooks
   const { user } = useAuth();
   const { agents, loading, error } = useAgents();
@@ -147,10 +150,13 @@ const Agents = () => {
             </div>
           ) : (
             displayedAgents.map((agent) => {
+              const isHovered = hoveredAgent === agent.id;
               return (
                 <Card 
                   key={agent.id}
                   className={`relative ${getCardStyles(agent.status)}`}
+                  onMouseEnter={() => setHoveredAgent(agent.id)}
+                  onMouseLeave={() => setHoveredAgent(null)}
                 >
                   <CardHeader className="space-y-4">
                     <div className="flex items-start justify-between">
@@ -174,10 +180,10 @@ const Agents = () => {
                     </CardDescription>
                   </CardHeader>
 
-                  {/* Key Features Dropdown - positioned between description and content */}
-                  <div className="relative">
-                    <div className="px-6 overflow-hidden transition-all duration-300 ease-in-out max-h-0 group-hover:max-h-48 group-hover:pb-4">
-                      <div className="space-y-2 border-t border-gray-100 pt-4">
+                  {/* Key Features Dropdown - only show for hovered agent */}
+                  {isHovered && (
+                    <div className="px-6 pb-4 border-t border-gray-100 bg-gray-50/50">
+                      <div className="space-y-2 pt-4">
                         <h4 className="font-semibold text-sm text-foreground">Key Features:</h4>
                         <ul className="space-y-1">
                           {agent.key_features.map((feature, index) => (
@@ -189,7 +195,7 @@ const Agents = () => {
                         </ul>
                       </div>
                     </div>
-                  </div>
+                  )}
                   
                   <CardContent className="space-y-6">
                     {agent.status === "active" ? (
