@@ -40,8 +40,7 @@ const Agents = () => {
   // Pagination logic
   const totalPages = Math.ceil(filteredAgents.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = showAll ? filteredAgents.length : startIndex + ITEMS_PER_PAGE;
-  const displayedAgents = filteredAgents.slice(startIndex, endIndex);
+  const displayedAgents = showAll ? filteredAgents : filteredAgents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   // Reset pagination when search changes
   useEffect(() => {
@@ -55,6 +54,12 @@ const Agents = () => {
     }
   };
 
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
+
   const handleShowAll = () => {
     setShowAll(true);
   };
@@ -62,13 +67,13 @@ const Agents = () => {
   const getCardStyles = (status: Agent['status']) => {
     switch (status) {
       case "active":
-        return "border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer";
+        return "border-2 border-primary/20";
       case "coming_soon":
-        return "opacity-70 bg-muted/30 border-2 border-muted hover:border-muted/70 hover:shadow-md hover:scale-[1.01] transition-all duration-300 cursor-pointer";
+        return "opacity-70 bg-muted/30 border-2 border-muted";
       case "inactive":
-        return "opacity-50 bg-gray-100 border-2 border-gray-300 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] transition-all duration-300 cursor-pointer";
+        return "opacity-50 bg-gray-100 border-2 border-gray-300";
       default:
-        return "hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer";
+        return "";
     }
   };
 
@@ -175,7 +180,7 @@ const Agents = () => {
                   
                   <CardContent className="space-y-6">
                     {agent.status === "active" ? (
-                      agent.id === "devmate" ? (
+                      agent.contact_info ? (
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button 
@@ -194,10 +199,10 @@ const Agents = () => {
                               <div className="flex items-center gap-2 p-2 bg-muted rounded">
                                 <User className="w-4 h-4" />
                                 <div className="text-sm">
-                                  <p className="font-medium">Contact: Nitin Goel</p>
+                                  <p className="font-medium">Contact: {agent.contact_info.name}</p>
                                   <div className="flex items-center gap-1 text-muted-foreground">
                                     <Mail className="w-3 h-3" />
-                                    <span>nitin.goel@ericsson.com</span>
+                                    <span>{agent.contact_info.email}</span>
                                   </div>
                                 </div>
                               </div>
@@ -236,6 +241,16 @@ const Agents = () => {
         {/* Pagination Controls */}
         {!showAll && filteredAgents.length > ITEMS_PER_PAGE && (
           <div className="flex justify-center gap-4 mb-12">
+            {currentPage > 1 && (
+              <Button 
+                onClick={handlePrevPage}
+                variant="outline" 
+                size="lg"
+                className="px-6"
+              >
+                Back
+              </Button>
+            )}
             {currentPage < totalPages && (
               <Button 
                 onClick={handleNextPage}

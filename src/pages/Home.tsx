@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,8 +49,7 @@ const Home = () => {
   // Pagination logic
   const totalPages = Math.ceil(filteredAgents.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = showAll ? filteredAgents.length : startIndex + ITEMS_PER_PAGE;
-  const displayedAgents = filteredAgents.slice(startIndex, endIndex);
+  const displayedAgents = showAll ? filteredAgents : filteredAgents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   // Reset pagination when search changes
   useEffect(() => {
@@ -65,6 +63,12 @@ const Home = () => {
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
     }
   };
 
@@ -134,7 +138,7 @@ const Home = () => {
               return (
                 <Card 
                   key={agent.id}
-                  className={`hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
+                  className={`border-2 ${
                     agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
                   }`}
                 >
@@ -174,7 +178,7 @@ const Home = () => {
                       >
                         Coming Soon
                       </Button>
-                    ) : agent.id === "devmate" ? (
+                    ) : agent.contact_info ? (
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button 
@@ -193,10 +197,10 @@ const Home = () => {
                             <div className="flex items-center gap-2 p-2 bg-muted rounded">
                               <User className="w-4 h-4" />
                               <div className="text-sm">
-                                <p className="font-medium">Contact: Nitin Goel</p>
+                                <p className="font-medium">Contact: {agent.contact_info.name}</p>
                                 <div className="flex items-center gap-1 text-muted-foreground">
                                   <Mail className="w-3 h-3" />
-                                  <span>nitin.goel@ericsson.com</span>
+                                  <span>{agent.contact_info.email}</span>
                                 </div>
                               </div>
                             </div>
@@ -226,6 +230,16 @@ const Home = () => {
         {/* Pagination Controls */}
         {!showAll && filteredAgents.length > ITEMS_PER_PAGE && (
           <div className="flex justify-center gap-4 mb-12">
+            {currentPage > 1 && (
+              <Button 
+                onClick={handlePrevPage}
+                variant="outline" 
+                size="lg"
+                className="px-6"
+              >
+                Back
+              </Button>
+            )}
             {currentPage < totalPages && (
               <Button 
                 onClick={handleNextPage}

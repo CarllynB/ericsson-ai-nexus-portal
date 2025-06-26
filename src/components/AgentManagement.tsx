@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronDown, ChevronUp, ChevronLeft } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useRoles } from '@/hooks/useRoles';
 import { Agent, getAgents, createAgent, updateAgent, deleteAgent } from '@/services/api';
@@ -17,6 +17,7 @@ export const AgentManagement = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
+  const [showAll, setShowAll] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const { currentUserRole } = useRoles();
   const { toast } = useToast();
@@ -30,6 +31,9 @@ export const AgentManagement = () => {
     status: 'active' as Agent['status'],
     key_features: '',
     access_link: '',
+    contact_name: '',
+    contact_email: '',
+    access_type: 'link' as 'link' | 'contact',
     owner: ''
   });
 
@@ -58,7 +62,7 @@ export const AgentManagement = () => {
   );
 
   const totalPages = Math.ceil(filteredAgents.length / pageSize);
-  const paginatedAgents = filteredAgents.slice((page - 1) * pageSize, page * pageSize);
+  const displayedAgents = showAll ? filteredAgents : filteredAgents.slice((page - 1) * pageSize, page * pageSize);
 
   const checkDuplicateName = (name: string, excludeId?: string) => {
     return agents.some(agent => 
@@ -86,7 +90,11 @@ export const AgentManagement = () => {
       category: formData.category,
       status: formData.status,
       key_features: formData.key_features.split('\n').filter(f => f.trim()),
-      access_link: formData.access_link || undefined,
+      access_link: formData.access_type === 'link' ? formData.access_link || undefined : undefined,
+      contact_info: formData.access_type === 'contact' ? {
+        name: formData.contact_name,
+        email: formData.contact_email
+      } : undefined,
       owner: formData.owner
     };
 
@@ -114,6 +122,9 @@ export const AgentManagement = () => {
         status: 'active',
         key_features: '',
         access_link: '',
+        contact_name: '',
+        contact_email: '',
+        access_type: 'link',
         owner: ''
       });
       fetchAgentsList();
@@ -135,6 +146,9 @@ export const AgentManagement = () => {
       status: agent.status,
       key_features: agent.key_features.join('\n'),
       access_link: agent.access_link || '',
+      contact_name: agent.contact_info?.name || '',
+      contact_email: agent.contact_info?.email || '',
+      access_type: agent.contact_info ? 'contact' : 'link',
       owner: agent.owner
     });
     setIsDialogOpen(true);
@@ -190,6 +204,7 @@ export const AgentManagement = () => {
 
   useEffect(() => {
     setPage(1);
+    setShowAll(false);
   }, [searchTerm]);
 
   if (!currentUserRole || !['admin', 'super_admin'].includes(currentUserRole)) {
@@ -256,11 +271,49 @@ export const AgentManagement = () => {
                   value={formData.key_features}
                   onChange={(e) => setFormData({...formData, key_features: e.target.value})}
                 />
-                <Input
-                  placeholder="Access Link (optional)"
-                  value={formData.access_link}
-                  onChange={(e) => setFormData({...formData, access_link: e.target.value})}
-                />
+                
+                <div className="space-y-4">
+                  <label className="text-sm font-medium">Access Type</label>
+                  <Select
+                    value={formData.access_type}
+                    onValueChange={(value: 'link' | 'contact') => 
+                      setFormData({...formData, access_type: value})
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="link">Access Link</SelectItem>
+                      <SelectItem value="contact">Contact Information</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {formData.access_type === 'link' ? (
+                    <Input
+                      placeholder="Access Link (optional)"
+                      value={formData.access_link}
+                      onChange={(e) => setFormData({...formData, access_link: e.target.value})}
+                    />
+                  ) : (
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Contact Name"
+                        value={formData.contact_name}
+                        onChange={(e) => setFormData({...formData, contact_name: e.target.value})}
+                        required
+                      />
+                      <Input
+                        placeholder="Contact Email"
+                        type="email"
+                        value={formData.contact_email}
+                        onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+                
                 <Input
                   placeholder="Owner"
                   value={formData.owner}
@@ -290,14 +343,13 @@ export const AgentManagement = () => {
       </div>
 
       <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-6">
-        {paginatedAgents.length === 0 ? (
+        {displayedAgents.length === 0 ? (
           <div className="col-span-full text-center py-12">
             <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
           </div>
         ) : (
-          paginatedAgents.map((agent) => {
+          displayedAgents.map((agent) => {
             const isExpanded = expandedCards.has(agent.id);
-            const hasContactInfo = (agent as any).contact_info;
             return (
               <Card key={agent.id} className="relative hover:shadow-lg transition-all duration-300">
                 <CardHeader>
@@ -375,6 +427,12 @@ export const AgentManagement = () => {
                         </a>
                       </p>
                     )}
+                    {agent.contact_info && (
+                      <div className="text-sm">
+                        <p><strong>Contact:</strong> {agent.contact_info.name}</p>
+                        <p><strong>Email:</strong> {agent.contact_info.email}</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -383,24 +441,48 @@ export const AgentManagement = () => {
         )}
       </div>
 
-      {totalPages > 1 && (
+      {!showAll && totalPages > 1 && (
         <div className="flex justify-center gap-4">
-          <Button 
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-            variant="outline"
-          >
-            Previous
-          </Button>
+          {page > 1 && (
+            <Button 
+              onClick={() => setPage(p => p - 1)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </Button>
+          )}
           <span className="flex items-center px-4">
             Page {page} of {totalPages}
           </span>
+          {page < totalPages && (
+            <Button 
+              onClick={() => setPage(p => p + 1)}
+              variant="outline"
+            >
+              Next
+            </Button>
+          )}
           <Button 
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
+            onClick={() => setShowAll(true)}
+            variant="default"
+          >
+            Show All
+          </Button>
+        </div>
+      )}
+
+      {showAll && (
+        <div className="flex justify-center">
+          <Button 
+            onClick={() => {
+              setShowAll(false);
+              setPage(1);
+            }}
             variant="outline"
           >
-            Next
+            Show Less
           </Button>
         </div>
       )}

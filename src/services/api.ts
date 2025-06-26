@@ -8,7 +8,10 @@ export interface Agent {
   status: 'active' | 'inactive' | 'coming_soon';
   key_features: string[];
   access_link?: string;
-  contact_info?: string;
+  contact_info?: {
+    name: string;
+    email: string;
+  };
   owner: string;
   last_updated: string;
   created_at: string;
