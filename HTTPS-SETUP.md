@@ -1,68 +1,57 @@
 
-# HTTPS Setup Instructions
+# HTTPS Setup Instructions - COMPLETE SETUP
 
-## Quick Start
+## ✅ You're All Set!
+Both certificate files are now in place:
+- `aiduagent-csstip.ckit1.explab.com.crt` ✅
+- `aiduagent-csstip.ckit1.explab.com.key` ✅
 
-### Development
+## 🚀 Quick Commands (Linux VM)
+
+### Development Mode
 ```bash
-# If you have SSL certificates
-sudo npm run start:dev
+# Run with HTTPS on port 443
+sudo npm run dev
 
-# If you don't have SSL certificates yet
-npm run start:dev
+# Access at: https://aiduagent-csstip.ckit1.explab.com/
 ```
 
-### Production
+### Production Mode
 ```bash
 # Build and run production server
-sudo npm run start:prod
+npm run build
+sudo node server.js
+
+# Access at: https://aiduagent-csstip.ckit1.explab.com/
 ```
 
-## SSL Certificates
-
-### Current Setup
-- Certificate: `aiduagent-csstip.ckit1.explab.com.crt` (already provided)
-- Private Key: `aiduagent-csstip.ckit1.explab.com.key` (you need to get this)
-
-### Future Certificates (from your team)
-- **Production**: `aiduagent-csstip.msts.ericsson.net`
-- **Sandbox**: TBD (Debajit will provide by 7/2)
-
-## How to Get the Private Key
-
-Contact the person who provided the certificate to get:
-- `aiduagent-csstip.ckit1.explab.com.key`
-
-Place this file in the root directory of your project.
-
-## What Happens
-
-### With SSL Certificates
-- **Development**: Runs on `https://aiduagent-csstip.ckit1.explab.com/` (port 443)
-- **Production**: Runs on `https://aiduagent-csstip.ckit1.explab.com/` (port 443)
-
-### Without SSL Certificates
-- **Development**: Runs on `http://localhost:8080/`
-- **Production**: Attempts HTTPS but may not work
-
-## Commands
-
-| Command | What it does |
-|---------|--------------|
-| `npm run start:dev` | Start development with auto-HTTPS detection |
-| `npm run start:prod` | Build and start production server |
-| `npm run dev` | Standard Vite dev server |
-| `npm run build` | Build for production |
-
-## DNS Configuration
-
-Make sure your domain points to your server:
+### Alternative: Using Docker
 ```bash
-# Add to /etc/hosts for local testing
-127.0.0.1 aiduagent-csstip.ckit1.explab.com
+# Build and run with Docker (includes HTTPS)
+sudo docker-compose up -d
+
+# Access at: https://aiduagent-csstip.ckit1.explab.com/
 ```
 
-## Firewall Configuration
+## 🔧 What Happens Now
+
+### Automatic HTTPS Detection
+- The app automatically detects your SSL certificates
+- **With certificates**: Runs on HTTPS port 443
+- **Without certificates**: Falls back to HTTP port 8080
+
+### URLs
+- **HTTPS**: `https://aiduagent-csstip.ckit1.explab.com/`
+- **Fallback**: `http://localhost:8080/`
+
+## 📋 DNS Setup (if needed)
+
+Add to `/etc/hosts` on your Linux VM:
+```bash
+echo "127.0.0.1 aiduagent-csstip.ckit1.explab.com" | sudo tee -a /etc/hosts
+```
+
+## 🔥 Firewall Setup (if needed)
 
 ```bash
 # Ubuntu/Debian
@@ -73,15 +62,26 @@ sudo firewall-cmd --permanent --add-port=443/tcp
 sudo firewall-cmd --reload
 ```
 
-## Docker (Optional)
+## 🎯 Recommended Commands
 
+**For Development:**
 ```bash
-# Build and run with Docker
-docker-compose up -d
+sudo npm run dev
 ```
 
-## Troubleshooting
+**For Production:**
+```bash
+npm run build && sudo node server.js
+```
 
-1. **Permission denied on port 443**: Run with `sudo`
-2. **Certificate errors**: Ensure both `.crt` and `.key` files exist
-3. **Domain not resolving**: Check DNS or `/etc/hosts`
+## 🔮 Future Certificates
+
+When you get new certificates from your team:
+- **Production**: `aiduagent-csstip.msts.ericsson.net`
+- **Sandbox**: (Debajit will provide by 7/2)
+
+Just replace the certificate files and restart!
+
+## ✨ That's It!
+
+Your HTTPS setup is now complete and ready to run on your Linux VM.
