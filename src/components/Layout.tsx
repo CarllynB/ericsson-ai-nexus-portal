@@ -8,7 +8,6 @@ import { UserProfileMenu } from "@/components/UserProfileMenu";
 import { useRoles } from "@/hooks/useRoles";
 import { useAuth } from "@/hooks/useAuth";
 import { AgentManagement } from "@/components/AgentManagement";
-import { DashboardManagement } from "@/components/DashboardManagement";
 import { RoleManagement } from "@/components/RoleManagement";
 import { SidebarManagement } from "@/components/SidebarManagement";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -17,7 +16,6 @@ import { useSidebarItems } from "@/hooks/useSidebarItems";
 export const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
-  const [dashboardManagementOpen, setDashboardManagementOpen] = useState(false);
   const [roleManagementOpen, setRoleManagementOpen] = useState(false);
   const [agentManagementOpen, setAgentManagementOpen] = useState(false);
   const [sidebarManagementOpen, setSidebarManagementOpen] = useState(false);
@@ -181,21 +179,6 @@ export const Layout = () => {
                     <DialogTitle>Agent Management</DialogTitle>
                   </DialogHeader>
                   <AgentManagement />
-                </DialogContent>
-              </Dialog>
-
-              <Dialog open={dashboardManagementOpen} onOpenChange={setDashboardManagementOpen}>
-                <DialogTrigger asChild>
-                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left">
-                    <ExternalLink className="w-4 h-4" />
-                    <span className="font-medium">Manage Dashboard</span>
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl">
-                  <DialogHeader>
-                    <DialogTitle>Dashboard Management</DialogTitle>
-                  </DialogHeader>
-                  <DashboardManagement />
                 </DialogContent>
               </Dialog>
 

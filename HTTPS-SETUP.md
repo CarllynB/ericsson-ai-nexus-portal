@@ -1,58 +1,69 @@
 
 # HTTPS Setup Instructions
 
-## Prerequisites
+## Quick Start
 
-You need to obtain the private key file that matches your certificate. Contact the person who provided the certificate to get:
+### Development
+```bash
+# If you have SSL certificates
+sudo npm run start:dev
+
+# If you don't have SSL certificates yet
+npm run start:dev
+```
+
+### Production
+```bash
+# Build and run production server
+sudo npm run start:prod
+```
+
+## SSL Certificates
+
+### Current Setup
+- Certificate: `aiduagent-csstip.ckit1.explab.com.crt` (already provided)
+- Private Key: `aiduagent-csstip.ckit1.explab.com.key` (you need to get this)
+
+### Future Certificates (from your team)
+- **Production**: `aiduagent-csstip.msts.ericsson.net`
+- **Sandbox**: TBD (Debajit will provide by 7/2)
+
+## How to Get the Private Key
+
+Contact the person who provided the certificate to get:
 - `aiduagent-csstip.ckit1.explab.com.key`
 
-## Development Setup
+Place this file in the root directory of your project.
 
-1. **Get the private key file:**
-   ```bash
-   # Place the private key file in the root directory
-   # aiduagent-csstip.ckit1.explab.com.key
-   ```
+## What Happens
 
-2. **Run development with HTTPS:**
-   ```bash
-   # Start Vite dev server (in one terminal)
-   npm run dev
+### With SSL Certificates
+- **Development**: Runs on `https://aiduagent-csstip.ckit1.explab.com/` (port 443)
+- **Production**: Runs on `https://aiduagent-csstip.ckit1.explab.com/` (port 443)
 
-   # Start HTTPS proxy (in another terminal)
-   sudo node dev-server.js
-   ```
+### Without SSL Certificates
+- **Development**: Runs on `http://localhost:8080/`
+- **Production**: Attempts HTTPS but may not work
 
-3. **Access your app:**
-   - Open: `https://aiduagent-csstip.ckit1.explab.com/`
-   - Your browser may show a certificate warning (click "Advanced" → "Proceed")
+## Commands
 
-## Production Setup
-
-1. **Build the application:**
-   ```bash
-   npm run build
-   ```
-
-2. **Run with Docker:**
-   ```bash
-   docker-compose up -d
-   ```
-
-3. **Or run directly:**
-   ```bash
-   sudo node server.js
-   ```
+| Command | What it does |
+|---------|--------------|
+| `npm run start:dev` | Start development with auto-HTTPS detection |
+| `npm run start:prod` | Build and start production server |
+| `npm run dev` | Standard Vite dev server |
+| `npm run build` | Build for production |
 
 ## DNS Configuration
 
 Make sure your domain points to your server:
-- Add DNS A record: `aiduagent-csstip.ckit1.explab.com` → `YOUR_SERVER_IP`
-- Or add to `/etc/hosts`: `YOUR_SERVER_IP aiduagent-csstip.ckit1.explab.com`
+```bash
+# Add to /etc/hosts for local testing
+127.0.0.1 aiduagent-csstip.ckit1.explab.com
+```
 
 ## Firewall Configuration
 
-Open port 443:
 ```bash
 # Ubuntu/Debian
 sudo ufw allow 443
@@ -62,15 +73,15 @@ sudo firewall-cmd --permanent --add-port=443/tcp
 sudo firewall-cmd --reload
 ```
 
+## Docker (Optional)
+
+```bash
+# Build and run with Docker
+docker-compose up -d
+```
+
 ## Troubleshooting
 
-1. **Permission denied on port 443:**
-   - Run with `sudo` (ports below 1024 require root privileges)
-   
-2. **Certificate errors:**
-   - Ensure both `.crt` and `.key` files are in the root directory
-   - Check file permissions: `chmod 600 *.key`
-   
-3. **Domain not resolving:**
-   - Check DNS configuration
-   - Try accessing by IP first
+1. **Permission denied on port 443**: Run with `sudo`
+2. **Certificate errors**: Ensure both `.crt` and `.key` files exist
+3. **Domain not resolving**: Check DNS or `/etc/hosts`
