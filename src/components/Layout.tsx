@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { X, LogIn, Settings, Shield, UserPlus, ExternalLink } from "lucide-react";
+import { X, LogIn, Settings, Shield, UserPlus, ExternalLink, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
@@ -9,7 +10,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { AgentManagement } from "@/components/AgentManagement";
 import { DashboardManagement } from "@/components/DashboardManagement";
 import { RoleManagement } from "@/components/RoleManagement";
+import { SidebarManagement } from "@/components/SidebarManagement";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useSidebarItems } from "@/hooks/useSidebarItems";
 
 export const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -17,8 +20,19 @@ export const Layout = () => {
   const [dashboardManagementOpen, setDashboardManagementOpen] = useState(false);
   const [roleManagementOpen, setRoleManagementOpen] = useState(false);
   const [agentManagementOpen, setAgentManagementOpen] = useState(false);
+  const [sidebarManagementOpen, setSidebarManagementOpen] = useState(false);
   const { currentUserRole } = useRoles();
   const { user } = useAuth();
+  const { items } = useSidebarItems();
+
+  const handleNavigation = (url: string) => {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      window.open(url, '_blank');
+    } else {
+      window.location.href = url;
+    }
+    setSidebarOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,40 +119,20 @@ export const Layout = () => {
         </div>
 
         <nav className="p-6 space-y-2">
-          <a
-            href="/"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <div className="w-2 h-2 bg-primary rounded-full" />
-            <span className="font-medium">Home</span>
-          </a>
-          <a
-            href="/agents"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <div className="w-2 h-2 bg-primary rounded-full" />
-            <span className="font-medium">Agents</span>
-          </a>
-          <a
-            href="/dashboard"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <div className="w-2 h-2 bg-primary rounded-full" />
-            <span className="font-medium">Dashboard</span>
-          </a>
-          <button
-            onClick={() => {
-              window.open('https://apps.powerapps.com/play/e/default-92e84ceb-fbfd-47ab-be52-080c6b87953f/a/549a8af5-f6ba-4b8b-824c-dfdfcf6f3740?tenantId=92e84ceb-fbfd-47ab-be52-080c6b87953f&hint=ec5023c9-376e-41fb-9280-10bd9f925919&source=sharebutton&sourcetime=1750260233474', '_blank');
-              setSidebarOpen(false);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left"
-          >
-            <div className="w-2 h-2 bg-primary rounded-full" />
-            <span className="font-medium">Pitch Box</span>
-          </button>
+          {/* Dynamic Sidebar Items */}
+          {items.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handleNavigation(item.url)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left"
+            >
+              <div className="w-2 h-2 bg-primary rounded-full" />
+              <span className="font-medium">{item.title}</span>
+              {(item.url.startsWith('http://') || item.url.startsWith('https://')) && (
+                <ExternalLink className="w-3 h-3 ml-auto text-muted-foreground" />
+              )}
+            </button>
+          ))}
 
           {/* Admin Section - Only show for regular admin, not super admin */}
           {currentUserRole === 'admin' && (
@@ -217,6 +211,21 @@ export const Layout = () => {
                     <DialogTitle>Role Management</DialogTitle>
                   </DialogHeader>
                   <RoleManagement />
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={sidebarManagementOpen} onOpenChange={setSidebarManagementOpen}>
+                <DialogTrigger asChild>
+                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left">
+                    <Menu className="w-4 h-4" />
+                    <span className="font-medium">Manage Sidebar</span>
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Sidebar Management</DialogTitle>
+                  </DialogHeader>
+                  <SidebarManagement />
                 </DialogContent>
               </Dialog>
             </div>
