@@ -13,11 +13,11 @@ const sslKeyExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.key');
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: mode === 'development' && sslCertExists && sslKeyExists ? 443 : 8080,
+    port: 8080,
     https: mode === 'development' && sslCertExists && sslKeyExists ? {
       cert: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.crt'),
       key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key'),
-    } : false,
+    } : undefined,
     cors: true,
   },
   plugins: [
