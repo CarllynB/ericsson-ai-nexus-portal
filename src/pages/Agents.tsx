@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,13 +63,13 @@ const Agents = () => {
   const getCardStyles = (status: Agent['status']) => {
     switch (status) {
       case "active":
-        return "border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group";
+        return "border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group overflow-hidden";
       case "coming_soon":
-        return "opacity-70 bg-muted/30 border-2 border-muted hover:border-muted/70 hover:shadow-md hover:scale-[1.01] transition-all duration-300 cursor-pointer group";
+        return "opacity-70 bg-muted/30 border-2 border-muted hover:border-muted/70 hover:shadow-md hover:scale-[1.01] transition-all duration-300 cursor-pointer group overflow-hidden";
       case "inactive":
-        return "opacity-50 bg-gray-100 border-2 border-gray-300 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] transition-all duration-300 cursor-pointer group";
+        return "opacity-50 bg-gray-100 border-2 border-gray-300 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] transition-all duration-300 cursor-pointer group overflow-hidden";
       default:
-        return "hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group";
+        return "hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group overflow-hidden";
     }
   };
 
@@ -173,18 +174,20 @@ const Agents = () => {
                     </CardDescription>
                   </CardHeader>
 
-                  {/* Key Features Dropdown */}
-                  <div className="px-6 overflow-hidden transition-all duration-300 max-h-0 group-hover:max-h-48 group-hover:pb-4">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm text-foreground">Key Features:</h4>
-                      <ul className="space-y-1">
-                        {agent.key_features.map((feature, index) => (
-                          <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
+                  {/* Key Features Dropdown - positioned between description and content */}
+                  <div className="relative">
+                    <div className="px-6 overflow-hidden transition-all duration-300 ease-in-out max-h-0 group-hover:max-h-48 group-hover:pb-4">
+                      <div className="space-y-2 border-t border-gray-100 pt-4">
+                        <h4 className="font-semibold text-sm text-foreground">Key Features:</h4>
+                        <ul className="space-y-1">
+                          {agent.key_features.map((feature, index) => (
+                            <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </div>
                   

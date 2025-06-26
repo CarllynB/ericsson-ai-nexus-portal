@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -132,7 +133,7 @@ const Home = () => {
               return (
                 <Card 
                   key={agent.id}
-                  className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
+                  className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/20 overflow-hidden ${
                     agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
                   }`}
                 >
@@ -163,18 +164,20 @@ const Home = () => {
                     </CardDescription>
                   </CardHeader>
 
-                  {/* Key Features Dropdown */}
-                  <div className="px-6 overflow-hidden transition-all duration-300 max-h-0 group-hover:max-h-48 group-hover:pb-4">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm text-foreground">Key Features:</h4>
-                      <ul className="space-y-1">
-                        {agent.key_features.map((feature: string, index: number) => (
-                          <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
+                  {/* Key Features Dropdown - positioned between description and content */}
+                  <div className="relative">
+                    <div className="px-6 overflow-hidden transition-all duration-300 ease-in-out max-h-0 group-hover:max-h-48 group-hover:pb-4">
+                      <div className="space-y-2 border-t border-gray-100 pt-4">
+                        <h4 className="font-semibold text-sm text-foreground">Key Features:</h4>
+                        <ul className="space-y-1">
+                          {agent.key_features.map((feature: string, index: number) => (
+                            <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </div>
                   
