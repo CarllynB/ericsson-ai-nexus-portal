@@ -14,7 +14,6 @@ const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
   const [agents, setAgents] = useState<any[]>([]);
-  const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
   const { currentUserRole } = useRoles();
@@ -62,17 +61,6 @@ const Home = () => {
 
   // Only show status badges for super admins, not regular admins
   const showStatusBadges = currentUserRole === 'super_admin';
-
-  const toggleAgentExpansion = (agentId: string, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    console.log('Toggling expansion for agent:', agentId);
-    setExpandedAgent(prev => {
-      const newExpanded = prev === agentId ? null : agentId;
-      console.log('New expanded agent:', newExpanded);
-      return newExpanded;
-    });
-  };
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
@@ -143,8 +131,6 @@ const Home = () => {
             </div>
           ) : (
             displayedAgents.map((agent) => {
-              const isExpanded = expandedAgent === agent.id;
-              console.log(`Agent ${agent.id} (${agent.name}) is expanded:`, isExpanded);
               return (
                 <Card 
                   key={agent.id}
@@ -152,45 +138,25 @@ const Home = () => {
                     agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
                   }`}
                 >
-                  {/* Features Overlay on Hover - Only show when not expanded */}
-                  {!isExpanded && (
-                    <div className="absolute inset-0 bg-background/95 p-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-center">
-                      <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
-                      <ul className="space-y-2">
-                        {agent.key_features.map((feature: string, index: number) => (
-                          <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-4"
-                        onClick={(e) => toggleAgentExpansion(agent.id, e)}
-                      >
-                        Pin Features
-                      </Button>
-                    </div>
-                  )}
+                  {/* Features Overlay on Hover */}
+                  <div className="absolute inset-0 bg-background/95 p-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-center">
+                    <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
+                    <ul className="space-y-2">
+                      {agent.key_features.map((feature: string, index: number) => (
+                        <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
                   <CardHeader className="space-y-4">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                            {agent.name}
-                          </CardTitle>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => toggleAgentExpansion(agent.id, e)}
-                            className="p-1 h-6 w-6"
-                          >
-                            {isExpanded ? '−' : '+'}
-                          </Button>
-                        </div>
+                        <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                          {agent.name}
+                        </CardTitle>
                         <Badge variant="secondary" className="text-xs">
                           {agent.category}
                         </Badge>
@@ -210,21 +176,6 @@ const Home = () => {
                     <CardDescription className="text-sm leading-relaxed">
                       {agent.description}
                     </CardDescription>
-
-                    {/* Expanded Features */}
-                    {isExpanded && (
-                      <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                        <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
-                        <ul className="space-y-2">
-                          {agent.key_features.map((feature: string, index: number) => (
-                            <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
                   </CardHeader>
                   
                   <CardContent className="space-y-6">

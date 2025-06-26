@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, User, ChevronRight, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Search, Mail, User, ChevronRight, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgents } from "@/hooks/useAgents";
@@ -18,7 +18,6 @@ const Agents = () => {
   // Pagination & Display
   const [currentPage, setCurrentPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   
   // Welcome Banner
   const [showWelcome, setShowWelcome] = useState(true);
@@ -61,34 +60,16 @@ const Agents = () => {
     setShowAll(true);
   };
 
-  const toggleCardExpansion = (agentId: string, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    console.log('Toggling expansion for agent:', agentId);
-    setExpandedCards(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(agentId)) {
-        newSet.delete(agentId);
-        console.log('Collapsed agent:', agentId);
-      } else {
-        newSet.add(agentId);
-        console.log('Expanded agent:', agentId);
-      }
-      console.log('New expanded cards:', Array.from(newSet));
-      return newSet;
-    });
-  };
-
   const getCardStyles = (status: Agent['status']) => {
     switch (status) {
       case "active":
-        return "border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer";
+        return "border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group";
       case "coming_soon":
-        return "opacity-70 bg-muted/30 border-2 border-muted hover:border-muted/70 hover:shadow-md hover:scale-[1.01] transition-all duration-300 cursor-pointer";
+        return "opacity-70 bg-muted/30 border-2 border-muted hover:border-muted/70 hover:shadow-md hover:scale-[1.01] transition-all duration-300 cursor-pointer group";
       case "inactive":
-        return "opacity-50 bg-gray-100 border-2 border-gray-300 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] transition-all duration-300 cursor-pointer";
+        return "opacity-50 bg-gray-100 border-2 border-gray-300 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] transition-all duration-300 cursor-pointer group";
       default:
-        return "hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer";
+        return "hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group";
     }
   };
 
@@ -166,32 +147,30 @@ const Agents = () => {
             </div>
           ) : (
             displayedAgents.map((agent) => {
-              const isExpanded = expandedCards.has(agent.id);
-              console.log(`Agent ${agent.id} (${agent.name}) is expanded:`, isExpanded);
               return (
                 <Card 
                   key={agent.id}
                   className={`relative ${getCardStyles(agent.status)}`}
                 >
+                  {/* Features Overlay on Hover */}
+                  <div className="absolute inset-0 bg-background/95 p-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-center">
+                    <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
+                    <ul className="space-y-2">
+                      {agent.key_features.map((feature, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
                   <CardHeader className="space-y-4">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-xl">
-                            {agent.name}
-                          </CardTitle>
-                          <button
-                            onClick={(e) => toggleCardExpansion(agent.id, e)}
-                            className="p-1 hover:bg-gray-100 rounded transition-colors"
-                            aria-label={isExpanded ? "Hide features" : "Show features"}
-                          >
-                            {isExpanded ? (
-                              <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                            )}
-                          </button>
-                        </div>
+                        <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                          {agent.name}
+                        </CardTitle>
                         <Badge variant="secondary" className="text-xs">
                           {agent.category}
                         </Badge>
@@ -208,28 +187,13 @@ const Agents = () => {
                     </CardDescription>
                   </CardHeader>
                   
-                  {/* Expandable Features Section */}
-                  {isExpanded && (
-                    <div className="px-6 pb-4 border-t border-gray-100">
-                      <h4 className="font-semibold text-sm text-foreground mb-3 mt-4">Key Features:</h4>
-                      <ul className="space-y-2">
-                        {agent.key_features.map((feature, index) => (
-                          <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  
                   <CardContent className="space-y-6">
                     {agent.status === "active" ? (
                       agent.id === "devmate" ? (
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button 
-                              className="w-full"
+                              className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                               variant="outline"
                             >
                               Access Agent
@@ -256,7 +220,7 @@ const Agents = () => {
                         </Popover>
                       ) : (
                         <Button 
-                          className="w-full"
+                          className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                           variant="outline"
                           onClick={() => {
                             if (agent.access_link) {
