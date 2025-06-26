@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    cors: true,
   },
   plugins: [
     react(),
@@ -18,5 +19,9 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
   },
 }));

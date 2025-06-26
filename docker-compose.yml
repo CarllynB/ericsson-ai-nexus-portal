@@ -1,0 +1,20 @@
+
+version: '3.8'
+
+services:
+  ai-du-agent:
+    build: .
+    ports:
+      - "443:443"
+    volumes:
+      - ./aiduagent-csstip.ckit1.explab.com.crt:/app/aiduagent-csstip.ckit1.explab.com.crt:ro
+      - ./aiduagent-csstip.ckit1.explab.com.key:/app/aiduagent-csstip.ckit1.explab.com.key:ro
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - ai-du-network
+
+networks:
+  ai-du-network:
+    driver: bridge
