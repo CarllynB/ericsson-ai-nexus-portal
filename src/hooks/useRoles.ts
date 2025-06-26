@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -201,6 +202,12 @@ export const useRoles = () => {
     }
   };
 
+  // Helper functions for role checking
+  const isAdmin = currentUserRole === 'admin' || currentUserRole === 'super_admin';
+  const isSuperAdmin = currentUserRole === 'super_admin';
+  const canEdit = isAdmin; // Both admin and super_admin can edit
+  const canManageUsers = isSuperAdmin; // Only super_admin can manage users
+
   useEffect(() => {
     const initRoles = async () => {
       setLoading(true);
@@ -225,6 +232,11 @@ export const useRoles = () => {
     assignRole,
     updateUserRole,
     fetchCurrentUserRole,
-    fetchAllUsers
+    fetchAllUsers,
+    // Helper properties
+    isAdmin,
+    isSuperAdmin,
+    canEdit,
+    canManageUsers
   };
 };
