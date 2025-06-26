@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, User, ChevronRight, X } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Mail, User, ChevronRight, X, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgents } from "@/hooks/useAgents";
 import { Agent } from "@/services/api";
@@ -22,9 +22,8 @@ const Agents = () => {
   // Welcome Banner
   const [showWelcome, setShowWelcome] = useState(true);
   
-  // Onboarding Modal
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  // Expanded Agents
+  const [expandedAgents, setExpandedAgents] = useState<{ [key: string]: boolean }>({});
   
   // Auth and Data Hooks
   const { user } = useAuth();
@@ -38,8 +37,7 @@ const Agents = () => {
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agent.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agent.key_features.some(feature => feature.toLowerCase().includes(searchTerm.toLowerCase()))
+    agent.owner.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Pagination logic
@@ -66,8 +64,10 @@ const Agents = () => {
 
   const handleAccessAgent = (agent: Agent) => {
     if (agent.id === "devmate") {
-      setSelectedAgent(agent);
-      setShowOnboardingModal(true);
+      setExpandedAgents(prev => ({
+        ...prev,
+        [agent.id]: !prev[agent.id]
+      }));
     } else if (agent.access_link) {
       window.open(agent.access_link, '_blank');
     }
@@ -130,30 +130,6 @@ const Agents = () => {
         </div>
       )}
 
-      {/* Onboarding Modal */}
-      <Dialog open={showOnboardingModal} onOpenChange={setShowOnboardingModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Onboarding Required</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">
-              To access {selectedAgent?.name}, you need to go through an onboarding process.
-            </p>
-            <div className="flex items-center gap-2 p-3 bg-muted rounded">
-              <User className="w-4 h-4" />
-              <div className="text-sm">
-                <p className="font-medium">Contact: Nitin Goel</p>
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <Mail className="w-3 h-3" />
-                  <span>nitin.goel@ericsson.com</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <div className="max-w-7xl mx-auto">
         {/* Error Banner */}
         {error && (
@@ -168,7 +144,7 @@ const Agents = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               type="search"
-              placeholder="Search agents by name, description, category, owner, or features..."
+              placeholder="Search agents by name, description, category, or owner..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 h-12 text-lg"
@@ -210,15 +186,44 @@ const Agents = () => {
                   </CardDescription>
                 </CardHeader>
                 
-                <CardContent>
+                <CardContent className="space-y-4">
                   {agent.status === "active" ? (
-                    <Button 
-                      className="w-full"
-                      variant="outline"
-                      onClick={() => handleAccessAgent(agent)}
+                    <Collapsible 
+                      open={expandedAgents[agent.id]} 
+                      onOpenChange={(open) => setExpandedAgents(prev => ({ ...prev, [agent.id]: open }))}
                     >
-                      Access Agent
-                    </Button>
+                      <CollapsibleTrigger asChild>
+                        <Button 
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                          onClick={() => handleAccessAgent(agent)}
+                        >
+                          Access Agent
+                          {agent.id === "devmate" && (
+                            <ChevronDown className={`ml-2 w-4 h-4 transition-transform ${expandedAgents[agent.id] ? 'rotate-180' : ''}`} />
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+                      {agent.id === "devmate" && (
+                        <CollapsibleContent className="mt-4">
+                          <div className="p-4 bg-muted rounded-lg border">
+                            <h4 className="font-medium mb-2">Onboarding Required</h4>
+                            <p className="text-sm text-muted-foreground mb-3">
+                              To access {agent.name}, you need to go through an onboarding process.
+                            </p>
+                            <div className="flex items-center gap-2 p-3 bg-background rounded border">
+                              <User className="w-4 h-4" />
+                              <div className="text-sm">
+                                <p className="font-medium">Contact: Nitin Goel</p>
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Mail className="w-3 h-3" />
+                                  <span>nitin.goel@ericsson.com</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      )}
+                    </Collapsible>
                   ) : (
                     <Button 
                       className="w-full opacity-50"
@@ -269,7 +274,7 @@ const Agents = () => {
           <Button 
             size="lg" 
             variant="outline"
-            onClick={() => window.open('https://apps.powerapps.com/play/e/default-92e84ceb-fbfd-47ab-be52-080c6b87953f/a/549a8af5-f6ba-4b8b-824c-dfdfcf6f3740?tenantId=92e84ceb-fbfd-47ab-be52-080c6b87953f&hint=ec5023c9-376e-41fb-9280-10bd9f925919&source=sharebutton&sourcetime=1750260233474', '_blank')}
+            onClick={() => window.open('https://apps.powerapps.com/play/e/default-92e84ceb-fbfd-47ab-be52-080c6b87953f&hint=ec5023c9-376e-41fb-9280-10bd9f925919&source=sharebutton&sourcetime=1750260233474', '_blank')}
           >
             Submit a Pitch
           </Button>

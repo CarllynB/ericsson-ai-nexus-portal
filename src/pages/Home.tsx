@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Search, Mail, User, ChevronRight } from "lucide-react";
+import { ArrowRight, Search, Mail, User, ChevronRight, ChevronDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useRoles } from "@/hooks/useRoles";
 import { getAgents } from "@/services/api";
 
@@ -15,8 +16,7 @@ const Home = () => {
   const [agents, setAgents] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<any>(null);
+  const [expandedAgents, setExpandedAgents] = useState<{ [key: string]: boolean }>({});
   const { currentUserRole } = useRoles();
 
   const ITEMS_PER_PAGE = 12;
@@ -44,8 +44,7 @@ const Home = () => {
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agent.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agent.key_features.some((feature: string) => feature.toLowerCase().includes(searchTerm.toLowerCase()))
+    agent.owner.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Pagination logic
@@ -75,8 +74,10 @@ const Home = () => {
 
   const handleAccessAgent = (agent: any) => {
     if (agent.id === "devmate") {
-      setSelectedAgent(agent);
-      setShowOnboardingModal(true);
+      setExpandedAgents(prev => ({
+        ...prev,
+        [agent.id]: !prev[agent.id]
+      }));
     } else if (agent.access_link) {
       window.open(agent.access_link, '_blank');
     }
@@ -118,30 +119,6 @@ const Home = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Onboarding Modal */}
-      <Dialog open={showOnboardingModal} onOpenChange={setShowOnboardingModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Onboarding Required</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">
-              To access {selectedAgent?.name}, you need to go through an onboarding process.
-            </p>
-            <div className="flex items-center gap-2 p-3 bg-muted rounded">
-              <User className="w-4 h-4" />
-              <div className="text-sm">
-                <p className="font-medium">Contact: Nitin Goel</p>
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <Mail className="w-3 h-3" />
-                  <span>nitin.goel@ericsson.com</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <div className="max-w-7xl mx-auto">
         {/* Search Bar */}
         <div className="max-w-2xl mx-auto mb-12">
@@ -149,7 +126,7 @@ const Home = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               type="text"
-              placeholder="Search agents by name, description, category, owner, or features..."
+              placeholder="Search agents by name, description, category, or owner..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 h-12 text-lg"
@@ -198,7 +175,7 @@ const Home = () => {
                   </CardDescription>
                 </CardHeader>
                 
-                <CardContent>
+                <CardContent className="space-y-4">
                   {agent.status === "coming_soon" ? (
                     <Button 
                       className="w-full"
@@ -208,13 +185,42 @@ const Home = () => {
                       Coming Soon
                     </Button>
                   ) : (
-                    <Button 
-                      className="w-full"
-                      variant="outline"
-                      onClick={() => handleAccessAgent(agent)}
+                    <Collapsible 
+                      open={expandedAgents[agent.id]} 
+                      onOpenChange={(open) => setExpandedAgents(prev => ({ ...prev, [agent.id]: open }))}
                     >
-                      Access Agent
-                    </Button>
+                      <CollapsibleTrigger asChild>
+                        <Button 
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                          onClick={() => handleAccessAgent(agent)}
+                        >
+                          Access Agent
+                          {agent.id === "devmate" && (
+                            <ChevronDown className={`ml-2 w-4 h-4 transition-transform ${expandedAgents[agent.id] ? 'rotate-180' : ''}`} />
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+                      {agent.id === "devmate" && (
+                        <CollapsibleContent className="mt-4">
+                          <div className="p-4 bg-muted rounded-lg border">
+                            <h4 className="font-medium mb-2">Onboarding Required</h4>
+                            <p className="text-sm text-muted-foreground mb-3">
+                              To access {agent.name}, you need to go through an onboarding process.
+                            </p>
+                            <div className="flex items-center gap-2 p-3 bg-background rounded border">
+                              <User className="w-4 h-4" />
+                              <div className="text-sm">
+                                <p className="font-medium">Contact: Nitin Goel</p>
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Mail className="w-3 h-3" />
+                                  <span>nitin.goel@ericsson.com</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      )}
+                    </Collapsible>
                   )}
                 </CardContent>
               </Card>
