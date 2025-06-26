@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           access_link: string | null
           category: string
+          contact_info: Json | null
           created_at: string
           description: string
           id: string
@@ -25,6 +26,7 @@ export type Database = {
         Insert: {
           access_link?: string | null
           category: string
+          contact_info?: Json | null
           created_at?: string
           description: string
           id: string
@@ -37,6 +39,7 @@ export type Database = {
         Update: {
           access_link?: string | null
           category?: string
+          contact_info?: Json | null
           created_at?: string
           description?: string
           id?: string
