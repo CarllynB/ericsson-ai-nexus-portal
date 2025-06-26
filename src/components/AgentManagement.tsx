@@ -19,7 +19,7 @@ export const AgentManagement = () => {
   const [page, setPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
-  const { currentUserRole } = useRoles();
+  const { canEdit, canManageUsers } = useRoles();
   const { toast } = useToast();
 
   const pageSize = 12;
@@ -52,7 +52,6 @@ export const AgentManagement = () => {
     }
   };
 
-  // Filter and paginate agents
   const filteredAgents = agents.filter(agent =>
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -138,6 +137,9 @@ export const AgentManagement = () => {
   };
 
   const handleEdit = (agent: Agent) => {
+    console.log('Edit button clicked for agent:', agent.name);
+    console.log('Can edit:', canEdit);
+    
     setEditingAgent(agent);
     setFormData({
       name: agent.name,
@@ -207,18 +209,15 @@ export const AgentManagement = () => {
     setShowAll(false);
   }, [searchTerm]);
 
-  if (!currentUserRole || !['admin', 'super_admin'].includes(currentUserRole)) {
+  if (!canEdit) {
     return null;
   }
-
-  // Check if user can create/delete (super admin only)
-  const canCreateDelete = currentUserRole === 'super_admin';
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Agent Management</h2>
-        {canCreateDelete && (
+        {canManageUsers && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2">
@@ -381,14 +380,122 @@ export const AgentManagement = () => {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(agent)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      {canCreateDelete && (
+                      {canEdit && (
+                        <Dialog open={isDialogOpen && editingAgent?.id === agent.id} onOpenChange={(open) => {
+                          if (!open) {
+                            setIsDialogOpen(false);
+                            setEditingAgent(null);
+                          }
+                        }}>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(agent)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle>Edit Agent</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                              <Input
+                                placeholder="Agent Name"
+                                value={formData.name}
+                                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                required
+                              />
+                              <Textarea
+                                placeholder="Description"
+                                value={formData.description}
+                                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                required
+                              />
+                              <Input
+                                placeholder="Category"
+                                value={formData.category}
+                                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                                required
+                              />
+                              <Select
+                                value={formData.status}
+                                onValueChange={(value: Agent['status']) => 
+                                  setFormData({...formData, status: value})
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="active">Active</SelectItem>
+                                  <SelectItem value="inactive">Inactive</SelectItem>
+                                  <SelectItem value="coming_soon">Coming Soon</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Textarea
+                                placeholder="Key Features (one per line)"
+                                value={formData.key_features}
+                                onChange={(e) => setFormData({...formData, key_features: e.target.value})}
+                              />
+                              
+                              <div className="space-y-4">
+                                <label className="text-sm font-medium">Access Type</label>
+                                <Select
+                                  value={formData.access_type}
+                                  onValueChange={(value: 'link' | 'contact') => 
+                                    setFormData({...formData, access_type: value})
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="link">Access Link</SelectItem>
+                                    <SelectItem value="contact">Contact Information</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                
+                                {formData.access_type === 'link' ? (
+                                  <Input
+                                    placeholder="Access Link (optional)"
+                                    value={formData.access_link}
+                                    onChange={(e) => setFormData({...formData, access_link: e.target.value})}
+                                  />
+                                ) : (
+                                  <div className="space-y-2">
+                                    <Input
+                                      placeholder="Contact Name"
+                                      value={formData.contact_name}
+                                      onChange={(e) => setFormData({...formData, contact_name: e.target.value})}
+                                      required
+                                    />
+                                    <Input
+                                      placeholder="Contact Email"
+                                      type="email"
+                                      value={formData.contact_email}
+                                      onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                                      required
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <Input
+                                placeholder="Owner"
+                                value={formData.owner}
+                                onChange={(e) => setFormData({...formData, owner: e.target.value})}
+                                required
+                              />
+                              <Button type="submit" className="w-full">
+                                Update Agent
+                              </Button>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                      {canManageUsers && (
                         <Button
                           variant="destructive"
                           size="sm"
