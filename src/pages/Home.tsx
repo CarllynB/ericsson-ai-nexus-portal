@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Search, Mail, User, ChevronRight, ChevronDown } from "lucide-react";
+import { ArrowRight, Search, Mail, User, ChevronRight } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useRoles } from "@/hooks/useRoles";
 import { getAgents } from "@/services/api";
 
@@ -16,7 +16,6 @@ const Home = () => {
   const [agents, setAgents] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
-  const [expandedAgents, setExpandedAgents] = useState<{ [key: string]: boolean }>({});
   const { currentUserRole } = useRoles();
 
   const ITEMS_PER_PAGE = 12;
@@ -44,7 +43,8 @@ const Home = () => {
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agent.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agent.owner.toLowerCase().includes(searchTerm.toLowerCase())
+    agent.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agent.key_features.some((feature: string) => feature.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Pagination logic
@@ -70,17 +70,6 @@ const Home = () => {
 
   const handleShowAll = () => {
     setShowAll(true);
-  };
-
-  const handleAccessAgent = (agent: any) => {
-    if (agent.id === "devmate") {
-      setExpandedAgents(prev => ({
-        ...prev,
-        [agent.id]: !prev[agent.id]
-      }));
-    } else if (agent.access_link) {
-      window.open(agent.access_link, '_blank');
-    }
   };
 
   return (
@@ -126,7 +115,7 @@ const Home = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               type="text"
-              placeholder="Search agents by name, description, category, or owner..."
+              placeholder="Search agents by name, description, category, owner, or features..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 h-12 text-lg"
@@ -141,73 +130,80 @@ const Home = () => {
               <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
             </div>
           ) : (
-            displayedAgents.map((agent) => (
-              <Card 
-                key={agent.id}
-                className={`transition-shadow hover:shadow-lg ${
-                  agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
-                }`}
-              >
-                <CardHeader className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <CardTitle className="text-xl">
-                        {agent.name}
-                      </CardTitle>
-                      <Badge variant="secondary" className="text-xs">
-                        {agent.category}
-                      </Badge>
-                    </div>
-                    {showStatusBadges && (
-                      <Badge 
-                        variant={agent.status === "active" ? "default" : "secondary"}
-                        className={agent.status === "active" 
-                          ? "bg-green-100 text-green-800 hover:bg-green-100" 
-                          : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                        }
-                      >
-                        {agent.status.replace('_', ' ')}
-                      </Badge>
-                    )}
+            displayedAgents.map((agent) => {
+              return (
+                <Card 
+                  key={agent.id}
+                  className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20 ${
+                    agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
+                  }`}
+                >
+                  {/* Features Overlay on Hover */}
+                  <div className="absolute inset-0 bg-background/95 p-6 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-center">
+                    <h4 className="font-semibold text-sm text-foreground mb-3">Key Features:</h4>
+                    <ul className="space-y-2">
+                      {agent.key_features.map((feature: string, index: number) => (
+                        <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {agent.description}
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  {agent.status === "coming_soon" ? (
-                    <Button 
-                      className="w-full"
-                      variant="outline"
-                      disabled
-                    >
-                      Coming Soon
-                    </Button>
-                  ) : (
-                    <Collapsible 
-                      open={expandedAgents[agent.id]} 
-                      onOpenChange={(open) => setExpandedAgents(prev => ({ ...prev, [agent.id]: open }))}
-                    >
-                      <CollapsibleTrigger asChild>
-                        <Button 
-                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                          onClick={() => handleAccessAgent(agent)}
+
+                  <CardHeader className="space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                          {agent.name}
+                        </CardTitle>
+                        <Badge variant="secondary" className="text-xs">
+                          {agent.category}
+                        </Badge>
+                      </div>
+                      {showStatusBadges && (
+                        <Badge 
+                          variant={agent.status === "active" ? "default" : "secondary"}
+                          className={agent.status === "active" 
+                            ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                            : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+                          }
                         >
-                          Access Agent
-                          {agent.id === "devmate" && (
-                            <ChevronDown className={`ml-2 w-4 h-4 transition-transform ${expandedAgents[agent.id] ? 'rotate-180' : ''}`} />
-                          )}
-                        </Button>
-                      </CollapsibleTrigger>
-                      {agent.id === "devmate" && (
-                        <CollapsibleContent className="mt-4">
-                          <div className="p-4 bg-muted rounded-lg border">
-                            <h4 className="font-medium mb-2">Onboarding Required</h4>
-                            <p className="text-sm text-muted-foreground mb-3">
-                              To access {agent.name}, you need to go through an onboarding process.
+                          {agent.status.replace('_', ' ')}
+                        </Badge>
+                      )}
+                    </div>
+                    <CardDescription className="text-sm leading-relaxed">
+                      {agent.description}
+                    </CardDescription>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-6">
+                    {agent.status === "coming_soon" ? (
+                      <Button 
+                        className="w-full"
+                        variant="outline"
+                        disabled
+                      >
+                        Coming Soon
+                      </Button>
+                    ) : agent.id === "devmate" ? (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button 
+                            className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                            variant="outline"
+                          >
+                            Access Agent
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-4">
+                          <div className="space-y-3">
+                            <h4 className="font-semibold text-sm">Onboarding Required</h4>
+                            <p className="text-sm text-muted-foreground">
+                              To access this agent, you need to go through an onboarding process.
                             </p>
-                            <div className="flex items-center gap-2 p-3 bg-background rounded border">
+                            <div className="flex items-center gap-2 p-2 bg-muted rounded">
                               <User className="w-4 h-4" />
                               <div className="text-sm">
                                 <p className="font-medium">Contact: Nitin Goel</p>
@@ -218,13 +214,25 @@ const Home = () => {
                               </div>
                             </div>
                           </div>
-                        </CollapsibleContent>
-                      )}
-                    </Collapsible>
-                  )}
-                </CardContent>
-              </Card>
-            ))
+                        </PopoverContent>
+                      </Popover>
+                    ) : (
+                      <Button 
+                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                        variant="outline"
+                        onClick={() => {
+                          if (agent.access_link) {
+                            window.open(agent.access_link, '_blank');
+                          }
+                        }}
+                      >
+                        Access Agent
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
 
