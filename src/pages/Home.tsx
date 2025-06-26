@@ -66,7 +66,12 @@ const Home = () => {
   const toggleAgentExpansion = (agentId: string, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    setExpandedAgent(prev => prev === agentId ? null : agentId);
+    console.log('Toggling expansion for agent:', agentId);
+    setExpandedAgent(prev => {
+      const newExpanded = prev === agentId ? null : agentId;
+      console.log('New expanded agent:', newExpanded);
+      return newExpanded;
+    });
   };
 
   const handleNextPage = () => {
@@ -116,13 +121,6 @@ const Home = () => {
       </Dialog>
 
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center space-y-4 mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-            AI Agents
-          </h1>
-        </div>
-
         {/* Search Bar */}
         <div className="max-w-2xl mx-auto mb-12">
           <div className="relative">
@@ -146,6 +144,7 @@ const Home = () => {
           ) : (
             displayedAgents.map((agent) => {
               const isExpanded = expandedAgent === agent.id;
+              console.log(`Agent ${agent.id} (${agent.name}) is expanded:`, isExpanded);
               return (
                 <Card 
                   key={agent.id}

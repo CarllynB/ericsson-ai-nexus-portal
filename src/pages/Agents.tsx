@@ -64,13 +64,17 @@ const Agents = () => {
   const toggleCardExpansion = (agentId: string, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
+    console.log('Toggling expansion for agent:', agentId);
     setExpandedCards(prev => {
       const newSet = new Set(prev);
       if (newSet.has(agentId)) {
         newSet.delete(agentId);
+        console.log('Collapsed agent:', agentId);
       } else {
         newSet.add(agentId);
+        console.log('Expanded agent:', agentId);
       }
+      console.log('New expanded cards:', Array.from(newSet));
       return newSet;
     });
   };
@@ -133,13 +137,6 @@ const Agents = () => {
       )}
 
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center space-y-4 mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-            AI Agents
-          </h1>
-        </div>
-
         {/* Error Banner */}
         {error && (
           <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
@@ -170,6 +167,7 @@ const Agents = () => {
           ) : (
             displayedAgents.map((agent) => {
               const isExpanded = expandedCards.has(agent.id);
+              console.log(`Agent ${agent.id} (${agent.name}) is expanded:`, isExpanded);
               return (
                 <Card 
                   key={agent.id}
