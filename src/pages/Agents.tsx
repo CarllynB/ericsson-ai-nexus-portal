@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, Mail, User, ChevronRight, X } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgents } from "@/hooks/useAgents";
 import { Agent } from "@/services/api";
@@ -22,8 +22,9 @@ const Agents = () => {
   // Welcome Banner
   const [showWelcome, setShowWelcome] = useState(true);
   
-  // Hover state for individual cards
-  const [hoveredAgent, setHoveredAgent] = useState<string | null>(null);
+  // Onboarding Modal
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   
   // Auth and Data Hooks
   const { user } = useAuth();
@@ -63,16 +64,25 @@ const Agents = () => {
     setShowAll(true);
   };
 
+  const handleAccessAgent = (agent: Agent) => {
+    if (agent.id === "devmate") {
+      setSelectedAgent(agent);
+      setShowOnboardingModal(true);
+    } else if (agent.access_link) {
+      window.open(agent.access_link, '_blank');
+    }
+  };
+
   const getCardStyles = (status: Agent['status']) => {
     switch (status) {
       case "active":
-        return "border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group overflow-hidden";
+        return "border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg transition-all duration-300";
       case "coming_soon":
-        return "opacity-70 bg-muted/30 border-2 border-muted hover:border-muted/70 hover:shadow-md hover:scale-[1.01] transition-all duration-300 cursor-pointer group overflow-hidden";
+        return "opacity-70 bg-muted/30 border-2 border-muted hover:border-muted/70 hover:shadow-md transition-all duration-300";
       case "inactive":
-        return "opacity-50 bg-gray-100 border-2 border-gray-300 hover:border-gray-400 hover:shadow-sm hover:scale-[1.01] transition-all duration-300 cursor-pointer group overflow-hidden";
+        return "opacity-50 bg-gray-100 border-2 border-gray-300 hover:border-gray-400 hover:shadow-sm transition-all duration-300";
       default:
-        return "hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group overflow-hidden";
+        return "hover:shadow-lg transition-all duration-300";
     }
   };
 
@@ -120,6 +130,30 @@ const Agents = () => {
         </div>
       )}
 
+      {/* Onboarding Modal */}
+      <Dialog open={showOnboardingModal} onOpenChange={setShowOnboardingModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Onboarding Required</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              To access {selectedAgent?.name}, you need to go through an onboarding process.
+            </p>
+            <div className="flex items-center gap-2 p-3 bg-muted rounded">
+              <User className="w-4 h-4" />
+              <div className="text-sm">
+                <p className="font-medium">Contact: Nitin Goel</p>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Mail className="w-3 h-3" />
+                  <span>nitin.goel@ericsson.com</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="max-w-7xl mx-auto">
         {/* Error Banner */}
         {error && (
@@ -149,99 +183,54 @@ const Agents = () => {
               <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
             </div>
           ) : (
-            displayedAgents.map((agent) => {
-              const isHovered = hoveredAgent === agent.id;
-              return (
-                <Card 
-                  key={agent.id}
-                  className={`relative ${getCardStyles(agent.status)}`}
-                  onMouseEnter={() => setHoveredAgent(agent.id)}
-                  onMouseLeave={() => setHoveredAgent(null)}
-                >
-                  <CardHeader className="space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                          {agent.name}
-                        </CardTitle>
-                        <Badge variant="secondary" className="text-xs">
-                          {agent.category}
-                        </Badge>
-                      </div>
-                      <Badge 
-                        variant="secondary"
-                        className={getStatusBadgeColor(agent.status)}
-                      >
-                        {agent.status === "coming_soon" ? "Coming Soon" : agent.status}
+            displayedAgents.map((agent) => (
+              <Card 
+                key={agent.id}
+                className={getCardStyles(agent.status)}
+              >
+                <CardHeader className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <CardTitle className="text-xl">
+                        {agent.name}
+                      </CardTitle>
+                      <Badge variant="secondary" className="text-xs">
+                        {agent.category}
                       </Badge>
                     </div>
-                    <CardDescription className="text-sm leading-relaxed">
-                      {agent.description}
-                    </CardDescription>
-                  </CardHeader>
-
-                  {/* Key Features Dropdown - only show for hovered agent */}
-                  {isHovered && (
-                    <div className="px-6 pb-4 border-t border-gray-100 bg-gray-50/50">
-                      <div className="space-y-2 pt-4">
-                        <h4 className="font-semibold text-sm text-foreground">Key Features:</h4>
-                        <ul className="space-y-1">
-                          {agent.key_features.map((feature, index) => (
-                            <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
-                              <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
+                    <Badge 
+                      variant="secondary"
+                      className={getStatusBadgeColor(agent.status)}
+                    >
+                      {agent.status === "coming_soon" ? "Coming Soon" : agent.status}
+                    </Badge>
+                  </div>
+                  <CardDescription className="text-sm leading-relaxed">
+                    {agent.description}
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent>
+                  {agent.status === "active" ? (
+                    <Button 
+                      className="w-full"
+                      variant="outline"
+                      onClick={() => handleAccessAgent(agent)}
+                    >
+                      Access Agent
+                    </Button>
+                  ) : (
+                    <Button 
+                      className="w-full opacity-50"
+                      variant="outline"
+                      disabled
+                    >
+                      {agent.status === "coming_soon" ? "Coming Soon" : "Access Agent"}
+                    </Button>
                   )}
-                  
-                  <CardContent className="space-y-6">
-                    {agent.status === "active" ? (
-                      agent.id === "devmate" ? (
-                        <div className="space-y-3">
-                          <h4 className="font-semibold text-sm">Onboarding Required</h4>
-                          <p className="text-sm text-muted-foreground">
-                            To access this agent, you need to go through an onboarding process.
-                          </p>
-                          <div className="flex items-center gap-2 p-2 bg-muted rounded">
-                            <User className="w-4 h-4" />
-                            <div className="text-sm">
-                              <p className="font-medium">Contact: Nitin Goel</p>
-                              <div className="flex items-center gap-1 text-muted-foreground">
-                                <Mail className="w-3 h-3" />
-                                <span>nitin.goel@ericsson.com</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <Button 
-                          className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                          variant="outline"
-                          onClick={() => {
-                            if (agent.access_link) {
-                              window.open(agent.access_link, '_blank');
-                            }
-                          }}
-                        >
-                          Access Agent
-                        </Button>
-                      )
-                    ) : (
-                      <Button 
-                        className="w-full opacity-50"
-                        variant="outline"
-                        disabled
-                      >
-                        {agent.status === "coming_soon" ? "Coming Soon" : "Access Agent"}
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })
+                </CardContent>
+              </Card>
+            ))
           )}
         </div>
 

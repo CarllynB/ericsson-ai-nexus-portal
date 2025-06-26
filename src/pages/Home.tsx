@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +15,8 @@ const Home = () => {
   const [agents, setAgents] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
-  const [hoveredAgent, setHoveredAgent] = useState<string | null>(null);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<any>(null);
   const { currentUserRole } = useRoles();
 
   const ITEMS_PER_PAGE = 12;
@@ -71,6 +73,15 @@ const Home = () => {
     setShowAll(true);
   };
 
+  const handleAccessAgent = (agent: any) => {
+    if (agent.id === "devmate") {
+      setSelectedAgent(agent);
+      setShowOnboardingModal(true);
+    } else if (agent.access_link) {
+      window.open(agent.access_link, '_blank');
+    }
+  };
+
   return (
     <div className="min-h-screen px-6 py-12">
       {/* Welcome Popup */}
@@ -107,6 +118,30 @@ const Home = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Onboarding Modal */}
+      <Dialog open={showOnboardingModal} onOpenChange={setShowOnboardingModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Onboarding Required</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              To access {selectedAgent?.name}, you need to go through an onboarding process.
+            </p>
+            <div className="flex items-center gap-2 p-3 bg-muted rounded">
+              <User className="w-4 h-4" />
+              <div className="text-sm">
+                <p className="font-medium">Contact: Nitin Goel</p>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Mail className="w-3 h-3" />
+                  <span>nitin.goel@ericsson.com</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="max-w-7xl mx-auto">
         {/* Search Bar */}
         <div className="max-w-2xl mx-auto mb-12">
@@ -129,104 +164,61 @@ const Home = () => {
               <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
             </div>
           ) : (
-            displayedAgents.map((agent) => {
-              const isHovered = hoveredAgent === agent.id;
-              return (
-                <Card 
-                  key={agent.id}
-                  className={`group relative hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/20 overflow-hidden ${
-                    agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
-                  }`}
-                  onMouseEnter={() => setHoveredAgent(agent.id)}
-                  onMouseLeave={() => setHoveredAgent(null)}
-                >
-                  <CardHeader className="space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                          {agent.name}
-                        </CardTitle>
-                        <Badge variant="secondary" className="text-xs">
-                          {agent.category}
-                        </Badge>
-                      </div>
-                      {showStatusBadges && (
-                        <Badge 
-                          variant={agent.status === "active" ? "default" : "secondary"}
-                          className={agent.status === "active" 
-                            ? "bg-green-100 text-green-800 hover:bg-green-100" 
-                            : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                          }
-                        >
-                          {agent.status.replace('_', ' ')}
-                        </Badge>
-                      )}
+            displayedAgents.map((agent) => (
+              <Card 
+                key={agent.id}
+                className={`transition-shadow hover:shadow-lg ${
+                  agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
+                }`}
+              >
+                <CardHeader className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <CardTitle className="text-xl">
+                        {agent.name}
+                      </CardTitle>
+                      <Badge variant="secondary" className="text-xs">
+                        {agent.category}
+                      </Badge>
                     </div>
-                    <CardDescription className="text-sm leading-relaxed">
-                      {agent.description}
-                    </CardDescription>
-                  </CardHeader>
-
-                  {/* Key Features Dropdown - only show for hovered agent */}
-                  {isHovered && (
-                    <div className="px-6 pb-4 border-t border-gray-100 bg-gray-50/50">
-                      <div className="space-y-2 pt-4">
-                        <h4 className="font-semibold text-sm text-foreground">Key Features:</h4>
-                        <ul className="space-y-1">
-                          {agent.key_features.map((feature: string, index: number) => (
-                            <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
-                              <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <CardContent className="space-y-6">
-                    {agent.status === "coming_soon" ? (
-                      <Button 
-                        className="w-full"
-                        variant="outline"
-                        disabled
+                    {showStatusBadges && (
+                      <Badge 
+                        variant={agent.status === "active" ? "default" : "secondary"}
+                        className={agent.status === "active" 
+                          ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                          : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+                        }
                       >
-                        Coming Soon
-                      </Button>
-                    ) : agent.id === "devmate" ? (
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-sm">Onboarding Required</h4>
-                        <p className="text-sm text-muted-foreground">
-                          To access this agent, you need to go through an onboarding process.
-                        </p>
-                        <div className="flex items-center gap-2 p-2 bg-muted rounded">
-                          <User className="w-4 h-4" />
-                          <div className="text-sm">
-                            <p className="font-medium">Contact: Nitin Goel</p>
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <Mail className="w-3 h-3" />
-                              <span>nitin.goel@ericsson.com</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <Button 
-                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                        variant="outline"
-                        onClick={() => {
-                          if (agent.access_link) {
-                            window.open(agent.access_link, '_blank');
-                          }
-                        }}
-                      >
-                        Access Agent
-                      </Button>
+                        {agent.status.replace('_', ' ')}
+                      </Badge>
                     )}
-                  </CardContent>
-                </Card>
-              );
-            })
+                  </div>
+                  <CardDescription className="text-sm leading-relaxed">
+                    {agent.description}
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent>
+                  {agent.status === "coming_soon" ? (
+                    <Button 
+                      className="w-full"
+                      variant="outline"
+                      disabled
+                    >
+                      Coming Soon
+                    </Button>
+                  ) : (
+                    <Button 
+                      className="w-full"
+                      variant="outline"
+                      onClick={() => handleAccessAgent(agent)}
+                    >
+                      Access Agent
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ))
           )}
         </div>
 
