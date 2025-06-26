@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -154,7 +155,7 @@ const Agents = () => {
               return (
                 <Card 
                   key={agent.id}
-                  className={`relative ${getCardStyles(agent.status)}`}
+                  className={`relative hover:shadow-lg hover:scale-105 transition-all duration-300 ${getCardStyles(agent.status)}`}
                 >
                   <CardHeader className="space-y-4">
                     <div className="flex items-start justify-between">

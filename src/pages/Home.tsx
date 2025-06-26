@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -138,7 +139,7 @@ const Home = () => {
               return (
                 <Card 
                   key={agent.id}
-                  className={`border-2 ${
+                  className={`border-2 hover:shadow-lg hover:scale-105 transition-all duration-300 ${
                     agent.status === "coming_soon" ? "opacity-75 bg-muted/30" : ""
                   }`}
                 >
