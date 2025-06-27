@@ -32,11 +32,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Default super admin users for offline mode
+  // Only Muhammad and Carllyn are super admins
   const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
 
   useEffect(() => {
-    // In offline mode, check localStorage for existing user session
+    // Check localStorage for existing user session
     const savedUser = localStorage.getItem('offline_user');
     if (savedUser) {
       try {
@@ -54,13 +54,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Attempting offline login for:', email);
       setLoading(true);
       
-      // Simple offline authentication - in a real app you'd want proper security
-      if (email && password === 'admin123') {
-        const role = SUPER_ADMINS.includes(email) ? 'super_admin' : 'admin';
+      // Check if user has assigned role in localStorage
+      const assignedRoles = JSON.parse(localStorage.getItem('user_roles') || '{}');
+      const userRole = assignedRoles[email];
+      
+      // Super admins can use admin123, others need to create accounts
+      if (SUPER_ADMINS.includes(email) && password === 'admin123') {
         const userData: User = {
           id: email.replace('@', '_').replace('.', '_'),
           email,
-          role,
+          role: 'super_admin',
           created_at: new Date().toISOString(),
         };
         
@@ -69,10 +72,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         toast({
           title: "Success",
-          description: "Logged in successfully (offline mode)"
+          description: "Logged in successfully"
+        });
+      } else if (userRole && password.length >= 6) {
+        // User has assigned role and created proper account
+        const userData: User = {
+          id: email.replace('@', '_').replace('.', '_'),
+          email,
+          role: userRole,
+          created_at: new Date().toISOString(),
+        };
+        
+        setUser(userData);
+        localStorage.setItem('offline_user', JSON.stringify(userData));
+        
+        toast({
+          title: "Success",
+          description: "Logged in successfully"
         });
       } else {
-        throw new Error('Invalid credentials. Use password: admin123');
+        throw new Error('Invalid credentials or account not found');
       }
     } catch (error) {
       console.error('Login failed:', error);
