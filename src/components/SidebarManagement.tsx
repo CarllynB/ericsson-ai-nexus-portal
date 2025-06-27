@@ -81,10 +81,6 @@ export const SidebarManagement = () => {
     return ['home', 'agents', 'dashboard', 'pitchbox'].includes(id);
   };
 
-  const isExternalUrl = (url: string) => {
-    return url.startsWith('http://') || url.startsWith('https://');
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -169,7 +165,6 @@ export const SidebarManagement = () => {
                           Default
                         </Badge>
                       )}
-                      {/* Removed the ExternalLink icon */}
                     </div>
                     <p className="text-sm text-muted-foreground">{item.url}</p>
                   </div>

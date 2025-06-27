@@ -23,7 +23,7 @@ export const useRoles = () => {
       const savedUser = localStorage.getItem('current_user');
       if (savedUser) {
         const userData = JSON.parse(savedUser);
-        console.log('Current user data:', userData);
+        console.log('🔍 Current user data:', userData);
         
         // Always check SQLite for the most up-to-date role
         await sqliteService.initialize();
@@ -34,7 +34,7 @@ export const useRoles = () => {
           userData.role = roleFromDb;
           localStorage.setItem('current_user', JSON.stringify(userData));
           setCurrentUserRole(roleFromDb as UserRole);
-          console.log('Updated user role from SQLite:', roleFromDb);
+          console.log('✅ Updated user role from SQLite:', roleFromDb);
         } else {
           setCurrentUserRole(userData.role || 'viewer');
         }
@@ -42,7 +42,7 @@ export const useRoles = () => {
         setCurrentUserRole('viewer');
       }
     } catch (error) {
-      console.error('Error in fetchCurrentUserRole:', error);
+      console.error('❌ Error in fetchCurrentUserRole:', error);
       setCurrentUserRole('viewer');
     }
   };
@@ -52,7 +52,7 @@ export const useRoles = () => {
       await sqliteService.initialize();
       const allUsers = await sqliteService.getAllUserRoles();
       
-      console.log('Fetched users with roles from SQLite:', allUsers);
+      console.log('✅ Fetched users with roles from SQLite:', allUsers);
       setUsers(allUsers.map(user => ({
         id: user.id,
         email: user.email,
@@ -60,14 +60,16 @@ export const useRoles = () => {
         assigned_at: user.assigned_at
       })));
     } catch (error) {
-      console.error('Error in fetchAllUsers:', error);
+      console.error('❌ Error in fetchAllUsers:', error);
       setUsers([]);
     }
   };
 
   const assignRole = async (userEmail: string, role: UserRole) => {
     try {
-      console.log(`Starting role assignment: ${userEmail} -> ${role}`);
+      console.log(`🔄 Starting role assignment: ${userEmail} -> ${role}`);
+      setLoading(true);
+      
       await sqliteService.initialize();
       
       // Get current user for assignedBy
@@ -76,7 +78,7 @@ export const useRoles = () => {
       
       // Create or update the user role in SQLite
       await sqliteService.createUserRole(userEmail, role, assignedBy);
-      console.log('Role assignment completed in SQLite');
+      console.log('✅ Role assignment completed in SQLite');
       
       // Refresh the users list
       await fetchAllUsers();
@@ -87,19 +89,23 @@ export const useRoles = () => {
       });
       return true;
     } catch (error) {
-      console.error('Error assigning role:', error);
+      console.error('❌ Error assigning role:', error);
       toast({
-        title: "Error",
-        description: "Failed to assign role. Please try again.",
+        title: "Error", 
+        description: `Failed to assign role: ${error.message}`,
         variant: "destructive"
       });
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateUserRole = async (userId: string, newRole: UserRole) => {
     try {
-      console.log(`Starting role update: ${userId} -> ${newRole}`);
+      console.log(`🔄 Starting role update: ${userId} -> ${newRole}`);
+      setLoading(true);
+      
       const user = users.find(u => u.id === userId);
       if (!user) {
         throw new Error('User not found');
@@ -109,7 +115,7 @@ export const useRoles = () => {
       
       // Update the role using the email
       await sqliteService.updateUserRole(user.email, newRole);
-      console.log('Role update completed in SQLite');
+      console.log('✅ Role update completed in SQLite');
       
       // Update current user if it's the same user
       const savedUser = localStorage.getItem('current_user');
@@ -131,13 +137,15 @@ export const useRoles = () => {
       });
       return true;
     } catch (error) {
-      console.error('Error updating user role:', error);
+      console.error('❌ Error updating user role:', error);
       toast({
         title: "Error",
-        description: "Failed to update role. Please try again.",
+        description: `Failed to update role: ${error.message}`,
         variant: "destructive"
       });
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 

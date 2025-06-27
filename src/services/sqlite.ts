@@ -109,7 +109,7 @@ class SQLiteService {
           role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'viewer')),
           assigned_at TEXT NOT NULL,
           assigned_by TEXT,
-          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
       `);
 
@@ -120,8 +120,8 @@ class SQLiteService {
           id INTEGER PRIMARY KEY DEFAULT 1,
           dashboard_url TEXT,
           updated_by TEXT,
-          updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+          updated_at TEXT DEFAULT (datetime('now')),
+          created_at TEXT DEFAULT (datetime('now'))
         );
       `);
 
@@ -322,31 +322,49 @@ class SQLiteService {
     }
   }
 
-  // User role management methods - Completely SQLite-based
+  // User role management methods - Completely SQLite-based with improved error handling
   async createUserRole(email: string, role: 'super_admin' | 'admin' | 'viewer', assignedBy?: string): Promise<void> {
     await this.initialize();
     if (!this.db) throw new Error('Database not initialized');
 
     try {
-      console.log(`Creating/updating user role: ${email} -> ${role}`);
+      console.log(`🔄 Creating/updating user role: ${email} -> ${role}`);
       
       const userId = email.replace('@', '_').replace(/\./g, '_');
       const now = new Date().toISOString();
       
-      // Use INSERT OR REPLACE to handle both creation and updates
-      const stmt = this.db.prepare(`
-        INSERT OR REPLACE INTO user_roles (id, user_id, email, role, assigned_at, assigned_by, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `);
-
-      stmt.run([userId, userId, email, role, now, assignedBy || null, now]);
-      stmt.free();
+      // First, check if user already exists
+      const checkStmt = this.db.prepare('SELECT email FROM user_roles WHERE email = ?');
+      checkStmt.bind([email]);
+      const exists = checkStmt.step();
+      checkStmt.free();
+      
+      if (exists) {
+        // Update existing user
+        console.log(`📝 Updating existing user role: ${email}`);
+        const updateStmt = this.db.prepare(`
+          UPDATE user_roles 
+          SET role = ?, updated_at = ?, assigned_by = ?
+          WHERE email = ?
+        `);
+        updateStmt.run([role, now, assignedBy || null, email]);
+        updateStmt.free();
+      } else {
+        // Create new user
+        console.log(`➕ Creating new user role: ${email}`);
+        const insertStmt = this.db.prepare(`
+          INSERT INTO user_roles (id, user_id, email, role, assigned_at, assigned_by, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
+        insertStmt.run([userId, userId, email, role, now, assignedBy || null, now]);
+        insertStmt.free();
+      }
       
       this.saveDatabase();
-      console.log('✅ User role created/updated successfully');
+      console.log('✅ User role operation completed successfully');
     } catch (error) {
-      console.error('❌ Error creating user role:', error);
-      throw error;
+      console.error('❌ Error in createUserRole:', error);
+      throw new Error(`Failed to assign role: ${error.message}`);
     }
   }
 
@@ -355,7 +373,7 @@ class SQLiteService {
     if (!this.db) throw new Error('Database not initialized');
 
     try {
-      console.log(`Updating user role: ${email} -> ${newRole}`);
+      console.log(`🔄 Updating user role: ${email} -> ${newRole}`);
       
       const now = new Date().toISOString();
       const stmt = this.db.prepare(`
@@ -364,14 +382,19 @@ class SQLiteService {
         WHERE email = ?
       `);
 
-      stmt.run([newRole, now, email]);
+      const result = stmt.run([newRole, now, email]);
       stmt.free();
+      
+      // Check if update actually happened
+      if (!result) {
+        throw new Error(`No user found with email: ${email}`);
+      }
       
       this.saveDatabase();
       console.log('✅ User role updated successfully');
     } catch (error) {
       console.error('❌ Error updating user role:', error);
-      throw error;
+      throw new Error(`Failed to update role: ${error.message}`);
     }
   }
 
@@ -386,12 +409,12 @@ class SQLiteService {
       if (stmt.step()) {
         const row = stmt.getAsObject();
         stmt.free();
-        console.log(`Found role for ${email}:`, row.role);
+        console.log(`✅ Found role for ${email}:`, row.role);
         return row.role as string;
       }
       
       stmt.free();
-      console.log(`No role found for ${email}`);
+      console.log(`ℹ️ No role found for ${email}`);
       return null;
     } catch (error) {
       console.error('❌ Error getting user role:', error);
@@ -418,7 +441,7 @@ class SQLiteService {
       }
 
       stmt.free();
-      console.log(`Retrieved ${results.length} user roles from database`);
+      console.log(`✅ Retrieved ${results.length} user roles from database`);
       return results;
     } catch (error) {
       console.error('❌ Error getting all user roles:', error);
