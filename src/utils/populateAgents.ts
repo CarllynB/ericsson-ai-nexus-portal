@@ -1,14 +1,21 @@
 
-import { offlineApiService } from '@/services/offlineApi';
+import { sqliteService } from '@/services/sqlite';
 
 export const populateDefaultAgents = async () => {
   try {
+    console.log('🔄 Starting to populate default agents...');
+    
+    // Initialize SQLite first
+    await sqliteService.initialize();
+    
     // Check if agents already exist
-    const existingAgents = await offlineApiService.getAgents();
+    const existingAgents = await sqliteService.getAgents();
     if (existingAgents.length > 0) {
-      console.log('Agents already exist, skipping population');
+      console.log('✅ Agents already exist, skipping population');
       return;
     }
+
+    console.log('🔄 No existing agents found, creating default agents...');
 
     const defaultAgents = [
       {
@@ -84,11 +91,16 @@ export const populateDefaultAgents = async () => {
 
     // Add each agent to the database
     for (const agent of defaultAgents) {
-      await offlineApiService.createAgent(agent);
+      try {
+        await sqliteService.createAgent(agent);
+        console.log(`✅ Created agent: ${agent.name}`);
+      } catch (error) {
+        console.error(`❌ Failed to create agent ${agent.name}:`, error);
+      }
     }
 
-    console.log('Successfully populated default agents');
+    console.log('🎉 Successfully populated default agents');
   } catch (error) {
-    console.error('Error populating default agents:', error);
+    console.error('❌ Error populating default agents:', error);
   }
 };

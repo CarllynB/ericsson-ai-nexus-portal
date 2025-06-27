@@ -24,7 +24,7 @@ class SQLiteService {
       console.log('✅ SQL.js loaded successfully');
 
       // Try to load existing database from localStorage
-      const savedDb = localStorage.getItem('offline_database');
+      const savedDb = localStorage.getItem('sqlite_database');
       if (savedDb) {
         try {
           console.log('🔄 Loading existing database from localStorage...');
@@ -107,7 +107,7 @@ class SQLiteService {
     try {
       const data = this.db.export();
       const dataArray = Array.from(data);
-      localStorage.setItem('offline_database', JSON.stringify(dataArray));
+      localStorage.setItem('sqlite_database', JSON.stringify(dataArray));
       console.log('💾 Database saved to localStorage');
     } catch (error) {
       console.error('❌ Failed to save database:', error);

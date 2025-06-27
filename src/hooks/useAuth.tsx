@@ -3,6 +3,7 @@ import React, { useState, useEffect, createContext, useContext, ReactNode } from
 import { User } from '@/types/database';
 import { useToast } from '@/components/ui/use-toast';
 import { useInitializeApp } from '@/hooks/useInitializeApp';
+import { sqliteService } from '@/services/sqlite';
 
 interface AuthContextType {
   user: User | null;
@@ -36,48 +37,61 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Initialize app (populate agents if needed)
   useInitializeApp();
 
-  // Default super admin users for offline mode
+  // Default super admin users
   const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
 
   useEffect(() => {
-    // In offline mode, check localStorage for existing user session
-    const savedUser = localStorage.getItem('offline_user');
+    // Check localStorage for existing user session
+    const savedUser = localStorage.getItem('current_user');
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
         setUser(userData);
       } catch (error) {
         console.error('Error parsing saved user:', error);
-        localStorage.removeItem('offline_user');
+        localStorage.removeItem('current_user');
       }
     }
   }, []);
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
-      console.log('Attempting offline login for:', email);
+      console.log('Attempting login for:', email);
       setLoading(true);
       
-      // Check if it's a super admin with the default password
-      if (SUPER_ADMINS.includes(email) && password === 'admin123') {
-        const userData: User = {
-          id: email.replace('@', '_').replace('.', '_'),
-          email,
-          role: 'super_admin',
-          created_at: new Date().toISOString(),
-        };
+      // Initialize SQLite first
+      await sqliteService.initialize();
+      
+      // Check if it's a super admin with default password or custom password
+      if (SUPER_ADMINS.includes(email)) {
+        // Check for custom password first
+        const savedPassword = localStorage.getItem(`password_${email}`);
+        const correctPassword = savedPassword || 'admin123';
         
-        setUser(userData);
-        localStorage.setItem('offline_user', JSON.stringify(userData));
-        
-        toast({
-          title: "Success",
-          description: "Logged in successfully"
-        });
+        if (password === correctPassword) {
+          const userData: User = {
+            id: email.replace('@', '_').replace('.', '_'),
+            email,
+            role: 'super_admin',
+            created_at: new Date().toISOString(),
+          };
+          
+          setUser(userData);
+          localStorage.setItem('current_user', JSON.stringify(userData));
+          
+          toast({
+            title: "Success",
+            description: "Logged in successfully"
+          });
+        } else {
+          throw new Error('Invalid password');
+        }
       } else {
         // For other users, check if they have an account in localStorage roles
         const existingRoles = JSON.parse(localStorage.getItem('user_roles') || '{}');
-        if (existingRoles[email]) {
+        const savedPassword = localStorage.getItem(`password_${email}`);
+        
+        if (existingRoles[email] && savedPassword && password === savedPassword) {
           const userData: User = {
             id: email.replace('@', '_').replace('.', '_'),
             email,
@@ -86,14 +100,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           };
           
           setUser(userData);
-          localStorage.setItem('offline_user', JSON.stringify(userData));
+          localStorage.setItem('current_user', JSON.stringify(userData));
           
           toast({
             title: "Success",
             description: "Logged in successfully"
           });
+        } else if (existingRoles[email] && !savedPassword) {
+          // First time login - set password
+          localStorage.setItem(`password_${email}`, password);
+          
+          const userData: User = {
+            id: email.replace('@', '_').replace('.', '_'),
+            email,
+            role: existingRoles[email],
+            created_at: new Date().toISOString(),
+          };
+          
+          setUser(userData);
+          localStorage.setItem('current_user', JSON.stringify(userData));
+          
+          toast({
+            title: "Success",
+            description: "Account created successfully"
+          });
         } else {
           // New user - create as viewer
+          localStorage.setItem(`password_${email}`, password);
+          
           const userData: User = {
             id: email.replace('@', '_').replace('.', '_'),
             email,
@@ -106,7 +140,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           localStorage.setItem('user_roles', JSON.stringify(existingRoles));
           
           setUser(userData);
-          localStorage.setItem('offline_user', JSON.stringify(userData));
+          localStorage.setItem('current_user', JSON.stringify(userData));
           
           toast({
             title: "Success",
@@ -131,7 +165,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('Logging out...');
       setUser(null);
-      localStorage.removeItem('offline_user');
+      localStorage.removeItem('current_user');
       
       toast({
         title: "Success",
@@ -144,11 +178,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const changePassword = async (newPassword: string): Promise<boolean> => {
     try {
-      // In offline mode, we don't actually change passwords
-      // This is just for compatibility - no toast needed
+      if (!user) {
+        throw new Error('No user logged in');
+      }
+
+      // Save new password to localStorage
+      localStorage.setItem(`password_${user.email}`, newPassword);
+      
+      toast({
+        title: "Success",
+        description: "Password changed successfully"
+      });
+      
       return true;
     } catch (error) {
       console.error('Password change error:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to change password',
+        variant: "destructive"
+      });
       return false;
     }
   };

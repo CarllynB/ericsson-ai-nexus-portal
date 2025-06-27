@@ -16,7 +16,7 @@ export const PasswordChangeModal = ({ open, onOpenChange, isFirstLogin = false }
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { changePassword } = useAuth();
+  const { changePassword, isSuperAdmin } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,35 +32,58 @@ export const PasswordChangeModal = ({ open, onOpenChange, isFirstLogin = false }
     }
 
     setLoading(true);
-    await changePassword(newPassword);
+    const success = await changePassword(newPassword);
     setLoading(false);
 
-    setNewPassword('');
-    setConfirmPassword('');
-    onOpenChange(false);
+    if (success) {
+      setNewPassword('');
+      setConfirmPassword('');
+      onOpenChange(false);
+    }
   };
 
-  // Don't show the modal in offline mode
-  if (!open) return null;
+  if (!open || !isSuperAdmin) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            Password Change Not Available
+            Change Password
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Password changes are not available in offline mode. Your current credentials will continue to work.
-          </p>
-          <div className="flex justify-end">
-            <Button onClick={() => onOpenChange(false)}>
-              OK
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="newPassword">New Password</Label>
+            <Input
+              id="newPassword"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Enter new password"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
+              required
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Changing...' : 'Change Password'}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
