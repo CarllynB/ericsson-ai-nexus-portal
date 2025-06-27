@@ -100,7 +100,7 @@ class SQLiteService {
         );
       `);
 
-      // Create user_roles table
+      // Create user_roles table with updated_at column
       this.db.exec(`
         DROP TABLE IF EXISTS user_roles;
         CREATE TABLE user_roles (
@@ -109,7 +109,8 @@ class SQLiteService {
           email TEXT NOT NULL UNIQUE,
           role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'viewer')),
           assigned_at TEXT NOT NULL,
-          assigned_by TEXT
+          assigned_by TEXT,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
       `);
 
@@ -330,18 +331,20 @@ class SQLiteService {
     try {
       console.log(`Creating user role: ${email} -> ${role}`);
       const stmt = this.db.prepare(`
-        INSERT OR REPLACE INTO user_roles (id, user_id, email, role, assigned_at, assigned_by)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO user_roles (id, user_id, email, role, assigned_at, assigned_by, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
 
       const userId = email.replace('@', '_').replace('.', '_');
+      const now = new Date().toISOString();
       stmt.run([
         userId,
         userId,
         email,
         role,
-        new Date().toISOString(),
-        assignedBy || null
+        now,
+        assignedBy || null,
+        now
       ]);
 
       stmt.free();

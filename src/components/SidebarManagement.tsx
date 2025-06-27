@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Plus, Edit, Trash2, GripVertical, ExternalLink } from "lucide-react";
+import { Plus, Edit, Trash2, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -169,9 +169,7 @@ export const SidebarManagement = () => {
                           Default
                         </Badge>
                       )}
-                      {isExternalUrl(item.url) && (
-                        <ExternalLink className="w-3 h-3 text-muted-foreground" />
-                      )}
+                      {/* Removed the ExternalLink icon */}
                     </div>
                     <p className="text-sm text-muted-foreground">{item.url}</p>
                   </div>

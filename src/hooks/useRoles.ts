@@ -24,7 +24,17 @@ export const useRoles = () => {
       if (savedUser) {
         const userData = JSON.parse(savedUser);
         console.log('Current user data:', userData);
-        setCurrentUserRole(userData.role || 'viewer');
+        
+        // Always check SQLite for the most up-to-date role
+        const roleFromDb = await sqliteService.getUserRole(userData.email);
+        if (roleFromDb) {
+          // Update localStorage with the latest role from SQLite
+          userData.role = roleFromDb;
+          localStorage.setItem('current_user', JSON.stringify(userData));
+          setCurrentUserRole(roleFromDb as UserRole);
+        } else {
+          setCurrentUserRole(userData.role || 'viewer');
+        }
       } else {
         setCurrentUserRole('viewer');
       }
@@ -37,40 +47,15 @@ export const useRoles = () => {
   const fetchAllUsers = async () => {
     try {
       await sqliteService.initialize();
+      const allUsers = await sqliteService.getAllUserRoles();
       
-      // Get all users from SQLite user_roles table
-      const stmt = sqliteService['db']?.prepare('SELECT * FROM user_roles ORDER BY assigned_at DESC');
-      const usersWithRoles: UserWithRole[] = [];
-      
-      if (stmt) {
-        while (stmt.step()) {
-          const row = stmt.getAsObject();
-          usersWithRoles.push({
-            id: row.id as string,
-            email: row.email as string,
-            role: row.role as UserRole,
-            assigned_at: row.assigned_at as string
-          });
-        }
-        stmt.free();
-      }
-      
-      // Add current user if not in the list
-      const savedUser = localStorage.getItem('current_user');
-      if (savedUser) {
-        const userData = JSON.parse(savedUser);
-        if (!usersWithRoles.some(u => u.email === userData.email)) {
-          usersWithRoles.unshift({
-            id: userData.id,
-            email: userData.email,
-            role: userData.role,
-            assigned_at: userData.created_at
-          });
-        }
-      }
-      
-      console.log('Fetched users with roles:', usersWithRoles);
-      setUsers(usersWithRoles);
+      console.log('Fetched users with roles from SQLite:', allUsers);
+      setUsers(allUsers.map(user => ({
+        id: user.id,
+        email: user.email,
+        role: user.role as UserRole,
+        assigned_at: user.assigned_at
+      })));
     } catch (error) {
       console.error('Error in fetchAllUsers:', error);
       setUsers([]);
@@ -80,13 +65,18 @@ export const useRoles = () => {
   const assignRole = async (userEmail: string, role: UserRole) => {
     try {
       await sqliteService.initialize();
-      await sqliteService.createUserRole(userEmail, role);
+      
+      // Get current user for assignedBy
+      const savedUser = localStorage.getItem('current_user');
+      const assignedBy = savedUser ? JSON.parse(savedUser).email : undefined;
+      
+      await sqliteService.createUserRole(userEmail, role, assignedBy);
       
       await fetchAllUsers();
       
       toast({
         title: "Success",
-        description: `Role ${role} assigned to ${userEmail}`
+        description: `Role ${role} assigned to ${userEmail}. They will have this role when they log in.`
       });
       return true;
     } catch (error) {
@@ -109,11 +99,18 @@ export const useRoles = () => {
       
       await sqliteService.initialize();
       
-      // Update in SQLite
-      const stmt = sqliteService['db']?.prepare('UPDATE user_roles SET role = ? WHERE email = ?');
+      // Update in SQLite using the proper method
+      const stmt = sqliteService.db?.prepare('UPDATE user_roles SET role = ?, updated_at = ? WHERE email = ?');
       if (stmt) {
-        stmt.run([newRole, user.email]);
+        stmt.run([newRole, new Date().toISOString(), user.email]);
         stmt.free();
+        
+        // Save the database
+        const data = sqliteService.db?.export();
+        if (data) {
+          const dataArray = Array.from(data);
+          localStorage.setItem('sqlite_database', JSON.stringify(dataArray));
+        }
       }
       
       // Update current user if it's the same user

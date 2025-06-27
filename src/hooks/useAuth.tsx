@@ -97,11 +97,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (savedPassword) {
           // User exists, check password
           if (password === savedPassword) {
-            // Get user role from SQLite or default to viewer
+            // Get user role from SQLite - this is the key fix
             const { sqliteService } = await import('@/services/sqlite');
+            await sqliteService.initialize();
+            
             let role = await sqliteService.getUserRole(email);
             
             if (!role) {
+              // If no role assigned, default to viewer and create the role
               role = 'viewer';
               await sqliteService.createUserRole(email, 'viewer');
             }
@@ -119,7 +122,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             
             toast({
               title: "Success",
-              description: "Logged in successfully"
+              description: `Logged in successfully as ${role}`
             });
           } else {
             throw new Error('Invalid password');
@@ -160,14 +163,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Create new user account
       localStorage.setItem(`password_${email}`, password);
       
-      // Create user role in SQLite
+      // Check if there's already a role assigned for this email
       const { sqliteService } = await import('@/services/sqlite');
-      await sqliteService.createUserRole(email, 'viewer');
+      await sqliteService.initialize();
+      
+      let role = await sqliteService.getUserRole(email);
+      
+      if (!role) {
+        // If no role was pre-assigned, default to viewer
+        role = 'viewer';
+        await sqliteService.createUserRole(email, 'viewer');
+      }
       
       const userData: User = {
         id: email.replace('@', '_').replace('.', '_'),
         email,
-        role: 'viewer',
+        role: role as 'super_admin' | 'admin' | 'viewer',
         created_at: new Date().toISOString(),
       };
       
@@ -177,7 +188,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       toast({
         title: "Success",
-        description: "Account created successfully"
+        description: `Account created successfully with ${role} role`
       });
     } catch (error) {
       console.error('Registration failed:', error);
