@@ -1,5 +1,6 @@
 
 
+
 -- Create an enum for the different roles
 CREATE TYPE public.app_role AS ENUM ('super_admin', 'admin', 'viewer');
 
@@ -112,4 +113,3 @@ CREATE TRIGGER update_user_roles_updated_at
   BEFORE UPDATE ON public.user_roles
   FOR EACH ROW
   EXECUTE FUNCTION public.update_user_roles_updated_at();
-
