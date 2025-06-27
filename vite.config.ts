@@ -5,23 +5,44 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import fs from "fs";
 
-// Check if SSL certificates exist
-const sslCertExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');
-const sslKeyExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.key');
+// Check if SSL certificates exist (look for mkcert generated files)
+const sslCertExists = fs.existsSync('./localhost.pem') || fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');
+const sslKeyExists = fs.existsSync('./localhost-key.pem') || fs.existsSync('./aiduagent-csstip.ckit1.explab.com.key');
 
 // Check if we're in offline mode
 const isOfflineMode = process.env.VITE_OFFLINE_MODE === 'true';
+
+// Determine which certificates to use
+const getCertificates = () => {
+  if (fs.existsSync('./localhost.pem') && fs.existsSync('./localhost-key.pem')) {
+    return {
+      cert: fs.readFileSync('./localhost.pem'),
+      key: fs.readFileSync('./localhost-key.pem'),
+    };
+  } else if (fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt') && fs.existsSync('./aiduagent-csstip.ckit1.explab.com.key')) {
+    return {
+      cert: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.crt'),
+      key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key'),
+    };
+  }
+  return undefined;
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080, // Always use port 8080 as required
-    https: !isOfflineMode && sslCertExists && sslKeyExists ? {
-      cert: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.crt'),
-      key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key'),
-    } : undefined,
+    port: 8080,
+    https: sslCertExists && sslKeyExists ? getCertificates() : undefined,
     cors: true,
+    // Proxy API calls to local Supabase when in development
+    proxy: mode === 'development' && isOfflineMode ? {
+      '/api': {
+        target: 'http://localhost:54321',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      }
+    } : undefined,
   },
   plugins: [
     react(),
