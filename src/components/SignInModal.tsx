@@ -24,16 +24,6 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
   const [activeTab, setActiveTab] = useState('signin');
   const { login, user } = useAuth();
 
-  // Check if this is a first login with default password
-  const isFirstLogin = password === 'admin123' && user;
-
-  useEffect(() => {
-    if (user && isFirstLogin) {
-      setShowPasswordChange(true);
-      onOpenChange(false);
-    }
-  }, [user, isFirstLogin, onOpenChange]);
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -184,7 +174,6 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
       <PasswordChangeModal
         open={showPasswordChange}
         onOpenChange={setShowPasswordChange}
-        isFirstLogin={true}
       />
     </>
   );
