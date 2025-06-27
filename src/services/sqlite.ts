@@ -322,7 +322,7 @@ class SQLiteService {
     }
   }
 
-  // User role management methods - Completely SQLite-based with improved error handling
+  // User role management methods - Fixed SQLite operations
   async createUserRole(email: string, role: 'super_admin' | 'admin' | 'viewer', assignedBy?: string): Promise<void> {
     await this.initialize();
     if (!this.db) throw new Error('Database not initialized');
@@ -333,10 +333,12 @@ class SQLiteService {
       const userId = email.replace('@', '_').replace(/\./g, '_');
       const now = new Date().toISOString();
       
-      // First, check if user already exists
-      const checkStmt = this.db.prepare('SELECT email FROM user_roles WHERE email = ?');
+      // Check if user already exists using a proper query
+      const checkStmt = this.db.prepare('SELECT COUNT(*) as count FROM user_roles WHERE email = ?');
       checkStmt.bind([email]);
-      const exists = checkStmt.step();
+      checkStmt.step();
+      const countResult = checkStmt.getAsObject();
+      const exists = (countResult.count as number) > 0;
       checkStmt.free();
       
       if (exists) {
@@ -349,6 +351,7 @@ class SQLiteService {
         `);
         updateStmt.run([role, now, assignedBy || null, email]);
         updateStmt.free();
+        console.log('✅ User role updated successfully');
       } else {
         // Create new user
         console.log(`➕ Creating new user role: ${email}`);
@@ -358,10 +361,11 @@ class SQLiteService {
         `);
         insertStmt.run([userId, userId, email, role, now, assignedBy || null, now]);
         insertStmt.free();
+        console.log('✅ User role created successfully');
       }
       
       this.saveDatabase();
-      console.log('✅ User role operation completed successfully');
+      console.log('💾 Database saved after role operation');
     } catch (error) {
       console.error('❌ Error in createUserRole:', error);
       throw new Error(`Failed to assign role: ${error.message}`);
@@ -376,19 +380,27 @@ class SQLiteService {
       console.log(`🔄 Updating user role: ${email} -> ${newRole}`);
       
       const now = new Date().toISOString();
+      
+      // Check if user exists first
+      const checkStmt = this.db.prepare('SELECT COUNT(*) as count FROM user_roles WHERE email = ?');
+      checkStmt.bind([email]);
+      checkStmt.step();
+      const countResult = checkStmt.getAsObject();
+      const exists = (countResult.count as number) > 0;
+      checkStmt.free();
+      
+      if (!exists) {
+        throw new Error(`No user found with email: ${email}`);
+      }
+      
+      // Update the role
       const stmt = this.db.prepare(`
         UPDATE user_roles 
         SET role = ?, updated_at = ? 
         WHERE email = ?
       `);
-
-      const result = stmt.run([newRole, now, email]);
+      stmt.run([newRole, now, email]);
       stmt.free();
-      
-      // Check if update actually happened
-      if (!result) {
-        throw new Error(`No user found with email: ${email}`);
-      }
       
       this.saveDatabase();
       console.log('✅ User role updated successfully');
