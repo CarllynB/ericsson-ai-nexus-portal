@@ -5,7 +5,7 @@ CREATE TYPE public.app_role AS ENUM ('super_admin', 'admin', 'viewer');
 -- Create the user_roles table to store role assignments
 CREATE TABLE public.user_roles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
   role app_role NOT NULL DEFAULT 'viewer',
   assigned_by UUID REFERENCES auth.users(id),
@@ -46,11 +46,11 @@ CREATE POLICY "Users can view their own role"
   FOR SELECT
   USING (user_id = auth.uid());
 
--- First, let's create a temporary approach for the hardcoded super admins
--- We'll modify the table to allow nullable user_id temporarily
+-- Modify the table to allow nullable user_id temporarily for pre-signup role assignments
 ALTER TABLE public.user_roles ALTER COLUMN user_id DROP NOT NULL;
 
--- Insert the hardcoded super admins with placeholder UUIDs (they'll be updated when users actually sign up)
+-- Insert the hardcoded super admins with placeholder UUIDs
+-- These will be updated when users actually sign up
 INSERT INTO public.user_roles (user_id, email, role) 
 VALUES 
   (gen_random_uuid(), 'muhammad.mahmood@ericsson.com', 'super_admin'),

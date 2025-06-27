@@ -75,8 +75,17 @@ else
     print_status "Docker is running"
 fi
 
-# Step 6: Generate SSL certificate for local development
-echo "6. Setting up SSL certificate..."
+# Step 6: Clean up old migration files that might cause conflicts
+echo "6. Cleaning up migration files..."
+MIGRATION_DIR="supabase/migrations"
+if [ -d "$MIGRATION_DIR" ]; then
+    # Remove any old migration files that might conflict
+    rm -f "$MIGRATION_DIR/20250624225725_add_roles_and_permissions.sql" 2>/dev/null
+    print_status "Cleaned up old migration files"
+fi
+
+# Step 7: Generate SSL certificate for local development
+echo "7. Setting up SSL certificate..."
 if ! command -v mkcert &> /dev/null; then
     print_warning "mkcert not found. Installing..."
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -109,24 +118,6 @@ else
     print_warning "Could not create SSL certificate"
 fi
 
-# Step 7: Check and fix migration file names
-echo "7. Checking migration file names..."
-MIGRATION_DIR="supabase/migrations"
-if [ -d "$MIGRATION_DIR" ]; then
-    # Check for files with UUID pattern and suggest renaming
-    UUID_FILES=$(find "$MIGRATION_DIR" -name "*-*-*-*-*.sql" 2>/dev/null)
-    if [ ! -z "$UUID_FILES" ]; then
-        print_warning "Found migration files with UUID naming pattern"
-        echo "These files need to be renamed to follow Supabase's naming convention:"
-        echo "$UUID_FILES"
-        echo ""
-        echo "Please rename them to: <timestamp>_<descriptive_name>.sql"
-        echo "For example: 20250624213437_create_agents_table.sql"
-    else
-        print_status "Migration file names look good"
-    fi
-fi
-
 # Step 8: Start Supabase
 echo "8. Starting Supabase..."
 supabase start
@@ -141,11 +132,21 @@ fi
 echo "9. Applying database migrations..."
 supabase db reset
 if [ $? -eq 0 ]; then
-    print_status "Database migrations applied"
+    print_status "Database migrations applied successfully"
 else
     print_error "Failed to apply migrations"
-    echo "This might be due to migration file naming or foreign key issues"
-    echo "Check the troubleshooting guide for details"
+    echo "Attempting to reset and try again..."
+    supabase stop
+    sleep 2
+    supabase start
+    sleep 5
+    supabase db reset
+    if [ $? -eq 0 ]; then
+        print_status "Database migrations applied successfully (after retry)"
+    else
+        print_error "Failed to apply migrations even after retry"
+        echo "Check the troubleshooting guide for details"
+    fi
 fi
 
 # Step 10: Build the application
