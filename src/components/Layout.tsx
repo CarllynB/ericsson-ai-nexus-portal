@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { X, LogIn, Settings, Shield, UserPlus, ExternalLink, Menu } from "lucide-react";
@@ -12,6 +11,7 @@ import { RoleManagement } from "@/components/RoleManagement";
 import { SidebarManagement } from "@/components/SidebarManagement";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSidebarItems } from "@/hooks/useSidebarItems";
+import { OfflineIndicator } from './OfflineIndicator';
 
 export const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -75,6 +75,8 @@ export const Layout = () => {
             </Button>
           )}
         </div>
+        {/* Add the OfflineIndicator component here */}
+        <OfflineIndicator />
       </header>
 
       {/* Sidebar Overlay */}
