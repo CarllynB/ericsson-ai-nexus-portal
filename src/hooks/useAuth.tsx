@@ -3,7 +3,6 @@ import React, { useState, useEffect, createContext, useContext, ReactNode } from
 import { User } from '@/types/database';
 import { useToast } from '@/components/ui/use-toast';
 import { useInitializeApp } from '@/hooks/useInitializeApp';
-import { sqliteService } from '@/services/sqlite';
 
 interface AuthContextType {
   user: User | null;
@@ -58,9 +57,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('Attempting login for:', email);
       setLoading(true);
-      
-      // Initialize SQLite first
-      await sqliteService.initialize();
       
       // Check if it's a super admin with default password or custom password
       if (SUPER_ADMINS.includes(email)) {

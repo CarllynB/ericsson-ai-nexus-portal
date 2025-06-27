@@ -19,7 +19,7 @@ export const useRoles = () => {
 
   const fetchCurrentUserRole = async () => {
     try {
-      const savedUser = localStorage.getItem('offline_user');
+      const savedUser = localStorage.getItem('current_user');
       if (savedUser) {
         const userData = JSON.parse(savedUser);
         setCurrentUserRole(userData.role || 'viewer');
@@ -34,20 +34,34 @@ export const useRoles = () => {
 
   const fetchAllUsers = async () => {
     try {
-      // In offline mode, we'll just return the current user
-      const savedUser = localStorage.getItem('offline_user');
+      const userRoles = JSON.parse(localStorage.getItem('user_roles') || '{}');
+      const usersWithRoles: UserWithRole[] = [];
+      
+      // Get current user
+      const savedUser = localStorage.getItem('current_user');
       if (savedUser) {
         const userData = JSON.parse(savedUser);
-        const userWithRole: UserWithRole = {
+        usersWithRoles.push({
           id: userData.id,
           email: userData.email,
           role: userData.role,
           assigned_at: userData.created_at
-        };
-        setUsers([userWithRole]);
-      } else {
-        setUsers([]);
+        });
       }
+      
+      // Get all users from roles
+      Object.entries(userRoles).forEach(([email, role]) => {
+        if (!usersWithRoles.some(u => u.email === email)) {
+          usersWithRoles.push({
+            id: email.replace('@', '_').replace('.', '_'),
+            email,
+            role: role as UserRole,
+            assigned_at: new Date().toISOString()
+          });
+        }
+      });
+      
+      setUsers(usersWithRoles);
     } catch (error) {
       console.error('Error in fetchAllUsers:', error);
     }
@@ -55,12 +69,17 @@ export const useRoles = () => {
 
   const assignRole = async (userEmail: string, role: UserRole) => {
     try {
-      // In offline mode, we can't actually assign roles to other users
+      const existingRoles = JSON.parse(localStorage.getItem('user_roles') || '{}');
+      existingRoles[userEmail] = role;
+      localStorage.setItem('user_roles', JSON.stringify(existingRoles));
+      
+      await fetchAllUsers();
+      
       toast({
-        title: "Info",
-        description: "Role assignment not available in offline mode"
+        title: "Success",
+        description: `Role ${role} assigned to ${userEmail}`
       });
-      return false;
+      return true;
     } catch (error) {
       console.error('Error assigning role:', error);
       toast({
@@ -74,12 +93,33 @@ export const useRoles = () => {
 
   const updateUserRole = async (userId: string, newRole: UserRole) => {
     try {
-      // In offline mode, we can't update user roles
+      const user = users.find(u => u.id === userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      
+      const existingRoles = JSON.parse(localStorage.getItem('user_roles') || '{}');
+      existingRoles[user.email] = newRole;
+      localStorage.setItem('user_roles', JSON.stringify(existingRoles));
+      
+      // Update current user if it's the same user
+      const savedUser = localStorage.getItem('current_user');
+      if (savedUser) {
+        const userData = JSON.parse(savedUser);
+        if (userData.email === user.email) {
+          userData.role = newRole;
+          localStorage.setItem('current_user', JSON.stringify(userData));
+        }
+      }
+      
+      await fetchAllUsers();
+      await fetchCurrentUserRole();
+      
       toast({
-        title: "Info",
-        description: "Role updates not available in offline mode"
+        title: "Success",
+        description: `Role updated to ${newRole}`
       });
-      return false;
+      return true;
     } catch (error) {
       console.error('Error updating user role:', error);
       toast({

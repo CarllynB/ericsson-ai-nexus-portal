@@ -26,7 +26,6 @@ export const populateDefaultAgents = async () => {
         owner: 'Development Team',
         key_features: ['Code Generation', 'Bug Detection', 'Documentation'],
         access_link: 'https://github.com/copilot',
-        contact_info: undefined,
       },
       {
         name: 'Customer Support Bot',
@@ -35,7 +34,6 @@ export const populateDefaultAgents = async () => {
         status: 'active' as const,
         owner: 'Customer Success Team',
         key_features: ['24/7 Availability', 'Multi-language Support', 'Ticket Routing'],
-        access_link: undefined,
         contact_info: {
           name: 'Sarah Johnson',
           email: 'sarah.johnson@company.com'
@@ -49,7 +47,6 @@ export const populateDefaultAgents = async () => {
         owner: 'Data Science Team',
         key_features: ['Real-time Analysis', 'Custom Dashboards', 'Predictive Modeling'],
         access_link: 'https://analytics.internal.com',
-        contact_info: undefined,
       },
       {
         name: 'Content Generator',
@@ -58,7 +55,6 @@ export const populateDefaultAgents = async () => {
         status: 'coming_soon' as const,
         owner: 'Marketing Team',
         key_features: ['SEO Optimization', 'Multi-format Output', 'Brand Voice Consistency'],
-        access_link: undefined,
         contact_info: {
           name: 'Mike Chen',
           email: 'mike.chen@company.com'
@@ -72,7 +68,6 @@ export const populateDefaultAgents = async () => {
         owner: 'Security Team',
         key_features: ['Threat Detection', 'Automated Response', 'Compliance Reporting'],
         access_link: 'https://security.internal.com',
-        contact_info: undefined,
       },
       {
         name: 'HR Assistant',
@@ -81,7 +76,6 @@ export const populateDefaultAgents = async () => {
         status: 'active' as const,
         owner: 'HR Team',
         key_features: ['Employee Onboarding', 'Policy Questions', 'Leave Management'],
-        access_link: undefined,
         contact_info: {
           name: 'Lisa Wang',
           email: 'lisa.wang@company.com'

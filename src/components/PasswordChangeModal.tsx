@@ -9,14 +9,13 @@ import { useAuth } from '@/hooks/useAuth';
 interface PasswordChangeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  isFirstLogin?: boolean;
 }
 
-export const PasswordChangeModal = ({ open, onOpenChange, isFirstLogin = false }: PasswordChangeModalProps) => {
+export const PasswordChangeModal = ({ open, onOpenChange }: PasswordChangeModalProps) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { changePassword, isSuperAdmin } = useAuth();
+  const { changePassword, isSuperAdmin, user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +41,7 @@ export const PasswordChangeModal = ({ open, onOpenChange, isFirstLogin = false }
     }
   };
 
-  if (!open || !isSuperAdmin) return null;
+  if (!open || !user) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
