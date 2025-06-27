@@ -40,31 +40,25 @@ const AppRoutes = () => {
       <Route 
         path="/" 
         element={
-          <ProtectedRoute>
-            <Layout>
-              <Index />
-            </Layout>
-          </ProtectedRoute>
+          <Layout>
+            <Index />
+          </Layout>
         } 
       />
       <Route 
         path="/agents" 
         element={
-          <ProtectedRoute>
-            <Layout>
-              <Agents />
-            </Layout>
-          </ProtectedRoute>
+          <Layout>
+            <Agents />
+          </Layout>
         } 
       />
       <Route 
         path="/dashboard" 
         element={
-          <ProtectedRoute>
-            <Layout>
-              <Dashboard />
-            </Layout>
-          </ProtectedRoute>
+          <Layout>
+            <Dashboard />
+          </Layout>
         } 
       />
       <Route path="*" element={<NotFound />} />

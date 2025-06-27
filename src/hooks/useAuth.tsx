@@ -2,6 +2,7 @@
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '@/types/database';
 import { useToast } from '@/components/ui/use-toast';
+import { useInitializeApp } from '@/hooks/useInitializeApp';
 
 interface AuthContextType {
   user: User | null;
@@ -32,6 +33,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Initialize app (populate agents if needed)
+  useInitializeApp();
+
   // Default super admin users for offline mode
   const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
 
@@ -54,13 +58,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Attempting offline login for:', email);
       setLoading(true);
       
-      // Simple offline authentication - in a real app you'd want proper security
-      if (email && password === 'admin123') {
-        const role = SUPER_ADMINS.includes(email) ? 'super_admin' : 'admin';
+      // Check if it's a super admin with the default password
+      if (SUPER_ADMINS.includes(email) && password === 'admin123') {
         const userData: User = {
           id: email.replace('@', '_').replace('.', '_'),
           email,
-          role,
+          role: 'super_admin',
           created_at: new Date().toISOString(),
         };
         
@@ -69,10 +72,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         toast({
           title: "Success",
-          description: "Logged in successfully (offline mode)"
+          description: "Logged in successfully"
         });
       } else {
-        throw new Error('Invalid credentials. Use password: admin123');
+        // For other users, check if they have an account in localStorage roles
+        const existingRoles = JSON.parse(localStorage.getItem('user_roles') || '{}');
+        if (existingRoles[email]) {
+          const userData: User = {
+            id: email.replace('@', '_').replace('.', '_'),
+            email,
+            role: existingRoles[email],
+            created_at: new Date().toISOString(),
+          };
+          
+          setUser(userData);
+          localStorage.setItem('offline_user', JSON.stringify(userData));
+          
+          toast({
+            title: "Success",
+            description: "Logged in successfully"
+          });
+        } else {
+          // New user - create as viewer
+          const userData: User = {
+            id: email.replace('@', '_').replace('.', '_'),
+            email,
+            role: 'viewer',
+            created_at: new Date().toISOString(),
+          };
+          
+          // Save the new user role
+          existingRoles[email] = 'viewer';
+          localStorage.setItem('user_roles', JSON.stringify(existingRoles));
+          
+          setUser(userData);
+          localStorage.setItem('offline_user', JSON.stringify(userData));
+          
+          toast({
+            title: "Success",
+            description: "Account created successfully"
+          });
+        }
       }
     } catch (error) {
       console.error('Login failed:', error);

@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Search, Mail, User } from "lucide-react";
+import { ArrowRight, Search, Mail, User, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRoles } from "@/hooks/useRoles";
 import { getAgents } from "@/services/api";
 
@@ -79,39 +78,25 @@ const Index = () => {
 
   return (
     <div className="min-h-screen px-6 py-12">
-      {/* Welcome Popup */}
-      <Dialog open={showWelcome} onOpenChange={(open) => !open && setShowWelcome(false)}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-3xl font-bold text-center mb-4">
-              Welcome to the AI-DU Agent Portal
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6 py-4">
-            <p className="text-lg text-muted-foreground text-center">
-              A centralized space to access and interact with GenAI agents. Empowering intelligent automation across teams.
+      {/* Welcome Banner - Not a popup, stays on screen */}
+      {showWelcome && (
+        <div className="bg-muted/50 border border-border rounded-lg p-6 mb-8 relative">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowWelcome(false)}
+            className="absolute top-4 right-4"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-2xl font-bold mb-2">Welcome to the AI-DU Agent Portal</h2>
+            <p className="text-muted-foreground">
+              Our centralized gateway to access and interact with GenAI agents. Streamline operations with intelligent automation.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                className="text-lg px-8"
-                onClick={() => setShowWelcome(false)}
-              >
-                Explore Agents
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="text-lg px-8"
-                onClick={() => window.location.href = '/dashboard'}
-              >
-                View Dashboard
-              </Button>
-            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto">
         {/* Search Bar */}
