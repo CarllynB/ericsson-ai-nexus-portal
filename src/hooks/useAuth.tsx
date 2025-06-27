@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Initialize app (populate agents if needed)
   useInitializeApp();
 
-  // Default super admin users
+  // Default super admin users - Fixed email addresses
   const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
 
   useEffect(() => {
