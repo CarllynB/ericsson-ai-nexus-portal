@@ -7,10 +7,10 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { Layout } from "@/components/Layout";
 import Index from "./pages/Index";
-import { Login } from "./pages/Login";
-import { Agents } from "./pages/Agents";
-import { Dashboard } from "./pages/Dashboard";
-import { NotFound } from "./pages/NotFound";
+import Login from "./pages/Login";
+import Agents from "./pages/Agents";
+import Dashboard from "./pages/Dashboard";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 

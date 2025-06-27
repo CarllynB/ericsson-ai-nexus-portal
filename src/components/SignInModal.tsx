@@ -25,7 +25,7 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
   const { login, user } = useAuth();
 
   // Check if this is a first login with default password
-  const isFirstLogin = password === 'password123' && user;
+  const isFirstLogin = password === 'admin123' && user;
 
   useEffect(() => {
     if (user && isFirstLogin) {
@@ -68,23 +68,12 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
     setLoading(true);
 
     try {
-      // Import supabase client for signup
-      const { supabase } = await import('@/integrations/supabase/client');
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password
-      });
-
-      if (error) throw error;
-
+      // In offline mode, we'll simulate signup by just creating a login
+      await login(email, password);
       setEmail('');
       setPassword('');
       setConfirmPassword('');
       onOpenChange(false);
-      
-      // Show success message
-      alert('Account created successfully! You can now sign in.');
     } catch (err: any) {
       setError(err.message || 'Sign up failed');
     } finally {
