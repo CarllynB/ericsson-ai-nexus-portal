@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Edit, Trash2, Search, ChevronDown, ChevronUp, ChevronLeft } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useRoles } from '@/hooks/useRoles';
-import { Agent, getAgents, createAgent, updateAgent, deleteAgent } from '@/services/api';
+import { Agent } from '@/services/api';
+import { offlineApiService } from '@/services/offlineApi';
 
 export const AgentManagement = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -39,7 +40,10 @@ export const AgentManagement = () => {
 
   const fetchAgentsList = async () => {
     try {
-      const data = await getAgents();
+      console.log('Fetching agents from offline API...');
+      const data = await offlineApiService.getAgents();
+      console.log('Fetched agents:', data);
+      
       // Sort agents: active first, then by name
       const sortedAgents = data.sort((a, b) => {
         if (a.status === 'active' && b.status !== 'active') return -1;
@@ -49,6 +53,11 @@ export const AgentManagement = () => {
       setAgents(sortedAgents);
     } catch (error) {
       console.error('Error fetching agents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load agents from local database",
+        variant: "destructive"
+      });
     }
   };
 
@@ -99,16 +108,16 @@ export const AgentManagement = () => {
 
     try {
       if (editingAgent) {
-        await updateAgent(editingAgent.id, agentData);
+        await offlineApiService.updateAgent(editingAgent.id, agentData);
         toast({
           title: "Success",
-          description: "Agent updated successfully and saved to database"
+          description: "Agent updated successfully and saved to local database"
         });
       } else {
-        await createAgent(agentData);
+        await offlineApiService.createAgent(agentData);
         toast({
           title: "Success",
-          description: "Agent created successfully and saved to database"
+          description: "Agent created successfully and saved to local database"
         });
       }
 
@@ -157,13 +166,13 @@ export const AgentManagement = () => {
   };
 
   const handleDelete = async (agentId: string) => {
-    if (!confirm('Are you sure you want to delete this agent? This will permanently remove it from the database.')) return;
+    if (!confirm('Are you sure you want to delete this agent? This will permanently remove it from the local database.')) return;
 
     try {
-      await deleteAgent(agentId);
+      await offlineApiService.deleteAgent(agentId);
       toast({
         title: "Success",
-        description: "Agent deleted successfully from database"
+        description: "Agent deleted successfully from local database"
       });
       fetchAgentsList();
     } catch (error) {

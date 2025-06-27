@@ -1,4 +1,3 @@
-
 import initSqlJs, { Database } from 'sql.js';
 import { Agent } from './api';
 
@@ -19,18 +18,28 @@ class SQLiteService {
       const savedDb = localStorage.getItem('offline_database');
       if (savedDb) {
         try {
+          console.log('Attempting to load existing database from localStorage...');
           const uint8Array = new Uint8Array(JSON.parse(savedDb));
           this.db = new SQL.Database(uint8Array);
-          console.log('Loaded existing database from localStorage');
+          console.log('Successfully loaded existing database from localStorage');
+          
+          // Verify tables exist
+          const tables = this.db.exec("SELECT name FROM sqlite_master WHERE type='table'");
+          console.log('Existing tables:', tables);
+          
+          if (!tables.length || !tables[0].values.some(row => row[0] === 'agents')) {
+            console.log('Tables missing, recreating...');
+            this.createTables();
+          }
         } catch (error) {
           console.warn('Failed to load saved database, creating new one:', error);
           this.db = new SQL.Database();
           this.createTables();
         }
       } else {
+        console.log('No existing database found, creating new one...');
         this.db = new SQL.Database();
         this.createTables();
-        console.log('Created new database');
       }
 
       this.initialized = true;
@@ -45,6 +54,8 @@ class SQLiteService {
     if (!this.db) return;
 
     try {
+      console.log('Creating database tables...');
+      
       // Create agents table matching Supabase schema
       this.db.exec(`
         CREATE TABLE IF NOT EXISTS agents (
@@ -114,6 +125,7 @@ class SQLiteService {
     if (!this.db) throw new Error('Database not initialized');
 
     try {
+      console.log('Querying agents from SQLite database...');
       const stmt = this.db.prepare('SELECT * FROM agents ORDER BY last_updated DESC');
       const results = [];
 
@@ -135,7 +147,7 @@ class SQLiteService {
       }
 
       stmt.free();
-      console.log(`Retrieved ${results.length} agents from database`);
+      console.log(`Successfully retrieved ${results.length} agents from database`);
       return results;
     } catch (error) {
       console.error('Error fetching agents from SQLite:', error);
@@ -157,6 +169,7 @@ class SQLiteService {
     };
 
     try {
+      console.log('Creating new agent in SQLite:', newAgent.name);
       const stmt = this.db.prepare(`
         INSERT INTO agents (id, name, description, category, status, key_features, access_link, contact_info, owner, last_updated, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

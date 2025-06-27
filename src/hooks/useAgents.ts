@@ -22,16 +22,18 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
   const fetchAgents = async () => {
     try {
       setLoading(true);
+      setError(null);
       console.log('Fetching agents in offline-only mode...');
       
-      // Seed database if empty
-      await offlineApiService.seedDatabase();
-      
       const response = await offlineApiService.getAgents();
+      console.log('Received agents from offline API:', response);
       
       if (Array.isArray(response)) {
-        setAgents(sortAgents(response));
+        const sortedAgents = sortAgents(response);
+        setAgents(sortedAgents);
+        console.log(`Successfully loaded ${sortedAgents.length} agents from local database`);
       } else {
+        console.warn('Invalid response format from offline API:', response);
         setAgents([]);
       }
       
@@ -39,7 +41,7 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     } catch (err) {
       console.error('Failed to fetch agents from SQLite:', err);
       setAgents([]);
-      setError('Failed to load agents from local database');
+      setError('Failed to load agents from local database. Please check the console for details.');
     } finally {
       setLoading(false);
     }

@@ -79,9 +79,9 @@ class OfflineApiService {
         return;
       }
 
-      console.log('Seeding database with sample data...');
+      console.log('Seeding database with comprehensive sample data...');
 
-      // Seed with sample data
+      // Enhanced seed data that matches typical Supabase data
       const sampleAgents: Omit<Agent, 'id' | 'created_at' | 'last_updated'>[] = [
         {
           name: 'AI Code Assistant',
@@ -103,7 +103,11 @@ class OfflineApiService {
           status: 'active',
           key_features: ['24/7 Support', 'Multi-language', 'Ticket Routing', 'Knowledge Base Integration'],
           access_link: 'https://support-bot.example.com',
-          owner: 'Customer Success'
+          owner: 'Customer Success',
+          contact_info: {
+            name: 'Support Manager',
+            email: 'support@company.com'
+          }
         },
         {
           name: 'Data Analytics Agent',
@@ -111,7 +115,11 @@ class OfflineApiService {
           category: 'Analytics',
           status: 'active',
           key_features: ['Real-time Analytics', 'Custom Reports', 'Predictive Modeling', 'Data Visualization'],
-          owner: 'Data Science Team'
+          owner: 'Data Science Team',
+          contact_info: {
+            name: 'Data Science Lead',
+            email: 'data-science@company.com'
+          }
         },
         {
           name: 'Marketing Assistant',
@@ -119,7 +127,61 @@ class OfflineApiService {
           category: 'Marketing',
           status: 'coming_soon',
           key_features: ['Content Generation', 'Campaign Optimization', 'A/B Testing', 'Social Media Management'],
-          owner: 'Marketing Team'
+          owner: 'Marketing Team',
+          contact_info: {
+            name: 'Marketing Director',
+            email: 'marketing@company.com'
+          }
+        },
+        {
+          name: 'HR Recruitment Bot',
+          description: 'Intelligent recruitment assistant for screening candidates and scheduling interviews.',
+          category: 'Human Resources',
+          status: 'active',
+          key_features: ['Resume Screening', 'Interview Scheduling', 'Candidate Matching', 'Reference Checking'],
+          access_link: 'https://hr-bot.example.com',
+          owner: 'HR Department',
+          contact_info: {
+            name: 'HR Manager',
+            email: 'hr@company.com'
+          }
+        },
+        {
+          name: 'Financial Advisor AI',
+          description: 'AI-powered financial planning and investment advice system.',
+          category: 'Finance',
+          status: 'inactive',
+          key_features: ['Portfolio Analysis', 'Risk Assessment', 'Investment Recommendations', 'Budget Planning'],
+          owner: 'Finance Team',
+          contact_info: {
+            name: 'Finance Director',
+            email: 'finance@company.com'
+          }
+        },
+        {
+          name: 'Quality Assurance Bot',
+          description: 'Automated testing and quality assurance agent for software development.',
+          category: 'Development',
+          status: 'active',
+          key_features: ['Automated Testing', 'Bug Tracking', 'Performance Monitoring', 'Code Quality Analysis'],
+          access_link: 'https://qa-bot.example.com',
+          owner: 'QA Team',
+          contact_info: {
+            name: 'QA Lead',
+            email: 'qa@company.com'
+          }
+        },
+        {
+          name: 'Sales Intelligence Agent',
+          description: 'AI agent for lead generation, customer insights, and sales optimization.',
+          category: 'Sales',
+          status: 'coming_soon',
+          key_features: ['Lead Scoring', 'Customer Insights', 'Pipeline Management', 'Sales Forecasting'],
+          owner: 'Sales Team',
+          contact_info: {
+            name: 'Sales Director',
+            email: 'sales@company.com'
+          }
         }
       ];
 
@@ -127,7 +189,7 @@ class OfflineApiService {
         await sqliteService.createAgent(agent);
       }
 
-      console.log(`Database seeded with ${sampleAgents.length} sample agents`);
+      console.log(`Database seeded with ${sampleAgents.length} comprehensive sample agents`);
     } catch (error) {
       console.error('Error seeding database:', error);
       throw error;
