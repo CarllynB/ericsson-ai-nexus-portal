@@ -1,13 +1,11 @@
 
-
-
 -- Create an enum for the different roles
 CREATE TYPE public.app_role AS ENUM ('super_admin', 'admin', 'viewer');
 
 -- Create the user_roles table to store role assignments
 CREATE TABLE public.user_roles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
   role app_role NOT NULL DEFAULT 'viewer',
   assigned_by UUID REFERENCES auth.users(id),
@@ -48,57 +46,12 @@ CREATE POLICY "Users can view their own role"
   FOR SELECT
   USING (user_id = auth.uid());
 
--- Modify the table to allow nullable user_id temporarily for pre-signup role assignments
-ALTER TABLE public.user_roles ALTER COLUMN user_id DROP NOT NULL;
-
--- Temporarily drop the FK constraints so we can insert placeholder UUIDs
-ALTER TABLE public.user_roles
-  DROP CONSTRAINT IF EXISTS user_roles_user_id_fkey;
-
-ALTER TABLE public.user_roles
-  DROP CONSTRAINT IF EXISTS user_roles_assigned_by_fkey;
-
--- Insert the hardcoded super admins with placeholder UUIDs
--- These will be updated when users actually sign up
+-- Insert the hardcoded super admins into the table
 INSERT INTO public.user_roles (user_id, email, role) 
 VALUES 
-  (gen_random_uuid(), 'muhammad.mahmood@ericsson.com', 'super_admin'),
-  (gen_random_uuid(), 'carllyn.barfi@ericsson.com', 'super_admin')
+  ('cfd87936-7cef-4ddb-bea6-88cf29f6c399', 'muhammad.mahmood@ericsson.com', 'super_admin'),
+  ('06925037-572c-49ff-b96e-26feceb40763', 'carllyn.barfi@ericsson.com', 'super_admin')
 ON CONFLICT (user_id, role) DO NOTHING;
-
--- Recreate the foreign key constraints
-ALTER TABLE public.user_roles
-  ADD CONSTRAINT user_roles_user_id_fkey 
-  FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
-
-ALTER TABLE public.user_roles
-  ADD CONSTRAINT user_roles_assigned_by_fkey 
-  FOREIGN KEY (assigned_by) REFERENCES auth.users(id);
-
--- Create a function to handle user role assignment when users actually sign up
-CREATE OR REPLACE FUNCTION public.handle_user_role_on_signup()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Check if this user should have a predefined role
-  UPDATE public.user_roles 
-  SET user_id = NEW.id 
-  WHERE email = NEW.email AND user_id IS NULL;
-  
-  -- If no predefined role exists, create a default viewer role
-  IF NOT FOUND THEN
-    INSERT INTO public.user_roles (user_id, email, role)
-    VALUES (NEW.id, NEW.email, 'viewer');
-  END IF;
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Create trigger to automatically assign roles when users sign up
-DROP TRIGGER IF EXISTS on_auth_user_created_assign_role ON auth.users;
-CREATE TRIGGER on_auth_user_created_assign_role
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_user_role_on_signup();
 
 -- Create trigger to update the updated_at column
 CREATE OR REPLACE FUNCTION public.update_user_roles_updated_at()
