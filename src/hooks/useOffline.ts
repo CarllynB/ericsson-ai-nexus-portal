@@ -1,28 +1,9 @@
 
-import { useState, useEffect } from 'react';
-
 export const useOffline = () => {
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
-
-  useEffect(() => {
-    const handleOnline = () => {
-      console.log('Network status: Online');
-      setIsOffline(false);
-    };
-
-    const handleOffline = () => {
-      console.log('Network status: Offline');
-      setIsOffline(true);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  return { isOffline, isOnline: !isOffline };
+  // In offline-only mode, we're always "offline" from a network perspective
+  // but we have full functionality through SQLite
+  return { 
+    isOffline: true, 
+    isOnline: false 
+  };
 };

@@ -61,22 +61,23 @@ export const Layout = () => {
             </button>
           </div>
           
-          {user ? (
-            <UserProfileMenu email={user.email} />
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSignInOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <LogIn className="w-4 h-4" />
-              Sign In
-            </Button>
-          )}
+          <div className="flex items-center gap-3">
+            <OfflineIndicator />
+            {user ? (
+              <UserProfileMenu email={user.email} />
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSignInOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <LogIn className="w-4 h-4" />
+                Sign In
+              </Button>
+            )}
+          </div>
         </div>
-        {/* Add the OfflineIndicator component here */}
-        <OfflineIndicator />
       </header>
 
       {/* Sidebar Overlay */}
