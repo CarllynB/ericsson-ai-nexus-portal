@@ -12,7 +12,10 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Enable CORS
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 
 // Serve static files from dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
@@ -20,7 +23,12 @@ app.use(express.static(path.join(__dirname, 'dist')));
 // Handle React Router routes - catch all and serve index.html
 app.get('*', (req, res) => {
   try {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    const indexPath = path.join(__dirname, 'dist', 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).send('Application not built. Please run npm run build first.');
+    }
   } catch (error) {
     console.error('Error serving file:', error);
     res.status(500).send('Server Error');
@@ -49,6 +57,7 @@ if (certExists && keyExists) {
   https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
     console.log(`HTTPS Server running on port ${PORT}`);
     console.log(`Access your app at: https://aiduagent-csstip.ckit1.explab.com/`);
+    console.log(`Local access: https://localhost:${PORT}/`);
   });
 } else {
   // HTTP fallback
@@ -57,5 +66,6 @@ if (certExists && keyExists) {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`HTTP Server running on port ${PORT}`);
     console.log(`Access your app at: http://localhost:${PORT}/`);
+    console.log('Note: SSL certificates not found, running in HTTP mode');
   });
 }
