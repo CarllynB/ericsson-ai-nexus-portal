@@ -19,6 +19,8 @@ export default defineConfig(({ mode }) => ({
       key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key'),
     } : undefined,
     cors: true,
+    strictPort: false,
+    open: false
   },
   plugins: [
     react(),
@@ -32,10 +34,15 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    sourcemap: false,
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: undefined,
       }
     }
   },
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+  }
 }));
