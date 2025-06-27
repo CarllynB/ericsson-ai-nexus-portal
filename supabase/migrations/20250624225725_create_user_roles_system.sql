@@ -1,4 +1,5 @@
 
+
 -- Create an enum for the different roles
 CREATE TYPE public.app_role AS ENUM ('super_admin', 'admin', 'viewer');
 
@@ -49,6 +50,13 @@ CREATE POLICY "Users can view their own role"
 -- Modify the table to allow nullable user_id temporarily for pre-signup role assignments
 ALTER TABLE public.user_roles ALTER COLUMN user_id DROP NOT NULL;
 
+-- Temporarily drop the FK constraints so we can insert placeholder UUIDs
+ALTER TABLE public.user_roles
+  DROP CONSTRAINT IF EXISTS user_roles_user_id_fkey;
+
+ALTER TABLE public.user_roles
+  DROP CONSTRAINT IF EXISTS user_roles_assigned_by_fkey;
+
 -- Insert the hardcoded super admins with placeholder UUIDs
 -- These will be updated when users actually sign up
 INSERT INTO public.user_roles (user_id, email, role) 
@@ -56,6 +64,15 @@ VALUES
   (gen_random_uuid(), 'muhammad.mahmood@ericsson.com', 'super_admin'),
   (gen_random_uuid(), 'carllyn.barfi@ericsson.com', 'super_admin')
 ON CONFLICT (user_id, role) DO NOTHING;
+
+-- Recreate the foreign key constraints
+ALTER TABLE public.user_roles
+  ADD CONSTRAINT user_roles_user_id_fkey 
+  FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.user_roles
+  ADD CONSTRAINT user_roles_assigned_by_fkey 
+  FOREIGN KEY (assigned_by) REFERENCES auth.users(id);
 
 -- Create a function to handle user role assignment when users actually sign up
 CREATE OR REPLACE FUNCTION public.handle_user_role_on_signup()
@@ -95,3 +112,4 @@ CREATE TRIGGER update_user_roles_updated_at
   BEFORE UPDATE ON public.user_roles
   FOR EACH ROW
   EXECUTE FUNCTION public.update_user_roles_updated_at();
+
