@@ -324,7 +324,7 @@ class SQLiteService {
     }
   }
 
-  // User role management methods - Fixed and improved
+  // User role management methods - Fixed implementation
   async createUserRole(email: string, role: 'super_admin' | 'admin' | 'viewer', assignedBy?: string): Promise<void> {
     await this.initialize();
     if (!this.db) throw new Error('Database not initialized');
@@ -392,18 +392,24 @@ class SQLiteService {
     try {
       console.log(`🔄 Updating role for user: ${email} to: ${newRole}`);
       
+      // First check if user exists
+      const checkStmt = this.db.prepare('SELECT email FROM user_roles WHERE email = ?');
+      checkStmt.bind([email]);
+      const userExists = checkStmt.step();
+      checkStmt.free();
+      
+      if (!userExists) {
+        throw new Error(`No user found with email: ${email}`);
+      }
+      
       const stmt = this.db.prepare(`
         UPDATE user_roles 
         SET role = ?, updated_at = ? 
         WHERE email = ?
       `);
       
-      const result = stmt.run([newRole, new Date().toISOString(), email]);
+      stmt.run([newRole, new Date().toISOString(), email]);
       stmt.free();
-      
-      if (result.changes === 0) {
-        throw new Error(`No user found with email: ${email}`);
-      }
       
       this.saveDatabase();
       console.log('✅ User role updated successfully');
@@ -436,7 +442,7 @@ class SQLiteService {
       console.log(`✅ Retrieved ${results.length} user roles`);
       return results;
     } catch (error) {
-      console.error('❌ Error getting all user roles:', error);
+      console.log('⚠️ Error getting all user roles, returning empty array:', error);
       return [];
     }
   }
