@@ -40,17 +40,8 @@ class SQLiteService {
           this.db = new SQL.Database(uint8Array);
           console.log('✅ Successfully loaded existing database');
           
-          // Verify tables exist
-          const tables = this.db.exec("SELECT name FROM sqlite_master WHERE type='table'");
-          const tableNames = tables.length > 0 ? tables[0].values.map(row => row[0]) : [];
-          console.log('📋 Existing tables:', tableNames);
-          
-          if (!tableNames.includes('agents') || !tableNames.includes('user_roles') || !tableNames.includes('dashboard_settings')) {
-            console.log('⚠️ Required tables missing, recreating...');
-            this.createTables();
-          } else {
-            console.log('✅ All required tables exist');
-          }
+          // Verify and update tables
+          await this.verifyAndUpdateTables();
         } catch (error) {
           console.warn('⚠️ Failed to load saved database, creating new one:', error);
           this.db = new SQL.Database();
@@ -69,6 +60,45 @@ class SQLiteService {
       this.initialized = false;
       this.initializationPromise = null;
       throw error;
+    }
+  }
+
+  private async verifyAndUpdateTables(): Promise<void> {
+    if (!this.db) return;
+
+    try {
+      // Check if tables exist and have correct structure
+      const tables = this.db.exec("SELECT name FROM sqlite_master WHERE type='table'");
+      const tableNames = tables.length > 0 ? tables[0].values.map(row => row[0]) : [];
+      console.log('📋 Existing tables:', tableNames);
+      
+      if (!tableNames.includes('agents') || !tableNames.includes('user_roles') || !tableNames.includes('dashboard_settings')) {
+        console.log('⚠️ Required tables missing, recreating...');
+        this.createTables();
+        return;
+      }
+
+      // Check if user_roles table has the updated_at column
+      try {
+        const columnCheck = this.db.exec("PRAGMA table_info(user_roles)");
+        const columns = columnCheck.length > 0 ? columnCheck[0].values.map(row => row[1]) : [];
+        
+        if (!columns.includes('updated_at')) {
+          console.log('⚠️ Adding missing updated_at column to user_roles table...');
+          this.db.exec(`
+            ALTER TABLE user_roles 
+            ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))
+          `);
+          this.saveDatabase();
+          console.log('✅ Added updated_at column successfully');
+        }
+      } catch (error) {
+        console.warn('⚠️ Error checking/updating table structure, recreating tables:', error);
+        this.createTables();
+      }
+    } catch (error) {
+      console.error('❌ Error verifying tables:', error);
+      this.createTables();
     }
   }
 
@@ -322,7 +352,7 @@ class SQLiteService {
     }
   }
 
-  // User role management methods - Fixed SQLite operations
+  // User role management methods - Fixed with proper column handling
   async createUserRole(email: string, role: 'super_admin' | 'admin' | 'viewer', assignedBy?: string): Promise<void> {
     await this.initialize();
     if (!this.db) throw new Error('Database not initialized');
