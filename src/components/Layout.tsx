@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { X, LogIn, Settings, Shield, UserPlus, ExternalLink, Menu } from "lucide-react";
+import { X, LogIn, Settings, Shield, UserPlus, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
@@ -117,7 +116,7 @@ export const Layout = () => {
         </div>
 
         <nav className="p-6 space-y-2">
-          {/* Dynamic Sidebar Items */}
+          {/* Dynamic Sidebar Items - NO MORE EXTERNAL LINK ICONS */}
           {items.map((item) => (
             <button
               key={item.id}
@@ -126,9 +125,6 @@ export const Layout = () => {
             >
               <div className="w-2 h-2 bg-primary rounded-full" />
               <span className="font-medium">{item.title}</span>
-              {(item.url.startsWith('http://') || item.url.startsWith('https://')) && (
-                <ExternalLink className="w-3 h-3 ml-auto text-muted-foreground" />
-              )}
             </button>
           ))}
 
