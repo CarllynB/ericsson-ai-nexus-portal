@@ -25,8 +25,8 @@ class OfflineApiService {
       console.log('SQLite service initialized successfully');
       this.initialized = true;
       
-      // Seed database if empty
-      await this.seedDatabase();
+      // No longer seed database with hardcoded data
+      console.log('Database initialized - ready for user-created agents');
     } catch (error) {
       console.error('Failed to initialize SQLite service:', error);
       this.initialized = false;
@@ -81,94 +81,6 @@ class OfflineApiService {
 
   async logAction(agentId: string, action: string, details?: any) {
     console.log('Action logged:', { agentId, action, details });
-  }
-
-  async seedDatabase() {
-    try {
-      // Check if we already have data
-      const existingAgents = await sqliteService.getAgents();
-      if (existingAgents.length > 0) {
-        console.log('Database already has data, skipping seed');
-        return;
-      }
-
-      console.log('Seeding database with sample data...');
-
-      const sampleAgents: Omit<Agent, 'id' | 'created_at' | 'last_updated'>[] = [
-        {
-          name: 'AI Code Assistant',
-          description: 'An intelligent code generation and review assistant that helps developers write better code faster.',
-          category: 'Development',
-          status: 'active',
-          key_features: ['Code Generation', 'Code Review', 'Bug Detection', 'Performance Optimization'],
-          access_link: 'https://ai-code-assistant.example.com',
-          owner: 'Development Team',
-        },
-        {
-          name: 'Customer Support Bot',
-          description: 'Advanced AI chatbot for handling customer inquiries and support tickets automatically.',
-          category: 'Customer Service',
-          status: 'active',
-          key_features: ['24/7 Support', 'Multi-language', 'Ticket Routing', 'Knowledge Base Integration'],
-          access_link: 'https://support-bot.example.com',
-          owner: 'Customer Success',
-        },
-        {
-          name: 'Data Analytics Agent',
-          description: 'Automated data analysis and reporting agent that generates insights from your business data.',
-          category: 'Analytics',
-          status: 'active',
-          key_features: ['Real-time Analytics', 'Custom Reports', 'Predictive Modeling', 'Data Visualization'],
-          owner: 'Data Science Team',
-          contact_info: {
-            name: 'Data Science Lead',
-            email: 'data-science@company.com'
-          }
-        },
-        {
-          name: 'Marketing Assistant',
-          description: 'AI-powered marketing content creation and campaign optimization tool.',
-          category: 'Marketing',
-          status: 'coming_soon',
-          key_features: ['Content Generation', 'Campaign Optimization', 'A/B Testing', 'Social Media Management'],
-          owner: 'Marketing Team',
-          contact_info: {
-            name: 'Marketing Director',
-            email: 'marketing@company.com'
-          }
-        },
-        {
-          name: 'HR Recruitment Bot',
-          description: 'Intelligent recruitment assistant for screening candidates and scheduling interviews.',
-          category: 'Human Resources',
-          status: 'active',
-          key_features: ['Resume Screening', 'Interview Scheduling', 'Candidate Matching', 'Reference Checking'],
-          access_link: 'https://hr-bot.example.com',
-          owner: 'HR Department',
-        },
-        {
-          name: 'Financial Advisor AI',
-          description: 'AI-powered financial planning and investment advice system.',
-          category: 'Finance',
-          status: 'inactive',
-          key_features: ['Portfolio Analysis', 'Risk Assessment', 'Investment Recommendations', 'Budget Planning'],
-          owner: 'Finance Team',
-          contact_info: {
-            name: 'Finance Director',
-            email: 'finance@company.com'
-          }
-        }
-      ];
-
-      for (const agent of sampleAgents) {
-        await sqliteService.createAgent(agent);
-      }
-
-      console.log(`Database seeded with ${sampleAgents.length} sample agents`);
-    } catch (error) {
-      console.error('Error seeding database:', error);
-      // Don't throw error here, just log it
-    }
   }
 
   get isOffline() {

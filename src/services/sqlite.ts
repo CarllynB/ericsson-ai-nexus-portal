@@ -1,3 +1,4 @@
+
 import initSqlJs, { Database } from 'sql.js';
 import { Agent } from './api';
 
@@ -163,6 +164,7 @@ class SQLiteService {
 
       this.saveDatabase();
       console.log('✅ Database tables created and saved successfully');
+      console.log('ℹ️ Database is empty and ready for user-created content');
     } catch (error) {
       console.error('❌ Error creating tables:', error);
       throw error;

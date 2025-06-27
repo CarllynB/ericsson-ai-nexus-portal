@@ -3,98 +3,14 @@ import { sqliteService } from '@/services/sqlite';
 
 export const populateDefaultAgents = async () => {
   try {
-    console.log('🔄 Starting to populate default agents...');
+    console.log('🔄 Checking database initialization...');
     
-    // Initialize SQLite first
+    // Just initialize SQLite without adding any hardcoded agents
     await sqliteService.initialize();
     
-    // Check if agents already exist  
-    const existingAgents = await sqliteService.getAgents();
-    if (existingAgents.length > 0) {
-      console.log('✅ Agents already exist, skipping population');
-      return;
-    }
-
-    console.log('🔄 No existing agents found, creating default agents...');
-
-    const defaultAgents = [
-      {
-        name: 'AI Code Assistant',
-        description: 'Intelligent code generation and debugging assistant for developers',
-        category: 'Development',
-        status: 'active' as const,
-        owner: 'Development Team',
-        key_features: ['Code Generation', 'Bug Detection', 'Documentation'],
-        access_link: 'https://github.com/copilot',
-      },
-      {
-        name: 'Customer Support Bot',
-        description: 'Automated customer service agent with natural language processing',
-        category: 'Support',
-        status: 'active' as const,
-        owner: 'Customer Success Team',
-        key_features: ['24/7 Availability', 'Multi-language Support', 'Ticket Routing'],
-        contact_info: {
-          name: 'Sarah Johnson',
-          email: 'sarah.johnson@company.com'
-        },
-      },
-      {
-        name: 'Data Analytics Agent',
-        description: 'Advanced data analysis and visualization tool for business insights',
-        category: 'Analytics',
-        status: 'active' as const,
-        owner: 'Data Science Team',
-        key_features: ['Real-time Analysis', 'Custom Dashboards', 'Predictive Modeling'],
-        access_link: 'https://analytics.internal.com',
-      },
-      {
-        name: 'Content Generator',
-        description: 'AI-powered content creation for marketing and documentation',
-        category: 'Marketing',
-        status: 'coming_soon' as const,
-        owner: 'Marketing Team',
-        key_features: ['SEO Optimization', 'Multi-format Output', 'Brand Voice Consistency'],
-        contact_info: {
-          name: 'Mike Chen',
-          email: 'mike.chen@company.com'
-        },
-      },
-      {
-        name: 'Security Monitor',
-        description: 'Real-time security threat detection and response system',
-        category: 'Security',
-        status: 'active' as const,
-        owner: 'Security Team',
-        key_features: ['Threat Detection', 'Automated Response', 'Compliance Reporting'],
-        access_link: 'https://security.internal.com',
-      },
-      {
-        name: 'HR Assistant',
-        description: 'Intelligent HR support for employee queries and processes',
-        category: 'Human Resources',
-        status: 'active' as const,
-        owner: 'HR Team',
-        key_features: ['Employee Onboarding', 'Policy Questions', 'Leave Management'],
-        contact_info: {
-          name: 'Lisa Wang',
-          email: 'lisa.wang@company.com'
-        },
-      }
-    ];
-
-    // Add each agent to the database
-    for (const agent of defaultAgents) {
-      try {
-        await sqliteService.createAgent(agent);
-        console.log(`✅ Created agent: ${agent.name}`);
-      } catch (error) {
-        console.error(`❌ Failed to create agent ${agent.name}:`, error);
-      }
-    }
-
-    console.log('🎉 Successfully populated default agents');
+    console.log('✅ Database initialized and ready for user-created agents');
+    console.log('ℹ️ No default agents will be created - only super admins can add agents');
   } catch (error) {
-    console.error('❌ Error populating default agents:', error);
+    console.error('❌ Error initializing database:', error);
   }
 };
