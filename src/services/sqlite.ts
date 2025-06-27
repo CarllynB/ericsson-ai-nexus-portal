@@ -3,7 +3,7 @@ import initSqlJs, { Database } from 'sql.js';
 import { Agent } from './api';
 
 class SQLiteService {
-  private db: Database | null = null;
+  public db: Database | null = null;
   private initialized = false;
   private initializationPromise: Promise<void> | null = null;
 
@@ -328,6 +328,7 @@ class SQLiteService {
     if (!this.db) throw new Error('Database not initialized');
 
     try {
+      console.log(`Creating user role: ${email} -> ${role}`);
       const stmt = this.db.prepare(`
         INSERT OR REPLACE INTO user_roles (id, user_id, email, role, assigned_at, assigned_by)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -373,6 +374,29 @@ class SQLiteService {
       return null;
     }
   }
-}
 
-export const sqliteService = new SQLiteService();
+  async getAllUserRoles(): Promise<Array<{id: string, email: string, role: string, assigned_at: string}>> {
+    await this.initialize();
+    if (!this.db) throw new Error('Database not initialized');
+
+    try {
+      const stmt = this.db.prepare('SELECT * FROM user_roles ORDER BY assigned_at DESC');
+      const results = [];
+
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        results.push({
+          id: row.id as string,
+          email: row.email as string,
+          role: row.role as string,
+          assigned_at: row.assigned_at as string,
+        });
+      }
+
+      stmt.free();
+      return results;
+    } catch (error) {
+      console.error('❌ Error getting all user roles:', error);
+      return [];
+    }
+  }

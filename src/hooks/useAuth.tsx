@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '@/types/database';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useInitializeApp } from '@/hooks/useInitializeApp';
 
 interface AuthContextType {
@@ -39,6 +40,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Default super admin users - Fixed email addresses
   const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
 
+  // Dispatch custom event when auth state changes
+  const dispatchAuthChange = () => {
+    window.dispatchEvent(new CustomEvent('authChange'));
+  };
+
   useEffect(() => {
     // Check localStorage for existing user session
     const savedUser = localStorage.getItem('current_user');
@@ -46,6 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const userData = JSON.parse(savedUser);
         setUser(userData);
+        dispatchAuthChange();
       } catch (error) {
         console.error('Error parsing saved user:', error);
         localStorage.removeItem('current_user');
@@ -74,6 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           setUser(userData);
           localStorage.setItem('current_user', JSON.stringify(userData));
+          dispatchAuthChange();
           
           toast({
             title: "Success",
@@ -107,6 +115,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             
             setUser(userData);
             localStorage.setItem('current_user', JSON.stringify(userData));
+            dispatchAuthChange();
             
             toast({
               title: "Success",
@@ -164,6 +173,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       setUser(userData);
       localStorage.setItem('current_user', JSON.stringify(userData));
+      dispatchAuthChange();
       
       toast({
         title: "Success",
@@ -187,6 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Logging out...');
       setUser(null);
       localStorage.removeItem('current_user');
+      dispatchAuthChange();
       
       toast({
         title: "Success",

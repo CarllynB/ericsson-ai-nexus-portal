@@ -57,9 +57,6 @@ const Index = () => {
     setShowAll(false);
   }, [searchTerm]);
 
-  // Only show status badges for super admins, not regular admins
-  const showStatusBadges = currentUserRole === 'super_admin';
-
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(prev => prev + 1);
@@ -78,9 +75,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen px-6 py-12">
-      {/* Welcome Banner - Not a popup, stays on screen */}
+      {/* Welcome Banner - Updated styling to match pitch section */}
       {showWelcome && (
-        <div className="bg-muted/50 border border-border rounded-lg p-6 mb-8 relative">
+        <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 mb-8 relative">
           <Button
             variant="ghost"
             size="sm"
@@ -138,17 +135,18 @@ const Index = () => {
                           {agent.category}
                         </Badge>
                       </div>
-                      {showStatusBadges && (
-                        <Badge 
-                          variant={agent.status === "active" ? "default" : "secondary"}
-                          className={agent.status === "active" 
-                            ? "bg-green-100 text-green-800 hover:bg-green-100" 
-                            : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                          }
-                        >
-                          {agent.status.replace('_', ' ')}
-                        </Badge>
-                      )}
+                      {/* Show status badges to all users */}
+                      <Badge 
+                        variant={agent.status === "active" ? "default" : "secondary"}
+                        className={agent.status === "active" 
+                          ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                          : agent.status === "inactive"
+                          ? "bg-red-100 text-red-800 hover:bg-red-100"
+                          : "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+                        }
+                      >
+                        {agent.status.replace('_', ' ')}
+                      </Badge>
                     </div>
                     <CardDescription className="text-sm leading-relaxed">
                       {agent.description}

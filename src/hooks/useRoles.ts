@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { sqliteService } from '@/services/sqlite';
 
 export type UserRole = 'super_admin' | 'admin' | 'viewer';
 
@@ -22,6 +23,7 @@ export const useRoles = () => {
       const savedUser = localStorage.getItem('current_user');
       if (savedUser) {
         const userData = JSON.parse(savedUser);
+        console.log('Current user data:', userData);
         setCurrentUserRole(userData.role || 'viewer');
       } else {
         setCurrentUserRole('viewer');
@@ -34,44 +36,51 @@ export const useRoles = () => {
 
   const fetchAllUsers = async () => {
     try {
-      const userRoles = JSON.parse(localStorage.getItem('user_roles') || '{}');
+      await sqliteService.initialize();
+      
+      // Get all users from SQLite user_roles table
+      const stmt = sqliteService['db']?.prepare('SELECT * FROM user_roles ORDER BY assigned_at DESC');
       const usersWithRoles: UserWithRole[] = [];
       
-      // Get current user
+      if (stmt) {
+        while (stmt.step()) {
+          const row = stmt.getAsObject();
+          usersWithRoles.push({
+            id: row.id as string,
+            email: row.email as string,
+            role: row.role as UserRole,
+            assigned_at: row.assigned_at as string
+          });
+        }
+        stmt.free();
+      }
+      
+      // Add current user if not in the list
       const savedUser = localStorage.getItem('current_user');
       if (savedUser) {
         const userData = JSON.parse(savedUser);
-        usersWithRoles.push({
-          id: userData.id,
-          email: userData.email,
-          role: userData.role,
-          assigned_at: userData.created_at
-        });
-      }
-      
-      // Get all users from roles
-      Object.entries(userRoles).forEach(([email, role]) => {
-        if (!usersWithRoles.some(u => u.email === email)) {
-          usersWithRoles.push({
-            id: email.replace('@', '_').replace('.', '_'),
-            email,
-            role: role as UserRole,
-            assigned_at: new Date().toISOString()
+        if (!usersWithRoles.some(u => u.email === userData.email)) {
+          usersWithRoles.unshift({
+            id: userData.id,
+            email: userData.email,
+            role: userData.role,
+            assigned_at: userData.created_at
           });
         }
-      });
+      }
       
+      console.log('Fetched users with roles:', usersWithRoles);
       setUsers(usersWithRoles);
     } catch (error) {
       console.error('Error in fetchAllUsers:', error);
+      setUsers([]);
     }
   };
 
   const assignRole = async (userEmail: string, role: UserRole) => {
     try {
-      const existingRoles = JSON.parse(localStorage.getItem('user_roles') || '{}');
-      existingRoles[userEmail] = role;
-      localStorage.setItem('user_roles', JSON.stringify(existingRoles));
+      await sqliteService.initialize();
+      await sqliteService.createUserRole(userEmail, role);
       
       await fetchAllUsers();
       
@@ -98,9 +107,14 @@ export const useRoles = () => {
         throw new Error('User not found');
       }
       
-      const existingRoles = JSON.parse(localStorage.getItem('user_roles') || '{}');
-      existingRoles[user.email] = newRole;
-      localStorage.setItem('user_roles', JSON.stringify(existingRoles));
+      await sqliteService.initialize();
+      
+      // Update in SQLite
+      const stmt = sqliteService['db']?.prepare('UPDATE user_roles SET role = ? WHERE email = ?');
+      if (stmt) {
+        stmt.run([newRole, user.email]);
+        stmt.free();
+      }
       
       // Update current user if it's the same user
       const savedUser = localStorage.getItem('current_user');
@@ -109,11 +123,11 @@ export const useRoles = () => {
         if (userData.email === user.email) {
           userData.role = newRole;
           localStorage.setItem('current_user', JSON.stringify(userData));
+          setCurrentUserRole(newRole);
         }
       }
       
       await fetchAllUsers();
-      await fetchCurrentUserRole();
       
       toast({
         title: "Success",
@@ -146,6 +160,26 @@ export const useRoles = () => {
     };
 
     initRoles();
+
+    // Listen for storage changes to update roles without page reload
+    const handleStorageChange = () => {
+      fetchCurrentUserRole();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom events when user logs in/out
+    const handleAuthChange = () => {
+      fetchCurrentUserRole();
+      fetchAllUsers();
+    };
+
+    window.addEventListener('authChange', handleAuthChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('authChange', handleAuthChange);
+    };
   }, []);
 
   return {
