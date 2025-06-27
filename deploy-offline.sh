@@ -19,6 +19,11 @@ if ! command -v npm &> /dev/null; then
     exit 1
 fi
 
+echo "🧹 Cleaning previous build artifacts..."
+rm -rf dist/
+rm -rf node_modules/.vite/
+rm -rf deployment-package/
+
 echo "📦 Installing dependencies..."
 npm ci
 
@@ -31,16 +36,16 @@ if [ ! -d "dist" ]; then
     exit 1
 fi
 
-echo "📂 Creating deployment package..."
+echo "✅ Build successful! Contents of dist/:"
+ls -la dist/
 
-# Remove existing deployment package
-rm -rf deployment-package
+echo "📂 Creating deployment package..."
 
 # Create deployment structure
 mkdir -p deployment-package
-mkdir -p deployment-package/certs
 
 # Copy application files
+echo "📋 Copying application files..."
 cp -r dist/ deployment-package/
 cp server.js deployment-package/
 cp package.json deployment-package/
@@ -50,11 +55,15 @@ cp package-lock.json deployment-package/
 if [ -f "aiduagent-csstip.ckit1.explab.com.crt" ]; then
     cp aiduagent-csstip.ckit1.explab.com.crt deployment-package/
     echo "✅ SSL certificate copied to deployment root"
+else
+    echo "⚠️  SSL certificate not found"
 fi
 
 if [ -f "aiduagent-csstip.ckit1.explab.com.key" ]; then
     cp aiduagent-csstip.ckit1.explab.com.key deployment-package/
     echo "✅ SSL key copied to deployment root"
+else
+    echo "⚠️  SSL key not found"
 fi
 
 # Create startup script
@@ -72,6 +81,10 @@ if [ ! -d "dist" ]; then
     echo "❌ Error: dist directory not found. Application not properly built."
     exit 1
 fi
+
+echo "✅ Application files verified:"
+echo "   📁 dist/: $(ls -la dist/ | wc -l) files"
+echo "   📄 server.js: $(if [ -f server.js ]; then echo "✅ Found"; else echo "❌ Missing"; fi)"
 
 # Check for SSL certificates
 if [ -f "aiduagent-csstip.ckit1.explab.com.crt" ] && [ -f "aiduagent-csstip.ckit1.explab.com.key" ]; then
@@ -153,6 +166,12 @@ deployment-package/
 sudo ./start-offline.sh
 ```
 
+### path-to-regexp Error
+This error has been fixed in the latest version. If you still see it:
+1. Delete deployment-package folder
+2. Run deployment script again
+3. Use fresh build
+
 ### Certificates Not Working
 - Verify certificate files exist in deployment folder
 - Check file permissions: `ls -la *.crt *.key`
@@ -192,6 +211,7 @@ echo ""
 echo "✅ Deployment package created successfully!"
 echo ""
 echo "📁 Location: ./deployment-package/"
+echo "📊 Package size: $(du -sh deployment-package/ | cut -f1)"
 echo ""
 echo "🔧 Next Steps:"
 echo "1. Copy 'deployment-package' folder to your Linux VM"
@@ -204,13 +224,6 @@ echo "   HTTPS: https://aiduagent-csstip.ckit1.explab.com/"
 echo "   HTTP:  http://localhost:8080/"
 echo ""
 echo "🔐 Login: muhammad.mahmood@ericsson.com / password123"
-EOF
-
-chmod +x deploy-offline.sh
-
-echo "✅ All deployment files updated and verified!"
 echo ""
-echo "🧪 To test locally:"
-echo "1. Run: ./deploy-offline.sh"
-echo "2. Run: cd deployment-package"
-echo "3. Run: sudo ./start-offline.sh (HTTPS) or ./start-offline.sh (HTTP)"
+echo "🔧 To test locally right now:"
+echo "   cd deployment-package && sudo ./start-offline.sh"
