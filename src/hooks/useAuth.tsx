@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
 import { useInitializeApp } from '@/hooks/useInitializeApp';
+import { fileStorageService } from '@/services/fileStorage';
 
 interface AuthContextType {
   user: User | null;
@@ -97,17 +97,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (savedPassword) {
           // User exists, check password
           if (password === savedPassword) {
-            // Get user role from SQLite - ensure role is properly retrieved
-            const { sqliteService } = await import('@/services/sqlite');
-            await sqliteService.initialize();
-            
-            let role = await sqliteService.getUserRole(email);
-            console.log('Retrieved role from SQLite for', email, ':', role);
+            // Get user role from persistent storage
+            let role = await fileStorageService.getUserRole(email);
+            console.log('Retrieved role from persistent storage for', email, ':', role);
             
             if (!role) {
               // If no role assigned, default to viewer and create the role
               role = 'viewer';
-              await sqliteService.createUserRole(email, 'viewer');
+              await fileStorageService.createUserRole(email, 'viewer');
               console.log('Created default viewer role for', email);
             }
             
@@ -166,16 +163,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem(`password_${email}`, password);
       
       // Check if there's already a role assigned for this email
-      const { sqliteService } = await import('@/services/sqlite');
-      await sqliteService.initialize();
-      
-      let role = await sqliteService.getUserRole(email);
+      let role = await fileStorageService.getUserRole(email);
       console.log('Found existing role for new user', email, ':', role);
       
       if (!role) {
         // If no role was pre-assigned, default to viewer
         role = 'viewer';
-        await sqliteService.createUserRole(email, 'viewer');
+        await fileStorageService.createUserRole(email, 'viewer');
         console.log('Created default viewer role for new user', email);
       }
       

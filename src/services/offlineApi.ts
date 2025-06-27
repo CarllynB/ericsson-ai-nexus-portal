@@ -1,81 +1,52 @@
 
 import { Agent } from './api';
-import { sqliteService } from './sqlite';
+import { fileStorageService } from './fileStorage';
 
 class OfflineApiService {
   private initialized = false;
-  private initPromise: Promise<void> | null = null;
 
   constructor() {
-    // Don't initialize in constructor to avoid blocking
-  }
-
-  private async initializeSQLite() {
-    if (this.initialized) return;
-    if (this.initPromise) return this.initPromise;
-    
-    this.initPromise = this.doInitialize();
-    return this.initPromise;
-  }
-
-  private async doInitialize() {
-    try {
-      console.log('Initializing offline API service...');
-      await sqliteService.initialize();
-      console.log('SQLite service initialized successfully');
-      this.initialized = true;
-      
-      // No longer seed database with hardcoded data
-      console.log('Database initialized - ready for user-created agents');
-    } catch (error) {
-      console.error('Failed to initialize SQLite service:', error);
-      this.initialized = false;
-      this.initPromise = null;
-      throw error;
-    }
+    // File storage is always ready, no async initialization needed
+    this.initialized = true;
   }
 
   async getAgents(): Promise<Agent[]> {
     try {
-      await this.initializeSQLite();
-      console.log('Fetching agents from local database');
-      return await sqliteService.getAgents();
+      console.log('Fetching agents from persistent file storage');
+      return await fileStorageService.getAgents();
     } catch (error) {
       console.error('Error getting agents:', error);
-      throw new Error('Failed to load agents from local database');
+      throw new Error('Failed to load agents from persistent storage');
     }
   }
 
   async createAgent(agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>): Promise<Agent> {
     try {
-      await this.initializeSQLite();
-      console.log('Creating agent in local database');
-      return await sqliteService.createAgent(agent);
+      console.log('Creating agent in persistent file storage');
+      return await fileStorageService.createAgent(agent);
     } catch (error) {
       console.error('Error creating agent:', error);
-      throw new Error('Failed to create agent in local database');
+      throw new Error('Failed to create agent in persistent storage');
     }
   }
 
   async updateAgent(id: string, updates: Partial<Agent>): Promise<Agent> {
     try {
-      await this.initializeSQLite();
-      console.log('Updating agent in local database');
-      return await sqliteService.updateAgent(id, updates);
+      console.log('Updating agent in persistent file storage');
+      return await fileStorageService.updateAgent(id, updates);
     } catch (error) {
       console.error('Error updating agent:', error);
-      throw new Error('Failed to update agent in local database');
+      throw new Error('Failed to update agent in persistent storage');
     }
   }
 
   async deleteAgent(id: string): Promise<void> {
     try {
-      await this.initializeSQLite();
-      console.log('Deleting agent from local database');
-      await sqliteService.deleteAgent(id);
+      console.log('Deleting agent from persistent file storage');
+      await fileStorageService.deleteAgent(id);
     } catch (error) {
       console.error('Error deleting agent:', error);
-      throw new Error('Failed to delete agent from local database');
+      throw new Error('Failed to delete agent from persistent storage');
     }
   }
 

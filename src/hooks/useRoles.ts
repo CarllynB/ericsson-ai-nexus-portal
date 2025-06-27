@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { sqliteService } from '@/services/sqlite';
+import { fileStorageService } from '@/services/fileStorage';
 
 export type UserRole = 'super_admin' | 'admin' | 'viewer';
 
@@ -25,16 +25,15 @@ export const useRoles = () => {
         const userData = JSON.parse(savedUser);
         console.log('🔍 Current user data:', userData);
         
-        // Always check SQLite for the most up-to-date role
-        await sqliteService.initialize();
-        const roleFromDb = await sqliteService.getUserRole(userData.email);
+        // Always check file storage for the most up-to-date role
+        const roleFromStorage = await fileStorageService.getUserRole(userData.email);
         
-        if (roleFromDb) {
-          // Update localStorage with the latest role from SQLite
-          userData.role = roleFromDb;
+        if (roleFromStorage) {
+          // Update localStorage with the latest role from storage
+          userData.role = roleFromStorage;
           localStorage.setItem('current_user', JSON.stringify(userData));
-          setCurrentUserRole(roleFromDb as UserRole);
-          console.log('✅ Updated user role from SQLite:', roleFromDb);
+          setCurrentUserRole(roleFromStorage as UserRole);
+          console.log('✅ Updated user role from persistent storage:', roleFromStorage);
         } else {
           setCurrentUserRole(userData.role || 'viewer');
         }
@@ -49,10 +48,9 @@ export const useRoles = () => {
 
   const fetchAllUsers = async () => {
     try {
-      await sqliteService.initialize();
-      const allUsers = await sqliteService.getAllUserRoles();
+      const allUsers = await fileStorageService.getAllUserRoles();
       
-      console.log('✅ Fetched users with roles from SQLite:', allUsers);
+      console.log('✅ Fetched users with roles from persistent storage:', allUsers);
       setUsers(allUsers.map(user => ({
         id: user.id,
         email: user.email,
@@ -70,15 +68,13 @@ export const useRoles = () => {
       console.log(`🔄 Starting role assignment: ${userEmail} -> ${role}`);
       setLoading(true);
       
-      await sqliteService.initialize();
-      
       // Get current user for assignedBy
       const savedUser = localStorage.getItem('current_user');
       const assignedBy = savedUser ? JSON.parse(savedUser).email : undefined;
       
-      // Create or update the user role in SQLite
-      await sqliteService.createUserRole(userEmail, role, assignedBy);
-      console.log('✅ Role assignment completed in SQLite');
+      // Create or update the user role in persistent storage
+      await fileStorageService.createUserRole(userEmail, role, assignedBy);
+      console.log('✅ Role assignment completed in persistent storage');
       
       // Refresh the users list
       await fetchAllUsers();
@@ -111,11 +107,9 @@ export const useRoles = () => {
         throw new Error('User not found');
       }
       
-      await sqliteService.initialize();
-      
       // Update the role using the email
-      await sqliteService.updateUserRole(user.email, newRole);
-      console.log('✅ Role update completed in SQLite');
+      await fileStorageService.updateUserRole(user.email, newRole);
+      console.log('✅ Role update completed in persistent storage');
       
       // Update current user if it's the same user
       const savedUser = localStorage.getItem('current_user');
