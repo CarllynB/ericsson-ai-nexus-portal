@@ -1,5 +1,5 @@
+
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
 import { X, LogIn, Settings, Shield, UserPlus, ExternalLink, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
@@ -12,7 +12,11 @@ import { SidebarManagement } from "@/components/SidebarManagement";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSidebarItems } from "@/hooks/useSidebarItems";
 
-export const Layout = () => {
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+export const Layout = ({ children }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
   const [roleManagementOpen, setRoleManagementOpen] = useState(false);
@@ -219,7 +223,7 @@ export const Layout = () => {
 
       {/* Main Content */}
       <main className="pt-20">
-        <Outlet />
+        {children}
       </main>
 
       <SignInModal open={signInOpen} onOpenChange={setSignInOpen} />
