@@ -400,3 +400,6 @@ class SQLiteService {
       return [];
     }
   }
+}
+
+export const sqliteService = new SQLiteService();
