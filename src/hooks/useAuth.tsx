@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '@/types/database';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
@@ -30,114 +29,74 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Default super admin users
+  // Default super admin users for offline mode
   const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
 
   useEffect(() => {
-    let isMounted = true;
-
-    const initializeAuth = async () => {
+    // In offline mode, check localStorage for existing user session
+    const savedUser = localStorage.getItem('offline_user');
+    if (savedUser) {
       try {
-        console.log('Initializing auth...');
-        
-        // Check for existing session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          return;
-        }
-        
-        if (isMounted && session?.user) {
-          console.log('Found existing session for:', session.user.email);
-          const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'viewer';
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            role,
-            created_at: session.user.created_at || new Date().toISOString(),
-          });
-        }
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
       } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        console.error('Error parsing saved user:', error);
+        localStorage.removeItem('offline_user');
       }
-    };
-
-    initializeAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        
-        if (!isMounted) return;
-
-        if (session?.user) {
-          const role = SUPER_ADMINS.includes(session.user.email || '') ? 'super_admin' : 'viewer';
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            role,
-            created_at: session.user.created_at || new Date().toISOString(),
-          });
-        } else {
-          setUser(null);
-        }
-        
-        if (loading) {
-          setLoading(false);
-        }
-      }
-    );
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, [loading]);
+    }
+  }, []);
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
-      console.log('Attempting login for:', email);
+      console.log('Attempting offline login for:', email);
+      setLoading(true);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        console.error('Login error:', error);
-        throw error;
-      }
-
-      if (data.user) {
-        console.log('Login successful for:', data.user.email);
-        const role = SUPER_ADMINS.includes(data.user.email || '') ? 'super_admin' : 'viewer';
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
+      // Simple offline authentication - in a real app you'd want proper security
+      if (email && password === 'admin123') {
+        const role = SUPER_ADMINS.includes(email) ? 'super_admin' : 'admin';
+        const userData: User = {
+          id: email.replace('@', '_').replace('.', '_'),
+          email,
           role,
-          created_at: data.user.created_at || new Date().toISOString(),
+          created_at: new Date().toISOString(),
+        };
+        
+        setUser(userData);
+        localStorage.setItem('offline_user', JSON.stringify(userData));
+        
+        toast({
+          title: "Success",
+          description: "Logged in successfully (offline mode)"
         });
+      } else {
+        throw new Error('Invalid credentials. Use password: admin123');
       }
     } catch (error) {
       console.error('Login failed:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Login failed',
+        variant: "destructive"
+      });
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = async (): Promise<void> => {
     try {
       console.log('Logging out...');
-      await supabase.auth.signOut();
       setUser(null);
+      localStorage.removeItem('offline_user');
+      
+      toast({
+        title: "Success",
+        description: "Logged out successfully"
+      });
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -145,22 +104,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const changePassword = async (newPassword: string): Promise<boolean> => {
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive"
-        });
-        return false;
-      }
-
+      // In offline mode, we can't actually change the password
+      // but we'll simulate success for demo purposes
       toast({
-        title: "Success",
-        description: "Password updated successfully"
+        title: "Info",
+        description: "Password change not available in offline mode"
       });
       return true;
     } catch (error) {

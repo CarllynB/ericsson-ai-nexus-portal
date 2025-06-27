@@ -17,43 +17,46 @@ class SQLiteService {
 
   private async doInitialize(): Promise<void> {
     try {
-      console.log('Starting SQLite initialization...');
+      console.log('🔄 Starting SQLite initialization...');
       const SQL = await initSqlJs({
         locateFile: (file) => `https://sql.js.org/dist/${file}`
       });
+      console.log('✅ SQL.js loaded successfully');
 
       // Try to load existing database from localStorage
       const savedDb = localStorage.getItem('offline_database');
       if (savedDb) {
         try {
-          console.log('Loading existing database from localStorage...');
+          console.log('🔄 Loading existing database from localStorage...');
           const uint8Array = new Uint8Array(JSON.parse(savedDb));
           this.db = new SQL.Database(uint8Array);
-          console.log('Successfully loaded existing database');
+          console.log('✅ Successfully loaded existing database');
           
           // Verify tables exist
           const tables = this.db.exec("SELECT name FROM sqlite_master WHERE type='table'");
-          console.log('Existing tables:', tables);
+          console.log('📋 Existing tables:', tables);
           
           if (!tables.length || !tables[0].values.some(row => row[0] === 'agents')) {
-            console.log('Tables missing, recreating...');
+            console.log('⚠️ Tables missing, recreating...');
             this.createTables();
+          } else {
+            console.log('✅ All required tables exist');
           }
         } catch (error) {
-          console.warn('Failed to load saved database, creating new one:', error);
+          console.warn('⚠️ Failed to load saved database, creating new one:', error);
           this.db = new SQL.Database();
           this.createTables();
         }
       } else {
-        console.log('No existing database found, creating new one...');
+        console.log('🆕 No existing database found, creating new one...');
         this.db = new SQL.Database();
         this.createTables();
       }
 
       this.initialized = true;
-      console.log('SQLite database initialized successfully');
+      console.log('🎉 SQLite database initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize SQLite:', error);
+      console.error('❌ Failed to initialize SQLite:', error);
       this.initialized = false;
       this.initializationPromise = null;
       throw error;
@@ -62,16 +65,17 @@ class SQLiteService {
 
   private createTables(): void {
     if (!this.db) {
-      console.error('Database not available for table creation');
+      console.error('❌ Database not available for table creation');
       return;
     }
 
     try {
-      console.log('Creating database tables...');
+      console.log('🔄 Creating database tables...');
       
       // Create agents table
       this.db.exec(`
-        CREATE TABLE IF NOT EXISTS agents (
+        DROP TABLE IF EXISTS agents;
+        CREATE TABLE agents (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           description TEXT NOT NULL,
@@ -87,16 +91,16 @@ class SQLiteService {
       `);
 
       this.saveDatabase();
-      console.log('Database tables created and saved successfully');
+      console.log('✅ Database tables created and saved successfully');
     } catch (error) {
-      console.error('Error creating tables:', error);
+      console.error('❌ Error creating tables:', error);
       throw error;
     }
   }
 
   private saveDatabase(): void {
     if (!this.db) {
-      console.warn('No database to save');
+      console.warn('⚠️ No database to save');
       return;
     }
 
@@ -104,9 +108,9 @@ class SQLiteService {
       const data = this.db.export();
       const dataArray = Array.from(data);
       localStorage.setItem('offline_database', JSON.stringify(dataArray));
-      console.log('Database saved to localStorage');
+      console.log('💾 Database saved to localStorage');
     } catch (error) {
-      console.error('Failed to save database:', error);
+      console.error('❌ Failed to save database:', error);
     }
   }
 
@@ -115,7 +119,7 @@ class SQLiteService {
     if (!this.db) throw new Error('Database not initialized');
 
     try {
-      console.log('Querying agents from SQLite database...');
+      console.log('🔍 Querying agents from SQLite database...');
       const stmt = this.db.prepare('SELECT * FROM agents ORDER BY last_updated DESC');
       const results = [];
 
@@ -137,10 +141,10 @@ class SQLiteService {
       }
 
       stmt.free();
-      console.log(`Successfully retrieved ${results.length} agents from database`);
+      console.log(`✅ Successfully retrieved ${results.length} agents from database`);
       return results;
     } catch (error) {
-      console.error('Error fetching agents from SQLite:', error);
+      console.error('❌ Error fetching agents from SQLite:', error);
       throw error;
     }
   }
@@ -157,7 +161,7 @@ class SQLiteService {
     };
 
     try {
-      console.log('Creating new agent in SQLite:', newAgent.name);
+      console.log('➕ Creating new agent in SQLite:', newAgent.name);
       const stmt = this.db.prepare(`
         INSERT INTO agents (id, name, description, category, status, key_features, access_link, contact_info, owner, last_updated, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -179,10 +183,10 @@ class SQLiteService {
 
       stmt.free();
       this.saveDatabase();
-      console.log('Agent created successfully:', newAgent.name);
+      console.log('✅ Agent created successfully:', newAgent.name);
       return newAgent;
     } catch (error) {
-      console.error('Error creating agent in SQLite:', error);
+      console.error('❌ Error creating agent in SQLite:', error);
       throw error;
     }
   }
@@ -256,7 +260,7 @@ class SQLiteService {
         created_at: row.created_at as string,
       };
     } catch (error) {
-      console.error('Error updating agent in SQLite:', error);
+      console.error('❌ Error updating agent in SQLite:', error);
       throw error;
     }
   }
@@ -270,9 +274,9 @@ class SQLiteService {
       stmt.run([id]);
       stmt.free();
       this.saveDatabase();
-      console.log('Agent deleted successfully');
+      console.log('🗑️ Agent deleted successfully');
     } catch (error) {
-      console.error('Error deleting agent from SQLite:', error);
+      console.error('❌ Error deleting agent from SQLite:', error);
       throw error;
     }
   }
