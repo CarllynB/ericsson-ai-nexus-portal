@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,9 +9,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRoles } from "@/hooks/useRoles";
 import { getAgents } from "@/services/api";
-import { SignInModal } from "@/components/SignInModal";
-import { useAuth } from "@/hooks/useAuth";
-import { useInitializeApp } from "@/hooks/useInitializeApp";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,16 +16,11 @@ const Index = () => {
   const [agents, setAgents] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
-  const [showSignIn, setShowSignIn] = useState(false);
   const { currentUserRole } = useRoles();
-  const { user } = useAuth();
-  const { initialized } = useInitializeApp();
 
   const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
-    if (!initialized) return;
-    
     const fetchAgents = async () => {
       try {
         const agentsData = await getAgents();
@@ -44,7 +37,7 @@ const Index = () => {
     };
 
     fetchAgents();
-  }, [initialized]);
+  }, []);
 
   const filteredAgents = agents.filter(agent =>
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,52 +77,10 @@ const Index = () => {
     setShowAll(true);
   };
 
-  if (!initialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg text-muted-foreground">Initializing AI-DU Agent Portal...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen px-6 py-12">
-      {/* Header with Sign In Button */}
-      <div className="fixed top-4 left-4 right-4 z-50 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
-            <div className="w-4 h-4 bg-white rounded-sm" />
-          </div>
-          <h1 className="text-xl font-bold">AI-DU Agent Portal</h1>
-        </div>
-        
-        {!user ? (
-          <Button 
-            variant="outline" 
-            onClick={() => setShowSignIn(true)}
-            className="bg-white/90 backdrop-blur"
-          >
-            Sign In
-          </Button>
-        ) : (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Welcome, {user.email}</span>
-            <Button 
-              variant="outline" 
-              onClick={() => window.location.href = '/dashboard'}
-              className="bg-white/90 backdrop-blur"
-            >
-              Dashboard
-            </Button>
-          </div>
-        )}
-      </div>
-
       {/* Welcome Popup */}
-      <Dialog open={showWelcome} onOpenChange={setShowWelcome}>
+      <Dialog open={showWelcome} onOpenChange={(open) => !open && setShowWelcome(false)}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-center mb-4">
@@ -138,7 +89,7 @@ const Index = () => {
           </DialogHeader>
           <div className="space-y-6 py-4">
             <p className="text-lg text-muted-foreground text-center">
-              Our centralized gateway to access and interact with GenAI agents. Streamline operations with intelligent automation.
+              A centralized space to access and interact with GenAI agents. Empowering intelligent automation across teams.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -162,7 +113,7 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
-      <div className="max-w-7xl mx-auto pt-20">
+      <div className="max-w-7xl mx-auto">
         {/* Search Bar */}
         <div className="max-w-2xl mx-auto mb-12">
           <div className="relative">
@@ -328,12 +279,6 @@ const Index = () => {
           </Button>
         </div>
       </div>
-
-      {/* Sign In Modal */}
-      <SignInModal 
-        open={showSignIn} 
-        onOpenChange={setShowSignIn} 
-      />
     </div>
   );
 };
