@@ -1,4 +1,3 @@
-
 import initSqlJs, { Database } from 'sql.js';
 import { Agent } from './api';
 
@@ -110,7 +109,7 @@ class SQLiteService {
           role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'viewer')),
           assigned_at TEXT NOT NULL,
           assigned_by TEXT,
-          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
       `);
 
@@ -323,35 +322,55 @@ class SQLiteService {
     }
   }
 
-  // User role management methods
+  // User role management methods - Completely SQLite-based
   async createUserRole(email: string, role: 'super_admin' | 'admin' | 'viewer', assignedBy?: string): Promise<void> {
     await this.initialize();
     if (!this.db) throw new Error('Database not initialized');
 
     try {
-      console.log(`Creating user role: ${email} -> ${role}`);
+      console.log(`Creating/updating user role: ${email} -> ${role}`);
+      
+      const userId = email.replace('@', '_').replace(/\./g, '_');
+      const now = new Date().toISOString();
+      
+      // Use INSERT OR REPLACE to handle both creation and updates
       const stmt = this.db.prepare(`
         INSERT OR REPLACE INTO user_roles (id, user_id, email, role, assigned_at, assigned_by, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
 
-      const userId = email.replace('@', '_').replace('.', '_');
-      const now = new Date().toISOString();
-      stmt.run([
-        userId,
-        userId,
-        email,
-        role,
-        now,
-        assignedBy || null,
-        now
-      ]);
-
+      stmt.run([userId, userId, email, role, now, assignedBy || null, now]);
       stmt.free();
+      
       this.saveDatabase();
-      console.log('✅ User role created successfully');
+      console.log('✅ User role created/updated successfully');
     } catch (error) {
       console.error('❌ Error creating user role:', error);
+      throw error;
+    }
+  }
+
+  async updateUserRole(email: string, newRole: 'super_admin' | 'admin' | 'viewer'): Promise<void> {
+    await this.initialize();
+    if (!this.db) throw new Error('Database not initialized');
+
+    try {
+      console.log(`Updating user role: ${email} -> ${newRole}`);
+      
+      const now = new Date().toISOString();
+      const stmt = this.db.prepare(`
+        UPDATE user_roles 
+        SET role = ?, updated_at = ? 
+        WHERE email = ?
+      `);
+
+      stmt.run([newRole, now, email]);
+      stmt.free();
+      
+      this.saveDatabase();
+      console.log('✅ User role updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating user role:', error);
       throw error;
     }
   }
@@ -367,10 +386,12 @@ class SQLiteService {
       if (stmt.step()) {
         const row = stmt.getAsObject();
         stmt.free();
+        console.log(`Found role for ${email}:`, row.role);
         return row.role as string;
       }
       
       stmt.free();
+      console.log(`No role found for ${email}`);
       return null;
     } catch (error) {
       console.error('❌ Error getting user role:', error);
@@ -397,6 +418,7 @@ class SQLiteService {
       }
 
       stmt.free();
+      console.log(`Retrieved ${results.length} user roles from database`);
       return results;
     } catch (error) {
       console.error('❌ Error getting all user roles:', error);

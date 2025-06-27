@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (password === correctPassword) {
           const userData: User = {
-            id: email.replace('@', '_').replace('.', '_'),
+            id: email.replace('@', '_').replace(/\./g, '_'),
             email,
             role: 'super_admin',
             created_at: new Date().toISOString(),
@@ -97,20 +97,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (savedPassword) {
           // User exists, check password
           if (password === savedPassword) {
-            // Get user role from SQLite - this is the key fix
+            // Get user role from SQLite - ensure role is properly retrieved
             const { sqliteService } = await import('@/services/sqlite');
             await sqliteService.initialize();
             
             let role = await sqliteService.getUserRole(email);
+            console.log('Retrieved role from SQLite for', email, ':', role);
             
             if (!role) {
               // If no role assigned, default to viewer and create the role
               role = 'viewer';
               await sqliteService.createUserRole(email, 'viewer');
+              console.log('Created default viewer role for', email);
             }
             
             const userData: User = {
-              id: email.replace('@', '_').replace('.', '_'),
+              id: email.replace('@', '_').replace(/\./g, '_'),
               email,
               role: role as 'super_admin' | 'admin' | 'viewer',
               created_at: new Date().toISOString(),
@@ -168,15 +170,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await sqliteService.initialize();
       
       let role = await sqliteService.getUserRole(email);
+      console.log('Found existing role for new user', email, ':', role);
       
       if (!role) {
         // If no role was pre-assigned, default to viewer
         role = 'viewer';
         await sqliteService.createUserRole(email, 'viewer');
+        console.log('Created default viewer role for new user', email);
       }
       
       const userData: User = {
-        id: email.replace('@', '_').replace('.', '_'),
+        id: email.replace('@', '_').replace(/\./g, '_'),
         email,
         role: role as 'super_admin' | 'admin' | 'viewer',
         created_at: new Date().toISOString(),

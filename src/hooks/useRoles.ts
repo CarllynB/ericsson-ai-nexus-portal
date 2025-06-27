@@ -26,12 +26,15 @@ export const useRoles = () => {
         console.log('Current user data:', userData);
         
         // Always check SQLite for the most up-to-date role
+        await sqliteService.initialize();
         const roleFromDb = await sqliteService.getUserRole(userData.email);
+        
         if (roleFromDb) {
           // Update localStorage with the latest role from SQLite
           userData.role = roleFromDb;
           localStorage.setItem('current_user', JSON.stringify(userData));
           setCurrentUserRole(roleFromDb as UserRole);
+          console.log('Updated user role from SQLite:', roleFromDb);
         } else {
           setCurrentUserRole(userData.role || 'viewer');
         }
@@ -64,14 +67,18 @@ export const useRoles = () => {
 
   const assignRole = async (userEmail: string, role: UserRole) => {
     try {
+      console.log(`Starting role assignment: ${userEmail} -> ${role}`);
       await sqliteService.initialize();
       
       // Get current user for assignedBy
       const savedUser = localStorage.getItem('current_user');
       const assignedBy = savedUser ? JSON.parse(savedUser).email : undefined;
       
+      // Create or update the user role in SQLite
       await sqliteService.createUserRole(userEmail, role, assignedBy);
+      console.log('Role assignment completed in SQLite');
       
+      // Refresh the users list
       await fetchAllUsers();
       
       toast({
@@ -83,7 +90,7 @@ export const useRoles = () => {
       console.error('Error assigning role:', error);
       toast({
         title: "Error",
-        description: "Failed to assign role",
+        description: "Failed to assign role. Please try again.",
         variant: "destructive"
       });
       return false;
@@ -92,6 +99,7 @@ export const useRoles = () => {
 
   const updateUserRole = async (userId: string, newRole: UserRole) => {
     try {
+      console.log(`Starting role update: ${userId} -> ${newRole}`);
       const user = users.find(u => u.id === userId);
       if (!user) {
         throw new Error('User not found');
@@ -99,19 +107,9 @@ export const useRoles = () => {
       
       await sqliteService.initialize();
       
-      // Update in SQLite using the proper method
-      const stmt = sqliteService.db?.prepare('UPDATE user_roles SET role = ?, updated_at = ? WHERE email = ?');
-      if (stmt) {
-        stmt.run([newRole, new Date().toISOString(), user.email]);
-        stmt.free();
-        
-        // Save the database
-        const data = sqliteService.db?.export();
-        if (data) {
-          const dataArray = Array.from(data);
-          localStorage.setItem('sqlite_database', JSON.stringify(dataArray));
-        }
-      }
+      // Update the role using the email
+      await sqliteService.updateUserRole(user.email, newRole);
+      console.log('Role update completed in SQLite');
       
       // Update current user if it's the same user
       const savedUser = localStorage.getItem('current_user');
@@ -124,6 +122,7 @@ export const useRoles = () => {
         }
       }
       
+      // Refresh the users list
       await fetchAllUsers();
       
       toast({
@@ -135,7 +134,7 @@ export const useRoles = () => {
       console.error('Error updating user role:', error);
       toast({
         title: "Error",
-        description: "Failed to update role",
+        description: "Failed to update role. Please try again.",
         variant: "destructive"
       });
       return false;
