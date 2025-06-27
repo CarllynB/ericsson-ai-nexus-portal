@@ -18,9 +18,18 @@ class SQLiteService {
   private async doInitialize(): Promise<void> {
     try {
       console.log('🔄 Starting SQLite initialization...');
-      const SQL = await initSqlJs({
-        locateFile: (file) => `https://sql.js.org/dist/${file}`
-      });
+      
+      // Try to load SQL.js with fallback
+      let SQL;
+      try {
+        SQL = await initSqlJs({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/${file}`
+        });
+      } catch (error) {
+        console.warn('Failed to load from CDN, trying alternative:', error);
+        SQL = await initSqlJs();
+      }
+      
       console.log('✅ SQL.js loaded successfully');
 
       // Try to load existing database from localStorage

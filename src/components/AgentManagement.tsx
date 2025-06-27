@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +21,7 @@ export const AgentManagement = () => {
   const [page, setPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
-  const { canEdit, canManageUsers } = useRoles();
+  const { canEdit, isSuperAdmin } = useRoles();
   const { toast } = useToast();
 
   const pageSize = 12;
@@ -226,7 +227,8 @@ export const AgentManagement = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Agent Management</h2>
-        {canManageUsers && (
+        {/* Only super admins can add new agents */}
+        {isSuperAdmin && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2">
@@ -389,122 +391,18 @@ export const AgentManagement = () => {
                       </div>
                     </div>
                     <div className="flex gap-2">
+                      {/* All admins (including super admins) can edit */}
                       {canEdit && (
-                        <Dialog open={isDialogOpen && editingAgent?.id === agent.id} onOpenChange={(open) => {
-                          if (!open) {
-                            setIsDialogOpen(false);
-                            setEditingAgent(null);
-                          }
-                        }}>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(agent)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Edit Agent</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                              <Input
-                                placeholder="Agent Name"
-                                value={formData.name}
-                                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                required
-                              />
-                              <Textarea
-                                placeholder="Description"
-                                value={formData.description}
-                                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                                required
-                              />
-                              <Input
-                                placeholder="Category"
-                                value={formData.category}
-                                onChange={(e) => setFormData({...formData, category: e.target.value})}
-                                required
-                              />
-                              <Select
-                                value={formData.status}
-                                onValueChange={(value: Agent['status']) => 
-                                  setFormData({...formData, status: value})
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="active">Active</SelectItem>
-                                  <SelectItem value="inactive">Inactive</SelectItem>
-                                  <SelectItem value="coming_soon">Coming Soon</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <Textarea
-                                placeholder="Key Features (one per line)"
-                                value={formData.key_features}
-                                onChange={(e) => setFormData({...formData, key_features: e.target.value})}
-                              />
-                              
-                              <div className="space-y-4">
-                                <label className="text-sm font-medium">Access Type</label>
-                                <Select
-                                  value={formData.access_type}
-                                  onValueChange={(value: 'link' | 'contact') => 
-                                    setFormData({...formData, access_type: value})
-                                  }
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="link">Access Link</SelectItem>
-                                    <SelectItem value="contact">Contact Information</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                
-                                {formData.access_type === 'link' ? (
-                                  <Input
-                                    placeholder="Access Link (optional)"
-                                    value={formData.access_link}
-                                    onChange={(e) => setFormData({...formData, access_link: e.target.value})}
-                                  />
-                                ) : (
-                                  <div className="space-y-2">
-                                    <Input
-                                      placeholder="Contact Name"
-                                      value={formData.contact_name}
-                                      onChange={(e) => setFormData({...formData, contact_name: e.target.value})}
-                                      required
-                                    />
-                                    <Input
-                                      placeholder="Contact Email"
-                                      type="email"
-                                      value={formData.contact_email}
-                                      onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
-                                      required
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                              
-                              <Input
-                                placeholder="Owner"
-                                value={formData.owner}
-                                onChange={(e) => setFormData({...formData, owner: e.target.value})}
-                                required
-                              />
-                              <Button type="submit" className="w-full">
-                                Update Agent
-                              </Button>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(agent)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
                       )}
-                      {canManageUsers && (
+                      {/* Only super admins can delete */}
+                      {isSuperAdmin && (
                         <Button
                           variant="destructive"
                           size="sm"

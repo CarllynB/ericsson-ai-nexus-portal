@@ -36,27 +36,47 @@ class OfflineApiService {
   }
 
   async getAgents(): Promise<Agent[]> {
-    await this.initializeSQLite();
-    console.log('Fetching agents from local database');
-    return await sqliteService.getAgents();
+    try {
+      await this.initializeSQLite();
+      console.log('Fetching agents from local database');
+      return await sqliteService.getAgents();
+    } catch (error) {
+      console.error('Error getting agents:', error);
+      throw new Error('Failed to load agents from local database');
+    }
   }
 
   async createAgent(agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>): Promise<Agent> {
-    await this.initializeSQLite();
-    console.log('Creating agent in local database');
-    return await sqliteService.createAgent(agent);
+    try {
+      await this.initializeSQLite();
+      console.log('Creating agent in local database');
+      return await sqliteService.createAgent(agent);
+    } catch (error) {
+      console.error('Error creating agent:', error);
+      throw new Error('Failed to create agent in local database');
+    }
   }
 
   async updateAgent(id: string, updates: Partial<Agent>): Promise<Agent> {
-    await this.initializeSQLite();
-    console.log('Updating agent in local database');
-    return await sqliteService.updateAgent(id, updates);
+    try {
+      await this.initializeSQLite();
+      console.log('Updating agent in local database');
+      return await sqliteService.updateAgent(id, updates);
+    } catch (error) {
+      console.error('Error updating agent:', error);
+      throw new Error('Failed to update agent in local database');
+    }
   }
 
   async deleteAgent(id: string): Promise<void> {
-    await this.initializeSQLite();
-    console.log('Deleting agent from local database');
-    await sqliteService.deleteAgent(id);
+    try {
+      await this.initializeSQLite();
+      console.log('Deleting agent from local database');
+      await sqliteService.deleteAgent(id);
+    } catch (error) {
+      console.error('Error deleting agent:', error);
+      throw new Error('Failed to delete agent from local database');
+    }
   }
 
   async logAction(agentId: string, action: string, details?: any) {
@@ -83,10 +103,6 @@ class OfflineApiService {
           key_features: ['Code Generation', 'Code Review', 'Bug Detection', 'Performance Optimization'],
           access_link: 'https://ai-code-assistant.example.com',
           owner: 'Development Team',
-          contact_info: {
-            name: 'Dev Team Lead',
-            email: 'dev-team@company.com'
-          }
         },
         {
           name: 'Customer Support Bot',
@@ -96,10 +112,6 @@ class OfflineApiService {
           key_features: ['24/7 Support', 'Multi-language', 'Ticket Routing', 'Knowledge Base Integration'],
           access_link: 'https://support-bot.example.com',
           owner: 'Customer Success',
-          contact_info: {
-            name: 'Support Manager',
-            email: 'support@company.com'
-          }
         },
         {
           name: 'Data Analytics Agent',
@@ -133,10 +145,6 @@ class OfflineApiService {
           key_features: ['Resume Screening', 'Interview Scheduling', 'Candidate Matching', 'Reference Checking'],
           access_link: 'https://hr-bot.example.com',
           owner: 'HR Department',
-          contact_info: {
-            name: 'HR Manager',
-            email: 'hr@company.com'
-          }
         },
         {
           name: 'Financial Advisor AI',
@@ -159,7 +167,7 @@ class OfflineApiService {
       console.log(`Database seeded with ${sampleAgents.length} sample agents`);
     } catch (error) {
       console.error('Error seeding database:', error);
-      throw error;
+      // Don't throw error here, just log it
     }
   }
 
