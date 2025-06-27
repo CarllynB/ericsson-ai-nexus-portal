@@ -32,65 +32,35 @@ export const PasswordChangeModal = ({ open, onOpenChange, isFirstLogin = false }
     }
 
     setLoading(true);
-    const success = await changePassword(newPassword);
+    await changePassword(newPassword);
     setLoading(false);
 
-    if (success) {
-      setNewPassword('');
-      setConfirmPassword('');
-      onOpenChange(false);
-    }
+    setNewPassword('');
+    setConfirmPassword('');
+    onOpenChange(false);
   };
+
+  // Don't show the modal in offline mode
+  if (!open) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {isFirstLogin ? 'Set New Password' : 'Change Password'}
+            Password Change Not Available
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="newPassword">New Password</Label>
-            <Input
-              id="newPassword"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Enter new password"
-              required
-              minLength={6}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
-              required
-              minLength={6}
-            />
-          </div>
-          <div className="flex gap-2 justify-end">
-            {!isFirstLogin && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-            )}
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Updating...' : 'Update Password'}
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Password changes are not available in offline mode. Your current credentials will continue to work.
+          </p>
+          <div className="flex justify-end">
+            <Button onClick={() => onOpenChange(false)}>
+              OK
             </Button>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -144,20 +144,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const changePassword = async (newPassword: string): Promise<boolean> => {
     try {
-      // In offline mode, we can't actually change the password
-      // but we'll simulate success for demo purposes
-      toast({
-        title: "Info",
-        description: "Password change not available in offline mode"
-      });
+      // In offline mode, we don't actually change passwords
+      // This is just for compatibility - no toast needed
       return true;
     } catch (error) {
       console.error('Password change error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update password",
-        variant: "destructive"
-      });
       return false;
     }
   };
