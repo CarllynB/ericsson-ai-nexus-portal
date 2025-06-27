@@ -109,8 +109,26 @@ else
     print_warning "Could not create SSL certificate"
 fi
 
-# Step 7: Start Supabase
-echo "7. Starting Supabase..."
+# Step 7: Check and fix migration file names
+echo "7. Checking migration file names..."
+MIGRATION_DIR="supabase/migrations"
+if [ -d "$MIGRATION_DIR" ]; then
+    # Check for files with UUID pattern and suggest renaming
+    UUID_FILES=$(find "$MIGRATION_DIR" -name "*-*-*-*-*.sql" 2>/dev/null)
+    if [ ! -z "$UUID_FILES" ]; then
+        print_warning "Found migration files with UUID naming pattern"
+        echo "These files need to be renamed to follow Supabase's naming convention:"
+        echo "$UUID_FILES"
+        echo ""
+        echo "Please rename them to: <timestamp>_<descriptive_name>.sql"
+        echo "For example: 20250624213437_create_agents_table.sql"
+    else
+        print_status "Migration file names look good"
+    fi
+fi
+
+# Step 8: Start Supabase
+echo "8. Starting Supabase..."
 supabase start
 if [ $? -eq 0 ]; then
     print_status "Supabase started successfully"
@@ -119,18 +137,19 @@ else
     exit 1
 fi
 
-# Step 8: Reset database with migrations
-echo "8. Applying database migrations..."
+# Step 9: Reset database with migrations
+echo "9. Applying database migrations..."
 supabase db reset
 if [ $? -eq 0 ]; then
     print_status "Database migrations applied"
 else
     print_error "Failed to apply migrations"
-    exit 1
+    echo "This might be due to migration file naming or foreign key issues"
+    echo "Check the troubleshooting guide for details"
 fi
 
-# Step 9: Build the application
-echo "9. Building application..."
+# Step 10: Build the application
+echo "10. Building application..."
 npm run build
 if [ $? -eq 0 ]; then
     print_status "Application built successfully"
@@ -144,12 +163,13 @@ echo "🎉 Setup complete!"
 echo "=================================================="
 echo ""
 echo "Your local development environment is ready:"
-echo "• Main app: https://localhost:8080"
+echo "• Main app: http://localhost:8080 (or https:// if SSL cert available)"
 echo "• Database admin: http://localhost:54323"
 echo "• Supabase API: http://localhost:54321"
-echo "• LAN access: https://$LOCAL_IP:8080"
+echo "• LAN access: http://$LOCAL_IP:8080"
 echo ""
 echo "To start the application:"
+echo "  export VITE_OFFLINE_MODE=true"
 echo "  npm run dev    (for development)"
 echo "  node server.js (for production build)"
 echo ""

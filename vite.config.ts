@@ -33,14 +33,17 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    https: sslCertExists && sslKeyExists ? getCertificates() : undefined,
+    // In offline mode, prefer HTTP to avoid mixed-content issues
+    // Unless we have SSL certs available
+    https: !isOfflineMode && sslCertExists && sslKeyExists ? getCertificates() : undefined,
     cors: true,
-    // Proxy API calls to local Supabase when in development
+    // Proxy API calls to local Supabase when in development and offline mode
     proxy: mode === 'development' && isOfflineMode ? {
       '/api': {
         target: 'http://localhost:54321',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: false
       }
     } : undefined,
   },

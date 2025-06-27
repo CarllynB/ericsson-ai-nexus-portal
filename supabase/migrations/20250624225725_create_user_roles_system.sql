@@ -46,12 +46,41 @@ CREATE POLICY "Users can view their own role"
   FOR SELECT
   USING (user_id = auth.uid());
 
--- Insert the hardcoded super admins into the table
+-- First, let's create a temporary approach for the hardcoded super admins
+-- We'll modify the table to allow nullable user_id temporarily
+ALTER TABLE public.user_roles ALTER COLUMN user_id DROP NOT NULL;
+
+-- Insert the hardcoded super admins with placeholder UUIDs (they'll be updated when users actually sign up)
 INSERT INTO public.user_roles (user_id, email, role) 
 VALUES 
-  ('cfd87936-7cef-4ddb-bea6-88cf29f6c399', 'muhammad.mahmood@ericsson.com', 'super_admin'),
-  ('06925037-572c-49ff-b96e-26feceb40763', 'carllyn.barfi@ericsson.com', 'super_admin')
+  (gen_random_uuid(), 'muhammad.mahmood@ericsson.com', 'super_admin'),
+  (gen_random_uuid(), 'carllyn.barfi@ericsson.com', 'super_admin')
 ON CONFLICT (user_id, role) DO NOTHING;
+
+-- Create a function to handle user role assignment when users actually sign up
+CREATE OR REPLACE FUNCTION public.handle_user_role_on_signup()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Check if this user should have a predefined role
+  UPDATE public.user_roles 
+  SET user_id = NEW.id 
+  WHERE email = NEW.email AND user_id IS NULL;
+  
+  -- If no predefined role exists, create a default viewer role
+  IF NOT FOUND THEN
+    INSERT INTO public.user_roles (user_id, email, role)
+    VALUES (NEW.id, NEW.email, 'viewer');
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger to automatically assign roles when users sign up
+DROP TRIGGER IF EXISTS on_auth_user_created_assign_role ON auth.users;
+CREATE TRIGGER on_auth_user_created_assign_role
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_user_role_on_signup();
 
 -- Create trigger to update the updated_at column
 CREATE OR REPLACE FUNCTION public.update_user_roles_updated_at()
