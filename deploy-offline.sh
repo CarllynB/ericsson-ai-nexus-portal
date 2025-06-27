@@ -61,7 +61,7 @@ fi
 
 # Install production dependencies
 echo "Installing production dependencies..."
-npm ci --only=production
+npm ci --omit=dev
 
 # Start server
 echo "Starting server..."
@@ -91,15 +91,6 @@ cat > deployment-package/README-DEPLOYMENT.md << 'EOF'
 - Email: muhammad.mahmood@ericsson.com or carllyn.barfi@ericsson.com
 - Password: password123
 
-## Features
-
-- Complete offline operation
-- Local authentication system
-- Role-based access control
-- Agent management system
-- HTTPS support (with certificates)
-- 10 pre-loaded agents
-
 ## Requirements
 
 - Linux VM with Node.js
@@ -113,10 +104,7 @@ cat > deployment-package/README-DEPLOYMENT.md << 'EOF'
 
 ## Data Storage
 
-All data stored in browser localStorage:
-- User accounts and roles
-- Agent configurations
-- Authentication sessions
+All data stored in browser localStorage - persists locally per browser/device.
 
 ## Troubleshooting
 
