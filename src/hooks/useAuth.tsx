@@ -34,29 +34,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Initialize app (populate agents if needed) - No Supabase dependency
+  // Initialize app (populate agents if needed)
   useInitializeApp();
 
-  // Default super admin users - These are the system admins
+  // Default super admin users - Fixed email addresses
   const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
 
-  // Helper to dispatch auth change events for real-time UI updates
+  // Dispatch custom event when auth state changes
   const dispatchAuthChange = () => {
-    console.log('📡 Dispatching auth change event...');
     window.dispatchEvent(new CustomEvent('authChange'));
   };
 
   useEffect(() => {
-    // Check localStorage for existing user session on app start
+    // Check localStorage for existing user session
     const savedUser = localStorage.getItem('current_user');
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
-        console.log('🔄 Restoring user session for:', userData.email);
         setUser(userData);
         dispatchAuthChange();
       } catch (error) {
-        console.error('❌ Error parsing saved user:', error);
+        console.error('Error parsing saved user:', error);
         localStorage.removeItem('current_user');
       }
     }
@@ -64,19 +62,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
-      console.log('🔐 Attempting login for:', email);
+      console.log('Attempting login for:', email);
       setLoading(true);
       
-      // Check if it's a super admin (system admin)
+      // Check if it's a super admin
       if (SUPER_ADMINS.includes(email)) {
-        console.log('👑 Super admin login detected');
-        // Check for custom password first, fallback to default
+        // Check for custom password first
         const savedPassword = localStorage.getItem(`password_${email}`);
         const correctPassword = savedPassword || 'admin123';
         
         if (password === correctPassword) {
           const userData: User = {
-            id: email.replace('@', '_').replace(/\./g, '_'),
+            id: email.replace('@', '_').replace('.', '_'),
             email,
             role: 'super_admin',
             created_at: new Date().toISOString(),
@@ -88,36 +85,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           toast({
             title: "Success",
-            description: "Logged in successfully as Super Admin"
+            description: "Logged in successfully"
           });
         } else {
           throw new Error('Invalid password');
         }
       } else {
-        // For regular users, check if they have a password set
+        // For other users, check if they have a password set
         const savedPassword = localStorage.getItem(`password_${email}`);
         
         if (savedPassword) {
           // User exists, check password
           if (password === savedPassword) {
-            console.log('✅ Password verified, getting role from SQLite...');
-            
-            // Get user role from SQLite - this is the key part for role management
+            // Get user role from SQLite - this is the key fix
             const { sqliteService } = await import('@/services/sqlite');
             await sqliteService.initialize();
             
             let role = await sqliteService.getUserRole(email);
-            console.log('📋 Role from SQLite:', role);
             
             if (!role) {
               // If no role assigned, default to viewer and create the role
-              console.log('⚠️ No role found, assigning default viewer role');
               role = 'viewer';
-              await sqliteService.createUserRole(email, 'viewer', 'system');
+              await sqliteService.createUserRole(email, 'viewer');
             }
             
             const userData: User = {
-              id: email.replace('@', '_').replace(/\./g, '_'),
+              id: email.replace('@', '_').replace('.', '_'),
               email,
               role: role as 'super_admin' | 'admin' | 'viewer',
               created_at: new Date().toISOString(),
@@ -129,10 +122,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             
             toast({
               title: "Success",
-              description: `Logged in successfully as ${role.replace('_', ' ').toUpperCase()}`
+              description: `Logged in successfully as ${role}`
             });
-            
-            console.log('✅ Login successful with role:', role);
           } else {
             throw new Error('Invalid password');
           }
@@ -141,7 +132,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
     } catch (error) {
-      console.error('❌ Login failed:', error);
+      console.error('Login failed:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : 'Login failed',
@@ -155,7 +146,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (email: string, password: string): Promise<void> => {
     try {
-      console.log('📝 Attempting registration for:', email);
+      console.log('Attempting registration for:', email);
       setLoading(true);
       
       // Check if user already exists
@@ -164,33 +155,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('Account already exists. Please sign in instead.');
       }
       
-      // Validate password strength
+      // Validate password
       if (password.length < 6) {
         throw new Error('Password must be at least 6 characters long');
       }
       
       // Create new user account
       localStorage.setItem(`password_${email}`, password);
-      console.log('💾 Password saved for user:', email);
       
-      // Check if there's already a role assigned for this email in SQLite
+      // Check if there's already a role assigned for this email
       const { sqliteService } = await import('@/services/sqlite');
       await sqliteService.initialize();
       
       let role = await sqliteService.getUserRole(email);
-      console.log('🔍 Checking for pre-assigned role:', role);
       
       if (!role) {
         // If no role was pre-assigned, default to viewer
-        console.log('⚠️ No pre-assigned role found, assigning default viewer role');
         role = 'viewer';
-        await sqliteService.createUserRole(email, 'viewer', 'system');
-      } else {
-        console.log('✅ Using pre-assigned role:', role);
+        await sqliteService.createUserRole(email, 'viewer');
       }
       
       const userData: User = {
-        id: email.replace('@', '_').replace(/\./g, '_'),
+        id: email.replace('@', '_').replace('.', '_'),
         email,
         role: role as 'super_admin' | 'admin' | 'viewer',
         created_at: new Date().toISOString(),
@@ -202,12 +188,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       toast({
         title: "Success",
-        description: `Account created successfully with ${role.replace('_', ' ').toUpperCase()} role`
+        description: `Account created successfully with ${role} role`
       });
-      
-      console.log('✅ Registration successful with role:', role);
     } catch (error) {
-      console.error('❌ Registration failed:', error);
+      console.error('Registration failed:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : 'Registration failed',
@@ -221,7 +205,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     try {
-      console.log('🚪 Logging out user...');
+      console.log('Logging out...');
       setUser(null);
       localStorage.removeItem('current_user');
       dispatchAuthChange();
@@ -230,10 +214,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         title: "Success",
         description: "Logged out successfully"
       });
-      
-      console.log('✅ Logout successful');
     } catch (error) {
-      console.error('❌ Logout error:', error);
+      console.error('Logout error:', error);
     }
   };
 
@@ -241,11 +223,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       if (!user) {
         throw new Error('No user logged in');
-      }
-
-      // Validate new password
-      if (newPassword.length < 6) {
-        throw new Error('Password must be at least 6 characters long');
       }
 
       // Save new password to localStorage
@@ -256,10 +233,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         description: "Password changed successfully"
       });
       
-      console.log('✅ Password changed successfully for:', user.email);
       return true;
     } catch (error) {
-      console.error('❌ Password change error:', error);
+      console.error('Password change error:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : 'Failed to change password',
