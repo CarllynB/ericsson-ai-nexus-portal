@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '@/types/database';
 import { useToast } from '@/components/ui/use-toast';
@@ -7,6 +6,7 @@ import { useInitializeApp } from '@/hooks/useInitializeApp';
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
   isAdmin: boolean;
@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Attempting login for:', email);
       setLoading(true);
       
-      // Check if it's a super admin with default password or custom password
+      // Check if it's a super admin
       if (SUPER_ADMINS.includes(email)) {
         // Check for custom password first
         const savedPassword = localStorage.getItem(`password_${email}`);
@@ -83,65 +83,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           throw new Error('Invalid password');
         }
       } else {
-        // For other users, check if they have an account in localStorage roles
-        const existingRoles = JSON.parse(localStorage.getItem('user_roles') || '{}');
+        // For other users, check if they have a password set
         const savedPassword = localStorage.getItem(`password_${email}`);
         
-        if (existingRoles[email] && savedPassword && password === savedPassword) {
-          const userData: User = {
-            id: email.replace('@', '_').replace('.', '_'),
-            email,
-            role: existingRoles[email],
-            created_at: new Date().toISOString(),
-          };
-          
-          setUser(userData);
-          localStorage.setItem('current_user', JSON.stringify(userData));
-          
-          toast({
-            title: "Success",
-            description: "Logged in successfully"
-          });
-        } else if (existingRoles[email] && !savedPassword) {
-          // First time login - set password
-          localStorage.setItem(`password_${email}`, password);
-          
-          const userData: User = {
-            id: email.replace('@', '_').replace('.', '_'),
-            email,
-            role: existingRoles[email],
-            created_at: new Date().toISOString(),
-          };
-          
-          setUser(userData);
-          localStorage.setItem('current_user', JSON.stringify(userData));
-          
-          toast({
-            title: "Success",
-            description: "Account created successfully"
-          });
+        if (savedPassword) {
+          // User exists, check password
+          if (password === savedPassword) {
+            // Get user role from SQLite or default to viewer
+            const { sqliteService } = await import('@/services/sqlite');
+            let role = await sqliteService.getUserRole(email);
+            
+            if (!role) {
+              role = 'viewer';
+              await sqliteService.createUserRole(email, 'viewer');
+            }
+            
+            const userData: User = {
+              id: email.replace('@', '_').replace('.', '_'),
+              email,
+              role: role as 'super_admin' | 'admin' | 'viewer',
+              created_at: new Date().toISOString(),
+            };
+            
+            setUser(userData);
+            localStorage.setItem('current_user', JSON.stringify(userData));
+            
+            toast({
+              title: "Success",
+              description: "Logged in successfully"
+            });
+          } else {
+            throw new Error('Invalid password');
+          }
         } else {
-          // New user - create as viewer
-          localStorage.setItem(`password_${email}`, password);
-          
-          const userData: User = {
-            id: email.replace('@', '_').replace('.', '_'),
-            email,
-            role: 'viewer',
-            created_at: new Date().toISOString(),
-          };
-          
-          // Save the new user role
-          existingRoles[email] = 'viewer';
-          localStorage.setItem('user_roles', JSON.stringify(existingRoles));
-          
-          setUser(userData);
-          localStorage.setItem('current_user', JSON.stringify(userData));
-          
-          toast({
-            title: "Success",
-            description: "Account created successfully"
-          });
+          throw new Error('Account not found. Please create an account first.');
         }
       }
     } catch (error) {
@@ -149,6 +124,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : 'Login failed',
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const register = async (email: string, password: string): Promise<void> => {
+    try {
+      console.log('Attempting registration for:', email);
+      setLoading(true);
+      
+      // Check if user already exists
+      const existingPassword = localStorage.getItem(`password_${email}`);
+      if (existingPassword) {
+        throw new Error('Account already exists. Please sign in instead.');
+      }
+      
+      // Validate password
+      if (password.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+      }
+      
+      // Create new user account
+      localStorage.setItem(`password_${email}`, password);
+      
+      // Create user role in SQLite
+      const { sqliteService } = await import('@/services/sqlite');
+      await sqliteService.createUserRole(email, 'viewer');
+      
+      const userData: User = {
+        id: email.replace('@', '_').replace('.', '_'),
+        email,
+        role: 'viewer',
+        created_at: new Date().toISOString(),
+      };
+      
+      setUser(userData);
+      localStorage.setItem('current_user', JSON.stringify(userData));
+      
+      toast({
+        title: "Success",
+        description: "Account created successfully"
+      });
+    } catch (error) {
+      console.error('Registration failed:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Registration failed',
         variant: "destructive"
       });
       throw error;
@@ -201,6 +226,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const contextValue: AuthContextType = {
     user,
     login,
+    register,
     logout,
     loading,
     isAdmin: user?.role === 'admin' || user?.role === 'super_admin',

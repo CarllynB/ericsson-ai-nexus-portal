@@ -22,7 +22,7 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
   const [error, setError] = useState('');
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [activeTab, setActiveTab] = useState('signin');
-  const { login, user } = useAuth();
+  const { login, register, user } = useAuth();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +58,7 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
     setLoading(true);
 
     try {
-      // In offline mode, we'll simulate signup by just creating a login
-      await login(email, password);
+      await register(email, password);
       setEmail('');
       setPassword('');
       setConfirmPassword('');
@@ -145,7 +144,7 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder="Enter your password (min 6 characters)"
                     required
                     minLength={6}
                   />

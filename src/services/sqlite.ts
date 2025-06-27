@@ -34,10 +34,11 @@ class SQLiteService {
           
           // Verify tables exist
           const tables = this.db.exec("SELECT name FROM sqlite_master WHERE type='table'");
-          console.log('📋 Existing tables:', tables);
+          const tableNames = tables.length > 0 ? tables[0].values.map(row => row[0]) : [];
+          console.log('📋 Existing tables:', tableNames);
           
-          if (!tables.length || !tables[0].values.some(row => row[0] === 'agents')) {
-            console.log('⚠️ Tables missing, recreating...');
+          if (!tableNames.includes('agents') || !tableNames.includes('user_roles') || !tableNames.includes('dashboard_settings')) {
+            console.log('⚠️ Required tables missing, recreating...');
             this.createTables();
           } else {
             console.log('✅ All required tables exist');
@@ -88,6 +89,37 @@ class SQLiteService {
           last_updated TEXT NOT NULL,
           created_at TEXT NOT NULL
         );
+      `);
+
+      // Create user_roles table
+      this.db.exec(`
+        DROP TABLE IF EXISTS user_roles;
+        CREATE TABLE user_roles (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          email TEXT NOT NULL UNIQUE,
+          role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'viewer')),
+          assigned_at TEXT NOT NULL,
+          assigned_by TEXT
+        );
+      `);
+
+      // Create dashboard_settings table
+      this.db.exec(`
+        DROP TABLE IF EXISTS dashboard_settings;
+        CREATE TABLE dashboard_settings (
+          id INTEGER PRIMARY KEY DEFAULT 1,
+          dashboard_url TEXT,
+          updated_by TEXT,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // Insert default dashboard setting
+      this.db.exec(`
+        INSERT OR IGNORE INTO dashboard_settings (id, dashboard_url, created_at) 
+        VALUES (1, NULL, datetime('now'));
       `);
 
       this.saveDatabase();
@@ -278,6 +310,58 @@ class SQLiteService {
     } catch (error) {
       console.error('❌ Error deleting agent from SQLite:', error);
       throw error;
+    }
+  }
+
+  // User role management methods
+  async createUserRole(email: string, role: 'super_admin' | 'admin' | 'viewer', assignedBy?: string): Promise<void> {
+    await this.initialize();
+    if (!this.db) throw new Error('Database not initialized');
+
+    try {
+      const stmt = this.db.prepare(`
+        INSERT OR REPLACE INTO user_roles (id, user_id, email, role, assigned_at, assigned_by)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+
+      const userId = email.replace('@', '_').replace('.', '_');
+      stmt.run([
+        userId,
+        userId,
+        email,
+        role,
+        new Date().toISOString(),
+        assignedBy || null
+      ]);
+
+      stmt.free();
+      this.saveDatabase();
+      console.log('✅ User role created successfully');
+    } catch (error) {
+      console.error('❌ Error creating user role:', error);
+      throw error;
+    }
+  }
+
+  async getUserRole(email: string): Promise<string | null> {
+    await this.initialize();
+    if (!this.db) throw new Error('Database not initialized');
+
+    try {
+      const stmt = this.db.prepare('SELECT role FROM user_roles WHERE email = ?');
+      stmt.bind([email]);
+      
+      if (stmt.step()) {
+        const row = stmt.getAsObject();
+        stmt.free();
+        return row.role as string;
+      }
+      
+      stmt.free();
+      return null;
+    } catch (error) {
+      console.error('❌ Error getting user role:', error);
+      return null;
     }
   }
 }

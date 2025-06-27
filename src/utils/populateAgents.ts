@@ -8,7 +8,7 @@ export const populateDefaultAgents = async () => {
     // Initialize SQLite first
     await sqliteService.initialize();
     
-    // Check if agents already exist
+    // Check if agents already exist  
     const existingAgents = await sqliteService.getAgents();
     if (existingAgents.length > 0) {
       console.log('✅ Agents already exist, skipping population');
