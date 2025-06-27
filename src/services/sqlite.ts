@@ -10,6 +10,7 @@ class SQLiteService {
     if (this.initialized) return;
 
     try {
+      console.log('Initializing SQLite...');
       const SQL = await initSqlJs({
         locateFile: (file) => `https://sql.js.org/dist/${file}`
       });
@@ -17,15 +18,23 @@ class SQLiteService {
       // Try to load existing database from localStorage
       const savedDb = localStorage.getItem('offline_database');
       if (savedDb) {
-        const uint8Array = new Uint8Array(JSON.parse(savedDb));
-        this.db = new SQL.Database(uint8Array);
+        try {
+          const uint8Array = new Uint8Array(JSON.parse(savedDb));
+          this.db = new SQL.Database(uint8Array);
+          console.log('Loaded existing database from localStorage');
+        } catch (error) {
+          console.warn('Failed to load saved database, creating new one:', error);
+          this.db = new SQL.Database();
+          this.createTables();
+        }
       } else {
         this.db = new SQL.Database();
         this.createTables();
+        console.log('Created new database');
       }
 
       this.initialized = true;
-      console.log('SQLite database initialized');
+      console.log('SQLite database initialized successfully');
     } catch (error) {
       console.error('Failed to initialize SQLite:', error);
       throw error;
@@ -35,48 +44,54 @@ class SQLiteService {
   private createTables(): void {
     if (!this.db) return;
 
-    // Create agents table matching Supabase schema
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS agents (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        description TEXT NOT NULL,
-        category TEXT NOT NULL,
-        status TEXT NOT NULL CHECK (status IN ('active', 'inactive', 'coming_soon')),
-        key_features TEXT NOT NULL,
-        access_link TEXT,
-        contact_info TEXT,
-        owner TEXT NOT NULL,
-        last_updated TEXT NOT NULL,
-        created_at TEXT NOT NULL
-      );
-    `);
+    try {
+      // Create agents table matching Supabase schema
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS agents (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT NOT NULL,
+          category TEXT NOT NULL,
+          status TEXT NOT NULL CHECK (status IN ('active', 'inactive', 'coming_soon')),
+          key_features TEXT NOT NULL,
+          access_link TEXT,
+          contact_info TEXT,
+          owner TEXT NOT NULL,
+          last_updated TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        );
+      `);
 
-    // Create user_roles table
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS user_roles (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        email TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'viewer',
-        assigned_by TEXT,
-        assigned_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      );
-    `);
+      // Create user_roles table
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS user_roles (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          email TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'viewer',
+          assigned_by TEXT,
+          assigned_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+      `);
 
-    // Create dashboard_settings table
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS dashboard_settings (
-        id INTEGER PRIMARY KEY DEFAULT 1,
-        dashboard_url TEXT,
-        updated_by TEXT,
-        updated_at TEXT,
-        created_at TEXT
-      );
-    `);
+      // Create dashboard_settings table
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS dashboard_settings (
+          id INTEGER PRIMARY KEY DEFAULT 1,
+          dashboard_url TEXT,
+          updated_by TEXT,
+          updated_at TEXT,
+          created_at TEXT
+        );
+      `);
 
-    this.saveDatabase();
+      this.saveDatabase();
+      console.log('Database tables created successfully');
+    } catch (error) {
+      console.error('Error creating tables:', error);
+      throw error;
+    }
   }
 
   private saveDatabase(): void {
@@ -86,12 +101,16 @@ class SQLiteService {
       const data = this.db.export();
       const dataArray = Array.from(data);
       localStorage.setItem('offline_database', JSON.stringify(dataArray));
+      console.log('Database saved to localStorage');
     } catch (error) {
       console.error('Failed to save database:', error);
     }
   }
 
   async getAgents(): Promise<Agent[]> {
+    if (!this.db) {
+      await this.initialize();
+    }
     if (!this.db) throw new Error('Database not initialized');
 
     try {
@@ -116,6 +135,7 @@ class SQLiteService {
       }
 
       stmt.free();
+      console.log(`Retrieved ${results.length} agents from database`);
       return results;
     } catch (error) {
       console.error('Error fetching agents from SQLite:', error);
@@ -124,6 +144,9 @@ class SQLiteService {
   }
 
   async createAgent(agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>): Promise<Agent> {
+    if (!this.db) {
+      await this.initialize();
+    }
     if (!this.db) throw new Error('Database not initialized');
 
     const newAgent: Agent = {
@@ -155,6 +178,7 @@ class SQLiteService {
 
       stmt.free();
       this.saveDatabase();
+      console.log('Agent created successfully:', newAgent.name);
       return newAgent;
     } catch (error) {
       console.error('Error creating agent in SQLite:', error);
