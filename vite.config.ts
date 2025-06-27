@@ -9,12 +9,15 @@ import fs from "fs";
 const sslCertExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');
 const sslKeyExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.key');
 
+// Check if we're in offline mode
+const isOfflineMode = process.env.VITE_OFFLINE_MODE === 'true';
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: sslCertExists && sslKeyExists ? 443 : 8080,
-    https: sslCertExists && sslKeyExists ? {
+    port: 8080, // Always use port 8080 as required
+    https: !isOfflineMode && sslCertExists && sslKeyExists ? {
       cert: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.crt'),
       key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key'),
     } : undefined,
@@ -32,5 +35,8 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+  },
+  define: {
+    'process.env.VITE_OFFLINE_MODE': JSON.stringify(process.env.VITE_OFFLINE_MODE || 'false'),
   },
 }));
