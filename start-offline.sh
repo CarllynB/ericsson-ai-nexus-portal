@@ -6,7 +6,7 @@ echo "Starting AI-DU Agent Portal in offline mode..."
 # Check if Supabase CLI is installed
 if ! command -v supabase &> /dev/null; then
     echo "Installing Supabase CLI..."
-    npm install -g @supabase/cli
+    npm install -g supabase
 fi
 
 # Initialize Supabase if not already done

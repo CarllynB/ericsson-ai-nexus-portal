@@ -9,7 +9,7 @@ npm ci
 
 # Install Supabase CLI globally
 echo "Installing Supabase CLI..."
-npm install -g @supabase/cli
+npm install -g supabase
 
 # Initialize Supabase if needed
 if [ ! -d "supabase" ]; then

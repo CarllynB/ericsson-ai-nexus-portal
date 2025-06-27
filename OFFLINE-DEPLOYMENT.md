@@ -33,7 +33,7 @@ If you need to set up manually:
 1. **Install dependencies:**
    ```bash
    npm ci
-   npm install -g @supabase/cli
+   npm install -g supabase
    ```
 
 2. **Initialize Supabase:**
