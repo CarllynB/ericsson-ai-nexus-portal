@@ -4,14 +4,21 @@ import { sqliteService } from './sqlite';
 
 class OfflineApiService {
   private initialized = false;
+  private initPromise: Promise<void> | null = null;
 
   constructor() {
-    this.initializeSQLite();
+    // Don't initialize in constructor to avoid blocking
   }
 
   private async initializeSQLite() {
     if (this.initialized) return;
+    if (this.initPromise) return this.initPromise;
     
+    this.initPromise = this.doInitialize();
+    return this.initPromise;
+  }
+
+  private async doInitialize() {
     try {
       console.log('Initializing offline API service...');
       await sqliteService.initialize();
@@ -22,42 +29,32 @@ class OfflineApiService {
       await this.seedDatabase();
     } catch (error) {
       console.error('Failed to initialize SQLite service:', error);
+      this.initialized = false;
+      this.initPromise = null;
       throw error;
     }
   }
 
   async getAgents(): Promise<Agent[]> {
-    if (!this.initialized) {
-      await this.initializeSQLite();
-    }
-    
+    await this.initializeSQLite();
     console.log('Fetching agents from local database');
     return await sqliteService.getAgents();
   }
 
   async createAgent(agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>): Promise<Agent> {
-    if (!this.initialized) {
-      await this.initializeSQLite();
-    }
-    
+    await this.initializeSQLite();
     console.log('Creating agent in local database');
     return await sqliteService.createAgent(agent);
   }
 
   async updateAgent(id: string, updates: Partial<Agent>): Promise<Agent> {
-    if (!this.initialized) {
-      await this.initializeSQLite();
-    }
-    
+    await this.initializeSQLite();
     console.log('Updating agent in local database');
     return await sqliteService.updateAgent(id, updates);
   }
 
   async deleteAgent(id: string): Promise<void> {
-    if (!this.initialized) {
-      await this.initializeSQLite();
-    }
-    
+    await this.initializeSQLite();
     console.log('Deleting agent from local database');
     await sqliteService.deleteAgent(id);
   }
@@ -67,10 +64,6 @@ class OfflineApiService {
   }
 
   async seedDatabase() {
-    if (!this.initialized) {
-      await this.initializeSQLite();
-    }
-
     try {
       // Check if we already have data
       const existingAgents = await sqliteService.getAgents();
@@ -79,9 +72,8 @@ class OfflineApiService {
         return;
       }
 
-      console.log('Seeding database with comprehensive sample data...');
+      console.log('Seeding database with sample data...');
 
-      // Enhanced seed data that matches typical Supabase data
       const sampleAgents: Omit<Agent, 'id' | 'created_at' | 'last_updated'>[] = [
         {
           name: 'AI Code Assistant',
@@ -157,31 +149,6 @@ class OfflineApiService {
             name: 'Finance Director',
             email: 'finance@company.com'
           }
-        },
-        {
-          name: 'Quality Assurance Bot',
-          description: 'Automated testing and quality assurance agent for software development.',
-          category: 'Development',
-          status: 'active',
-          key_features: ['Automated Testing', 'Bug Tracking', 'Performance Monitoring', 'Code Quality Analysis'],
-          access_link: 'https://qa-bot.example.com',
-          owner: 'QA Team',
-          contact_info: {
-            name: 'QA Lead',
-            email: 'qa@company.com'
-          }
-        },
-        {
-          name: 'Sales Intelligence Agent',
-          description: 'AI agent for lead generation, customer insights, and sales optimization.',
-          category: 'Sales',
-          status: 'coming_soon',
-          key_features: ['Lead Scoring', 'Customer Insights', 'Pipeline Management', 'Sales Forecasting'],
-          owner: 'Sales Team',
-          contact_info: {
-            name: 'Sales Director',
-            email: 'sales@company.com'
-          }
         }
       ];
 
@@ -189,7 +156,7 @@ class OfflineApiService {
         await sqliteService.createAgent(agent);
       }
 
-      console.log(`Database seeded with ${sampleAgents.length} comprehensive sample agents`);
+      console.log(`Database seeded with ${sampleAgents.length} sample agents`);
     } catch (error) {
       console.error('Error seeding database:', error);
       throw error;

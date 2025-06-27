@@ -1,15 +1,23 @@
+
 import initSqlJs, { Database } from 'sql.js';
 import { Agent } from './api';
 
 class SQLiteService {
   private db: Database | null = null;
   private initialized = false;
+  private initializationPromise: Promise<void> | null = null;
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
+    if (this.initializationPromise) return this.initializationPromise;
 
+    this.initializationPromise = this.doInitialize();
+    return this.initializationPromise;
+  }
+
+  private async doInitialize(): Promise<void> {
     try {
-      console.log('Initializing SQLite...');
+      console.log('Starting SQLite initialization...');
       const SQL = await initSqlJs({
         locateFile: (file) => `https://sql.js.org/dist/${file}`
       });
@@ -18,10 +26,10 @@ class SQLiteService {
       const savedDb = localStorage.getItem('offline_database');
       if (savedDb) {
         try {
-          console.log('Attempting to load existing database from localStorage...');
+          console.log('Loading existing database from localStorage...');
           const uint8Array = new Uint8Array(JSON.parse(savedDb));
           this.db = new SQL.Database(uint8Array);
-          console.log('Successfully loaded existing database from localStorage');
+          console.log('Successfully loaded existing database');
           
           // Verify tables exist
           const tables = this.db.exec("SELECT name FROM sqlite_master WHERE type='table'");
@@ -46,17 +54,22 @@ class SQLiteService {
       console.log('SQLite database initialized successfully');
     } catch (error) {
       console.error('Failed to initialize SQLite:', error);
+      this.initialized = false;
+      this.initializationPromise = null;
       throw error;
     }
   }
 
   private createTables(): void {
-    if (!this.db) return;
+    if (!this.db) {
+      console.error('Database not available for table creation');
+      return;
+    }
 
     try {
       console.log('Creating database tables...');
       
-      // Create agents table matching Supabase schema
+      // Create agents table
       this.db.exec(`
         CREATE TABLE IF NOT EXISTS agents (
           id TEXT PRIMARY KEY,
@@ -73,32 +86,8 @@ class SQLiteService {
         );
       `);
 
-      // Create user_roles table
-      this.db.exec(`
-        CREATE TABLE IF NOT EXISTS user_roles (
-          id TEXT PRIMARY KEY,
-          user_id TEXT NOT NULL,
-          email TEXT NOT NULL,
-          role TEXT NOT NULL DEFAULT 'viewer',
-          assigned_by TEXT,
-          assigned_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL
-        );
-      `);
-
-      // Create dashboard_settings table
-      this.db.exec(`
-        CREATE TABLE IF NOT EXISTS dashboard_settings (
-          id INTEGER PRIMARY KEY DEFAULT 1,
-          dashboard_url TEXT,
-          updated_by TEXT,
-          updated_at TEXT,
-          created_at TEXT
-        );
-      `);
-
       this.saveDatabase();
-      console.log('Database tables created successfully');
+      console.log('Database tables created and saved successfully');
     } catch (error) {
       console.error('Error creating tables:', error);
       throw error;
@@ -106,7 +95,10 @@ class SQLiteService {
   }
 
   private saveDatabase(): void {
-    if (!this.db) return;
+    if (!this.db) {
+      console.warn('No database to save');
+      return;
+    }
 
     try {
       const data = this.db.export();
@@ -119,9 +111,7 @@ class SQLiteService {
   }
 
   async getAgents(): Promise<Agent[]> {
-    if (!this.db) {
-      await this.initialize();
-    }
+    await this.initialize();
     if (!this.db) throw new Error('Database not initialized');
 
     try {
@@ -156,9 +146,7 @@ class SQLiteService {
   }
 
   async createAgent(agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>): Promise<Agent> {
-    if (!this.db) {
-      await this.initialize();
-    }
+    await this.initialize();
     if (!this.db) throw new Error('Database not initialized');
 
     const newAgent: Agent = {
@@ -200,6 +188,7 @@ class SQLiteService {
   }
 
   async updateAgent(id: string, updates: Partial<Agent>): Promise<Agent> {
+    await this.initialize();
     if (!this.db) throw new Error('Database not initialized');
 
     const updateData = {
@@ -217,7 +206,6 @@ class SQLiteService {
         throw new Error('Agent not found');
       }
 
-      const existing = existingStmt.getAsObject();
       existingStmt.free();
 
       // Build update query dynamically
@@ -274,6 +262,7 @@ class SQLiteService {
   }
 
   async deleteAgent(id: string): Promise<void> {
+    await this.initialize();
     if (!this.db) throw new Error('Database not initialized');
 
     try {
@@ -281,61 +270,10 @@ class SQLiteService {
       stmt.run([id]);
       stmt.free();
       this.saveDatabase();
+      console.log('Agent deleted successfully');
     } catch (error) {
       console.error('Error deleting agent from SQLite:', error);
       throw error;
-    }
-  }
-
-  async syncFromSupabase(agents: Agent[]): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-
-    try {
-      // Clear existing data
-      this.db.exec('DELETE FROM agents');
-
-      // Insert new data
-      const stmt = this.db.prepare(`
-        INSERT INTO agents (id, name, description, category, status, key_features, access_link, contact_info, owner, last_updated, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-      for (const agent of agents) {
-        stmt.run([
-          agent.id,
-          agent.name,
-          agent.description,
-          agent.category,
-          agent.status,
-          JSON.stringify(agent.key_features),
-          agent.access_link || null,
-          agent.contact_info ? JSON.stringify(agent.contact_info) : null,
-          agent.owner,
-          agent.last_updated,
-          agent.created_at,
-        ]);
-      }
-
-      stmt.free();
-      this.saveDatabase();
-      console.log(`Synced ${agents.length} agents to SQLite`);
-    } catch (error) {
-      console.error('Error syncing data to SQLite:', error);
-      throw error;
-    }
-  }
-
-  async clearDatabase(): Promise<void> {
-    if (!this.db) return;
-
-    try {
-      this.db.exec('DELETE FROM agents');
-      this.db.exec('DELETE FROM user_roles');
-      this.db.exec('DELETE FROM dashboard_settings');
-      this.saveDatabase();
-      console.log('SQLite database cleared');
-    } catch (error) {
-      console.error('Error clearing SQLite database:', error);
     }
   }
 }

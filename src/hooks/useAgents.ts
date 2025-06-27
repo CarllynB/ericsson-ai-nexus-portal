@@ -23,31 +23,33 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching agents in offline-only mode...');
+      console.log('Starting to fetch agents...');
       
       const response = await offlineApiService.getAgents();
-      console.log('Received agents from offline API:', response);
+      console.log('Successfully received agents:', response);
       
       if (Array.isArray(response)) {
         const sortedAgents = sortAgents(response);
         setAgents(sortedAgents);
-        console.log(`Successfully loaded ${sortedAgents.length} agents from local database`);
+        console.log(`Successfully loaded ${sortedAgents.length} agents`);
+        setError(null);
       } else {
-        console.warn('Invalid response format from offline API:', response);
+        console.warn('Invalid response format:', response);
         setAgents([]);
+        setError('Invalid data format received from database');
       }
-      
-      setError(null);
     } catch (err) {
-      console.error('Failed to fetch agents from SQLite:', err);
+      console.error('Failed to fetch agents:', err);
       setAgents([]);
-      setError('Failed to load agents from local database. Please check the console for details.');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(`Failed to load agents: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    console.log('useAgents effect triggered');
     fetchAgents();
   }, [page, pageSize, showAll]);
 
