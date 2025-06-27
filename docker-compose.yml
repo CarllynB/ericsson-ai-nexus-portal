@@ -3,34 +3,18 @@ version: '3.8'
 
 services:
   ai-du-agent:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    container_name: ai-du-agent-portal
+    build: .
     ports:
       - "443:443"
-      - "8080:8080"  # Fallback HTTP port
     volumes:
       - ./aiduagent-csstip.ckit1.explab.com.crt:/app/aiduagent-csstip.ckit1.explab.com.crt:ro
       - ./aiduagent-csstip.ckit1.explab.com.key:/app/aiduagent-csstip.ckit1.explab.com.key:ro
     environment:
       - NODE_ENV=production
-      - PORT=443
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('https').get('https://localhost:443/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     networks:
       - ai-du-network
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
 
 networks:
   ai-du-network:
     driver: bridge
-    name: ai-du-network
