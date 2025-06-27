@@ -25,6 +25,9 @@ npm run build
 
 echo "Creating deployment package..."
 
+# Remove existing deployment package
+rm -rf deployment-package
+
 # Create deployment structure
 mkdir -p deployment-package
 mkdir -p deployment-package/certs
@@ -111,6 +114,7 @@ All data stored in browser localStorage - persists locally per browser/device.
 - Port 443 requires sudo
 - Place .crt and .key files in main directory
 - Run `npm install` if dependencies missing
+- If routing errors occur, clear browser cache
 EOF
 
 echo "Deployment package created: ./deployment-package/"

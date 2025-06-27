@@ -17,9 +17,20 @@ app.use(cors());
 // Serve static files from dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Handle React Router routes
+// Handle React Router routes - catch all and serve index.html
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  try {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  } catch (error) {
+    console.error('Error serving file:', error);
+    res.status(500).send('Server Error');
+  }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).send('Something went wrong!');
 });
 
 // Check if certificates exist
