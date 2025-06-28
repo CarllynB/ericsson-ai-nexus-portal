@@ -55,13 +55,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Global error handler - MUST be last middleware
-app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('🚨 CRITICAL ERROR:', error);
-  console.error('Stack trace:', error.stack);
-  res.status(500).json({ error: 'Internal server error' });
-});
-
 // Serve static files from dist directory in production
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(process.cwd(), 'dist');
@@ -74,6 +67,13 @@ if (process.env.NODE_ENV === 'production') {
     }
   });
 }
+
+// Global error handler - MUST be last middleware
+app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('🚨 CRITICAL ERROR:', error);
+  console.error('Stack trace:', error.stack);
+  res.status(500).json({ error: 'Internal server error' });
+});
 
 // Initialize database when the module is loaded
 setupDatabase().then(() => {

@@ -1,5 +1,5 @@
 
-const { spawn } = require('child_process');
+import { spawn } from 'child_process';
 
 console.log('🚀 Starting AI-DU Agent Portal Development Server (HTTPS)...\n');
 
