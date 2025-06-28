@@ -14,6 +14,12 @@ import { fileURLToPath } from 'url';
 
 const app = express();
 
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`📨 ${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
+
 // Enable CORS with specific options
 app.use(cors({
   origin: true,
@@ -21,18 +27,39 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// API Routes
-app.use('/api/auth', authRoutes);
+// Add error handling middleware for JSON parsing
+app.use((error, req, res, next) => {
+  if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
+    console.error('❌ JSON Parse Error:', error.message);
+    return res.status(400).json({ error: 'Invalid JSON' });
+  }
+  next();
+});
+
+// API Routes with error handling
+app.use('/api/auth', (req, res, next) => {
+  console.log('🔑 Auth route accessed:', req.method, req.url);
+  next();
+}, authRoutes);
+
 app.use('/api/agents', agentRoutes);
 app.use('/api/roles', roleRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+  console.log('💓 Health check requested');
   res.json({ 
     status: 'ok', 
     database: 'connected',
     timestamp: new Date().toISOString()
   });
+});
+
+// Global error handler
+app.use((error, req, res, next) => {
+  console.error('🚨 CRITICAL ERROR:', error);
+  console.error('Stack trace:', error.stack);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 // Serve static files from dist directory in production
@@ -81,7 +108,13 @@ if (isMainModule) {
             allowHTTP1: true
           };
 
-          https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
+          const server = https.createServer(httpsOptions, app);
+          
+          server.on('error', (error) => {
+            console.error('🚨 HTTPS Server Error:', error);
+          });
+
+          server.listen(PORT, '0.0.0.0', () => {
             console.log(`🔒 HTTPS Backend Server running on port ${PORT}`);
             console.log(`🔧 Backend API: https://localhost:${PORT}`);
             console.log(`🔍 API Health: https://localhost:${PORT}/api/health`);
@@ -101,12 +134,28 @@ if (isMainModule) {
   };
 
   const startHttpServer = (port: number) => {
-    http.createServer(app).listen(port, '0.0.0.0', () => {
+    const server = http.createServer(app);
+    
+    server.on('error', (error) => {
+      console.error('🚨 HTTP Server Error:', error);
+    });
+
+    server.listen(port, '0.0.0.0', () => {
       console.log(`🌐 HTTP Backend Server running on port ${port}`);
       console.log(`🔧 Backend API: http://localhost:${port}`);
       console.log(`🔍 API Health: http://localhost:${port}/api/health`);
     });
   };
+
+  // Catch unhandled errors
+  process.on('uncaughtException', (error) => {
+    console.error('🚨 UNCAUGHT EXCEPTION:', error);
+    console.error('Stack:', error.stack);
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('🚨 UNHANDLED REJECTION at:', promise, 'reason:', reason);
+  });
 
   startServer();
 }
