@@ -1,6 +1,6 @@
 
-const { spawn } = require('child_process');
-const fs = require('fs');
+import { spawn } from 'child_process';
+import fs from 'fs';
 
 console.log('🚀 Starting AI-DU Agent Portal Production Server...\n');
 
