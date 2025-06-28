@@ -28,12 +28,12 @@ app.use(cors({
 app.use(express.json());
 
 // Add error handling middleware for JSON parsing
-app.use((error, req, res, next) => {
-  if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
+app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (error instanceof SyntaxError && 'status' in error && error.status === 400 && 'body' in error) {
     console.error('❌ JSON Parse Error:', error.message);
     return res.status(400).json({ error: 'Invalid JSON' });
   }
-  next();
+  next(error);
 });
 
 // API Routes with error handling
@@ -56,7 +56,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Global error handler
-app.use((error, req, res, next) => {
+app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('🚨 CRITICAL ERROR:', error);
   console.error('Stack trace:', error.stack);
   res.status(500).json({ error: 'Internal server error' });
