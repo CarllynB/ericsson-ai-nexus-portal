@@ -69,7 +69,8 @@ agentRoutes.put('/:id', authenticateToken, requireRole(['admin', 'super_admin'])
     // Check if agent exists
     const existingAgent = await dbGet('SELECT * FROM agents WHERE id = ?', [id]);
     if (!existingAgent) {
-      return res.status(404).json({ error: 'Agent not found' });
+      res.status(404).json({ error: 'Agent not found' });
+      return;
     }
 
     // Build update query dynamically
@@ -118,7 +119,8 @@ agentRoutes.delete('/:id', authenticateToken, requireRole(['admin', 'super_admin
     const result = await dbRun('DELETE FROM agents WHERE id = ?', [id]);
     
     if (result.changes === 0) {
-      return res.status(404).json({ error: 'Agent not found' });
+      res.status(404).json({ error: 'Agent not found' });
+      return;
     }
 
     res.json({ message: 'Agent deleted successfully' });

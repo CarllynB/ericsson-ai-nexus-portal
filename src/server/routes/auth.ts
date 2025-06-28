@@ -16,13 +16,15 @@ authRoutes.post('/login', async (req: Request, res: Response) => {
     const user = await dbGet('SELECT * FROM users WHERE email = ?', [email]);
     
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      res.status(401).json({ error: 'Invalid credentials' });
+      return;
     }
 
     // Check password
     const validPassword = await bcrypt.compare(password, user.password_hash);
     if (!validPassword) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      res.status(401).json({ error: 'Invalid credentials' });
+      return;
     }
 
     // Get user role
@@ -59,12 +61,14 @@ authRoutes.post('/register', async (req: Request, res: Response) => {
     // Check if user already exists
     const existingUser = await dbGet('SELECT id FROM users WHERE email = ?', [email]);
     if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+      res.status(400).json({ error: 'User already exists' });
+      return;
     }
 
     // Validate password
     if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+      res.status(400).json({ error: 'Password must be at least 6 characters long' });
+      return;
     }
 
     // Hash password
@@ -120,7 +124,8 @@ authRoutes.post('/change-password', async (req: Request, res: Response) => {
     
     // Validate password
     if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+      res.status(400).json({ error: 'Password must be at least 6 characters long' });
+      return;
     }
 
     // Hash new password

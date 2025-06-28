@@ -59,7 +59,8 @@ roleRoutes.put('/:userId', authenticateToken, requireRole(['super_admin']), asyn
     // Get user by ID to find email
     const userRole = await dbGet('SELECT * FROM user_roles WHERE id = ?', [userId]);
     if (!userRole) {
-      return res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ error: 'User not found' });
+      return;
     }
 
     await dbRun(
