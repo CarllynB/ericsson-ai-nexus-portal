@@ -29,6 +29,21 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Helper function to decode JWT token
+const decodeJWT = (token: string) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Error decoding JWT:', error);
+    return null;
+  }
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,7 +75,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         console.log('🔍 Validating token with backend...');
         
-        // First check if backend is available
+        // First decode the JWT to get user data
+        const tokenData = decodeJWT(token);
+        if (!tokenData) {
+          throw new Error('Invalid token format');
+        }
+        
+        console.log('🎫 Token data decoded:', { id: tokenData.id, email: tokenData.email, role: tokenData.role });
+        
+        // Check if backend is available
         try {
           await backendApiService.healthCheck();
           console.log('✅ Backend health check passed');
@@ -78,14 +101,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           ? roleResponse.role as 'super_admin' | 'admin' | 'viewer'
           : 'viewer';
         
-        // If we got here, the token is valid. Get user data from token
+        // Use the actual user data from the token
         const userData: User = {
-          id: 'current-user-id',
-          email: 'current-user-email', 
+          id: tokenData.id,
+          email: tokenData.email,
           role: validRole,
-          created_at: new Date().toISOString(),
+          created_at: tokenData.created_at || new Date().toISOString(),
         };
         
+        console.log('👤 Setting user data:', userData);
         setUser(userData);
         dispatchAuthChange();
       } catch (error) {
