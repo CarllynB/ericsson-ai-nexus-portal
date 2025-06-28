@@ -1,6 +1,5 @@
 
 import { Agent } from './api';
-import { backendApiService } from './backendApi';
 import { sqliteService } from './sqlite';
 
 class OfflineApiService {
@@ -21,38 +20,30 @@ class OfflineApiService {
 
   private async doInitialize(): Promise<void> {
     try {
-      console.log('🔄 Initializing services...');
+      console.log('🔄 Initializing SQLite service...');
       
-      // Initialize SQLite first
+      // Initialize SQLite - this is our only source of truth
       await sqliteService.initialize();
-      console.log('✅ SQLite initialized');
-      
-      // Test backend connection
-      try {
-        const healthCheck = await backendApiService.healthCheck();
-        console.log('✅ Backend connection established:', healthCheck);
-      } catch (error) {
-        console.warn('⚠️ Backend not available, using SQLite only:', error);
-      }
+      console.log('✅ SQLite initialized successfully');
       
       this.initialized = true;
     } catch (error) {
-      console.error('❌ Failed to initialize services:', error);
+      console.error('❌ Failed to initialize SQLite service:', error);
       this.initialized = false;
       this.initializationPromise = null;
-      throw new Error('Services unavailable. Please refresh the page.');
+      throw new Error('SQLite database unavailable. Please refresh the page.');
     }
   }
 
   async getAgents(): Promise<Agent[]> {
     try {
       await this.initialize();
-      console.log('🔍 Fetching agents from SQLite...');
+      console.log('🔍 Fetching agents from SQLite database...');
       const agents = await sqliteService.getAgents();
-      console.log(`✅ Successfully fetched ${agents.length} agents`);
+      console.log(`✅ Successfully fetched ${agents.length} agents from SQLite`);
       return agents;
     } catch (error) {
-      console.error('❌ Error getting agents:', error);
+      console.error('❌ Error getting agents from SQLite:', error);
       throw new Error('Failed to load agents from database.');
     }
   }
@@ -60,38 +51,38 @@ class OfflineApiService {
   async createAgent(agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>): Promise<Agent> {
     try {
       await this.initialize();
-      console.log('➕ Creating agent via SQLite...');
+      console.log('➕ Creating agent in SQLite database...');
       const newAgent = await sqliteService.createAgent(agent);
-      console.log('✅ Agent created successfully:', newAgent.name);
+      console.log('✅ Agent created successfully in SQLite:', newAgent.name);
       return newAgent;
     } catch (error) {
-      console.error('❌ Error creating agent:', error);
-      throw new Error('Failed to create agent');
+      console.error('❌ Error creating agent in SQLite:', error);
+      throw new Error('Failed to create agent in database');
     }
   }
 
   async updateAgent(id: string, updates: Partial<Agent>): Promise<Agent> {
     try {
       await this.initialize();
-      console.log('📝 Updating agent via SQLite...');
+      console.log('📝 Updating agent in SQLite database...');
       const updatedAgent = await sqliteService.updateAgent(id, updates);
-      console.log('✅ Agent updated successfully:', updatedAgent.name);
+      console.log('✅ Agent updated successfully in SQLite:', updatedAgent.name);
       return updatedAgent;
     } catch (error) {
-      console.error('❌ Error updating agent:', error);
-      throw new Error('Failed to update agent');
+      console.error('❌ Error updating agent in SQLite:', error);
+      throw new Error('Failed to update agent in database');
     }
   }
 
   async deleteAgent(id: string): Promise<void> {
     try {
       await this.initialize();
-      console.log('🗑️ Deleting agent via SQLite...');
+      console.log('🗑️ Deleting agent from SQLite database...');
       await sqliteService.deleteAgent(id);
-      console.log('✅ Agent deleted successfully');
+      console.log('✅ Agent deleted successfully from SQLite');
     } catch (error) {
-      console.error('❌ Error deleting agent:', error);
-      throw new Error('Failed to delete agent');
+      console.error('❌ Error deleting agent from SQLite:', error);
+      throw new Error('Failed to delete agent from database');
     }
   }
 

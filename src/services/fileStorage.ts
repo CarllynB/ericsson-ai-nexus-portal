@@ -1,4 +1,4 @@
-// This file is deprecated - all functionality has been moved to SQLite
+// This file is fully deprecated - SQLite is now the only source of truth
 // Keeping minimal interface for backwards compatibility during transition
 
 import { Agent } from './api';
@@ -20,7 +20,7 @@ export interface DatabaseData {
   lastUpdated: string;
 }
 
-// All methods now proxy to SQLite service
+// All methods now proxy directly to SQLite service - no localStorage usage
 class FileStorageService {
   async getAgents(): Promise<Agent[]> {
     return sqliteService.getAgents();
@@ -54,16 +54,18 @@ class FileStorageService {
     return sqliteService.getAllUserRoles();
   }
 
+  // Deprecated methods - no longer use localStorage
   exportData(): string {
+    console.warn('Export functionality moved to SQLite service');
     return JSON.stringify({ message: "Data export now handled by SQLite service" });
   }
 
   importData(jsonData: string): void {
-    console.log("Import functionality moved to SQLite service");
+    console.warn('Import functionality moved to SQLite service');
   }
 
   clearAllData(): void {
-    console.log("Clear data functionality moved to SQLite service");
+    console.warn('Clear data functionality moved to SQLite service');
   }
 }
 

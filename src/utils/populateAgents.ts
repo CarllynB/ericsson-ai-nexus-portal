@@ -3,14 +3,15 @@ import { sqliteService } from '@/services/sqlite';
 
 export const populateDefaultAgents = async () => {
   try {
-    console.log('🔄 Checking database initialization...');
+    console.log('🔄 Initializing clean SQLite database...');
     
-    // Just initialize SQLite without adding any hardcoded agents
+    // Only initialize SQLite database structure - no hardcoded data
     await sqliteService.initialize();
     
-    console.log('✅ Database initialized and ready for user-created agents');
-    console.log('ℹ️ No default agents will be created - only super admins can add agents');
+    console.log('✅ SQLite database initialized with empty tables');
+    console.log('ℹ️ Database is ready for user-created content only');
+    console.log('📝 Only Super Admins can create agents - no default data loaded');
   } catch (error) {
-    console.error('❌ Error initializing database:', error);
+    console.error('❌ Error initializing clean database:', error);
   }
 };

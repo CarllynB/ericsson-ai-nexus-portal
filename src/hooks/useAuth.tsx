@@ -65,12 +65,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const roleResponse = await backendApiService.getUserRole();
         console.log('✅ Session validation successful, role:', roleResponse.role);
         
+        // Ensure role is one of the valid types
+        const validRole = ['super_admin', 'admin', 'viewer'].includes(roleResponse.role) 
+          ? roleResponse.role as 'super_admin' | 'admin' | 'viewer'
+          : 'viewer';
+        
         // If we got here, the token is valid. Get user data from token
-        // For now we'll create a basic user object - in a real app this would come from the backend
         const userData: User = {
           id: 'current-user-id',
-          email: 'current-user-email', // This should come from backend
-          role: roleResponse.role,
+          email: 'current-user-email', 
+          role: validRole,
           created_at: new Date().toISOString(),
         };
         
@@ -95,10 +99,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       const response = await backendApiService.login(email, password);
       
+      // Ensure role is one of the valid types
+      const validRole = ['super_admin', 'admin', 'viewer'].includes(response.user.role) 
+        ? response.user.role as 'super_admin' | 'admin' | 'viewer'
+        : 'viewer';
+      
       const userData: User = {
         id: response.user.id,
         email: response.user.email,
-        role: response.user.role,
+        role: validRole,
         created_at: response.user.created_at,
       };
       
@@ -131,10 +140,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       const response = await backendApiService.register(email, password);
       
+      // Ensure role is one of the valid types
+      const validRole = ['super_admin', 'admin', 'viewer'].includes(response.user.role) 
+        ? response.user.role as 'super_admin' | 'admin' | 'viewer'
+        : 'viewer';
+      
       const userData: User = {
         id: response.user.id,
         email: response.user.email,
-        role: response.user.role,
+        role: validRole,
         created_at: response.user.created_at,
       };
       

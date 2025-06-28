@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { AuthProvider } from "@/hooks/useAuth";
 import { Layout } from "@/components/Layout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -14,75 +14,33 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
-  
-  console.log('ProtectedRoute - user:', !!user, 'loading:', loading);
-  
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    console.log('ProtectedRoute - No user, redirecting to login');
-    return <Navigate to="/login" replace />;
-  }
-  
-  return <>{children}</>;
-};
-
 const AppRoutes = () => {
-  const { user, loading } = useAuth();
-  
-  console.log('AppRoutes - user:', !!user, 'loading:', loading);
-  
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
-  
   return (
     <Routes>
-      <Route 
-        path="/login" 
-        element={user ? <Navigate to="/" replace /> : <Login />} 
-      />
-      {/* ALL routes now require authentication */}
+      <Route path="/login" element={<Login />} />
+      {/* All routes are now publicly accessible */}
       <Route 
         path="/" 
         element={
-          <ProtectedRoute>
-            <Layout>
-              <Index />
-            </Layout>
-          </ProtectedRoute>
+          <Layout>
+            <Index />
+          </Layout>
         } 
       />
       <Route 
         path="/agents" 
         element={
-          <ProtectedRoute>
-            <Layout>
-              <Agents />
-            </Layout>
-          </ProtectedRoute>
+          <Layout>
+            <Agents />
+          </Layout>
         } 
       />
       <Route 
         path="/dashboard" 
         element={
-          <ProtectedRoute>
-            <Layout>
-              <Dashboard />
-            </Layout>
-          </ProtectedRoute>
+          <Layout>
+            <Dashboard />
+          </Layout>
         } 
       />
       <Route path="*" element={<NotFound />} />
