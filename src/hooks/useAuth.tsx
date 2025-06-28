@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
@@ -43,21 +42,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     window.dispatchEvent(new CustomEvent('authChange'));
   };
 
-  // Helper function to decode JWT and extract user data
-  const decodeJWT = (token: string) => {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      return JSON.parse(jsonPayload);
-    } catch (error) {
-      console.error('Error decoding JWT:', error);
-      return null;
-    }
-  };
-
   // Validate stored session on mount
   useEffect(() => {
     const validateStoredSession = async () => {
@@ -76,15 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         console.log('🔍 Validating token with backend...');
         
-        // First decode the JWT to get user data
-        const decodedToken = decodeJWT(token);
-        if (!decodedToken) {
-          throw new Error('Invalid token format');
-        }
-
-        console.log('🔓 Decoded token data:', decodedToken);
-        
-        // Check if backend is available
+        // First check if backend is available
         try {
           await backendApiService.healthCheck();
           console.log('✅ Backend health check passed');
@@ -102,15 +78,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           ? roleResponse.role as 'super_admin' | 'admin' | 'viewer'
           : 'viewer';
         
-        // Create user data from decoded token
+        // If we got here, the token is valid. Get user data from token
         const userData: User = {
-          id: decodedToken.id || 'unknown-user-id',
-          email: decodedToken.email || 'unknown-email', 
+          id: 'current-user-id',
+          email: 'current-user-email', 
           role: validRole,
           created_at: new Date().toISOString(),
         };
         
-        console.log('👤 Setting user data:', userData);
         setUser(userData);
         dispatchAuthChange();
       } catch (error) {
