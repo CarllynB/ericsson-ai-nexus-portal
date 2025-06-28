@@ -14,11 +14,15 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "0.0.0.0",
     port: 8080,
-    // Use HTTPS with SSL certificates if they exist
+    // Use HTTPS with SSL certificates if they exist, but force HTTP/1.1 to avoid Vite HTTP/2 bug
     https: sslCertExists && sslKeyExists ? {
       cert: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.crt'),
-      key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key')
-    } : undefined,
+      key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key'),
+      // Force HTTP/1.1 to avoid the req.url undefined bug in HTTP/2
+      allowHTTP1: true,
+      // Disable HTTP/2 to prevent the Vite crash
+      http2: false
+    } : false,
     cors: true,
     // Proxy API requests to the backend server
     proxy: {
