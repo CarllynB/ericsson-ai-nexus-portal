@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Agent } from '@/services/api';
-import { offlineApiService } from '@/services/offlineApi';
+import { backendApiService } from '@/services/backendApi';
 
 export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -23,34 +23,24 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔍 useAgents: Fetching agents from SQLite ONLY - NO hardcoded fallbacks...');
-      console.log('🔥 CRITICAL: If agents appear but this logs 0, hardcoded data still exists!');
+      console.log('🔍 useAgents: Fetching agents from backend API...');
       
-      const response = await offlineApiService.getAgents();
-      console.log('📊 useAgents: Raw response from SQLite:', response);
+      const response = await backendApiService.getAgents();
+      console.log('📊 useAgents: Raw response from backend:', response);
       console.log(`📊 useAgents: Response type: ${typeof response}, Array: ${Array.isArray(response)}, Length: ${response?.length || 'undefined'}`);
       
       if (Array.isArray(response)) {
         const sortedAgents = sortAgents(response);
         setAgents(sortedAgents);
-        console.log(`✅ useAgents: Set ${sortedAgents.length} agents from SQLite (ZERO hardcoded data)`);
-        
-        if (sortedAgents.length === 0) {
-          console.log('✅ useAgents: Database is empty - this is CORRECT (no hardcoded agents should exist)');
-          console.log('🔥 CRITICAL: If you still see agents on screen, they are coming from hardcoded data!');
-        } else {
-          console.log(`ℹ️ useAgents: Displaying ${sortedAgents.length} real user-created agents from SQLite`);
-        }
+        console.log(`✅ useAgents: Set ${sortedAgents.length} agents from backend database`);
         setError(null);
       } else {
-        console.error('❌ useAgents: Invalid response format from SQLite:', response);
-        console.log('🚫 useAgents: Setting empty array - NO hardcoded fallbacks');
+        console.error('❌ useAgents: Invalid response format from backend:', response);
         setAgents([]);
-        setError('Invalid data format received from database');
+        setError('Invalid data format received from backend');
       }
     } catch (err) {
-      console.error('❌ useAgents: Failed to fetch agents from SQLite:', err);
-      console.log('🚫 useAgents: Setting empty array - NO hardcoded fallbacks EVER');
+      console.error('❌ useAgents: Failed to fetch agents from backend:', err);
       setAgents([]);
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(`Failed to load agents: ${errorMessage}`);
@@ -60,13 +50,13 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
   };
 
   useEffect(() => {
-    console.log('🔄 useAgents: Effect triggered - fetching from SQLite ONLY (no hardcoded data)');
+    console.log('🔄 useAgents: Effect triggered - fetching from backend API');
     fetchAgents();
   }, [page, pageSize, showAll]);
 
   const updateAgentStatus = async (id: string, status: Agent['status']) => {
     try {
-      await offlineApiService.updateAgent(id, { status });
+      await backendApiService.updateAgent(id, { status });
       setAgents(prev => 
         sortAgents(prev.map(agent => 
           agent.id === id ? { ...agent, status, last_updated: new Date().toISOString() } : agent
@@ -80,7 +70,7 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
 
   const deleteAgentById = async (id: string) => {
     try {
-      await offlineApiService.deleteAgent(id);
+      await backendApiService.deleteAgent(id);
       setAgents(prev => prev.filter(agent => agent.id !== id));
     } catch (err) {
       console.error('❌ useAgents: Failed to delete agent:', err);

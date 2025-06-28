@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import fs from "fs";
+import type { ViteDevServer } from 'vite';
 
 // Check if SSL certificates exist
 const sslCertExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');
@@ -27,7 +28,7 @@ export default defineConfig(({ mode }) => ({
     // Custom plugin to integrate Express backend
     {
       name: 'integrated-backend',
-      configureServer(server) {
+      configureServer(server: ViteDevServer) {
         // Import and set up the Express app
         const { app } = require('./src/server/index.ts');
         server.middlewares.use('/api', app);
