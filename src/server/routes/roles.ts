@@ -1,12 +1,13 @@
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { dbAll, dbRun, dbGet } from '../database';
 import { authenticateToken, requireRole } from '../index';
+import { AuthenticatedRequest } from '../types';
 
 export const roleRoutes = express.Router();
 
 // Get all user roles (super_admin only)
-roleRoutes.get('/', authenticateToken, requireRole(['super_admin']), async (req, res) => {
+roleRoutes.get('/', authenticateToken, requireRole(['super_admin']), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userRoles = await dbAll('SELECT * FROM user_roles ORDER BY assigned_at DESC');
     res.json(userRoles);
@@ -17,10 +18,10 @@ roleRoutes.get('/', authenticateToken, requireRole(['super_admin']), async (req,
 });
 
 // Assign role to user (super_admin only)
-roleRoutes.post('/assign', authenticateToken, requireRole(['super_admin']), async (req, res) => {
+roleRoutes.post('/assign', authenticateToken, requireRole(['super_admin']), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { userEmail, role } = req.body;
-    const assignedBy = req.user.email;
+    const assignedBy = req.user?.email;
     
     const userId = userEmail.replace('@', '_').replace(/\./g, '_');
     const now = new Date().toISOString();
@@ -50,7 +51,7 @@ roleRoutes.post('/assign', authenticateToken, requireRole(['super_admin']), asyn
 });
 
 // Update user role (super_admin only)
-roleRoutes.put('/:userId', authenticateToken, requireRole(['super_admin']), async (req, res) => {
+roleRoutes.put('/:userId', authenticateToken, requireRole(['super_admin']), async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const { role } = req.body;
@@ -74,9 +75,9 @@ roleRoutes.put('/:userId', authenticateToken, requireRole(['super_admin']), asyn
 });
 
 // Get user's own role
-roleRoutes.get('/me', authenticateToken, async (req, res) => {
+roleRoutes.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const userRole = await dbGet('SELECT role FROM user_roles WHERE email = ?', [req.user.email]);
+    const userRole = await dbGet('SELECT role FROM user_roles WHERE email = ?', [req.user?.email]);
     res.json({ role: userRole ? userRole.role : 'viewer' });
   } catch (error) {
     console.error('Error fetching user role:', error);

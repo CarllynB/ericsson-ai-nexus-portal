@@ -70,7 +70,7 @@ const startServer = async () => {
     await setupDatabase();
     console.log('✅ Database initialized successfully');
 
-    const PORT = process.env.PORT || 8080;
+    const PORT = parseInt(process.env.PORT || '8080', 10);
 
     // Check if SSL certificates exist for HTTPS
     const sslCertExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');

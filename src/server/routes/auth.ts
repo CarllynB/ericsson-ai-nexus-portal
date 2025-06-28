@@ -1,5 +1,5 @@
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { dbGet, dbRun } from '../database';
@@ -8,7 +8,7 @@ import { JWT_SECRET } from '../index';
 export const authRoutes = express.Router();
 
 // Login endpoint
-authRoutes.post('/login', async (req, res) => {
+authRoutes.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -52,7 +52,7 @@ authRoutes.post('/login', async (req, res) => {
 });
 
 // Register endpoint
-authRoutes.post('/register', async (req, res) => {
+authRoutes.post('/register', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -114,7 +114,7 @@ authRoutes.post('/register', async (req, res) => {
 });
 
 // Change password endpoint
-authRoutes.post('/change-password', async (req, res) => {
+authRoutes.post('/change-password', async (req: Request, res: Response) => {
   try {
     const { email, newPassword } = req.body;
     

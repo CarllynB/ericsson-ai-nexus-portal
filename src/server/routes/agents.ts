@@ -1,13 +1,14 @@
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { dbAll, dbRun, dbGet } from '../database';
 import { authenticateToken, requireRole } from '../index';
 import { Agent } from '../../services/api';
+import { AuthenticatedRequest } from '../types';
 
 export const agentRoutes = express.Router();
 
 // Get all agents (public endpoint)
-agentRoutes.get('/', async (req, res) => {
+agentRoutes.get('/', async (req: Request, res: Response) => {
   try {
     const agents = await dbAll('SELECT * FROM agents ORDER BY last_updated DESC');
     
@@ -25,7 +26,7 @@ agentRoutes.get('/', async (req, res) => {
 });
 
 // Create agent (admin/super_admin only)
-agentRoutes.post('/', authenticateToken, requireRole(['admin', 'super_admin']), async (req, res) => {
+agentRoutes.post('/', authenticateToken, requireRole(['admin', 'super_admin']), async (req: Request, res: Response) => {
   try {
     const agent = req.body;
     const newAgent: Agent = {
@@ -60,7 +61,7 @@ agentRoutes.post('/', authenticateToken, requireRole(['admin', 'super_admin']), 
 });
 
 // Update agent (admin/super_admin only)
-agentRoutes.put('/:id', authenticateToken, requireRole(['admin', 'super_admin']), async (req, res) => {
+agentRoutes.put('/:id', authenticateToken, requireRole(['admin', 'super_admin']), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -110,7 +111,7 @@ agentRoutes.put('/:id', authenticateToken, requireRole(['admin', 'super_admin'])
 });
 
 // Delete agent (admin/super_admin only)
-agentRoutes.delete('/:id', authenticateToken, requireRole(['admin', 'super_admin']), async (req, res) => {
+agentRoutes.delete('/:id', authenticateToken, requireRole(['admin', 'super_admin']), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
