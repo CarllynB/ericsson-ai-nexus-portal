@@ -43,27 +43,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     window.dispatchEvent(new CustomEvent('authChange'));
   };
 
+  // Validate stored session on mount
   useEffect(() => {
-    // Check localStorage for existing user session
-    const savedUser = localStorage.getItem('current_user');
-    const token = localStorage.getItem('auth_token');
-    
-    if (savedUser && token) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-        dispatchAuthChange();
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('current_user');
-        localStorage.removeItem('auth_token');
+    const validateStoredSession = async () => {
+      const savedUser = localStorage.getItem('current_user');
+      const token = localStorage.getItem('auth_token');
+      
+      if (savedUser && token) {
+        try {
+          const userData = JSON.parse(savedUser);
+          
+          // Validate token by making a test API call
+          try {
+            await backendApiService.getUserRole();
+            setUser(userData);
+            dispatchAuthChange();
+            console.log('✅ Session validated successfully');
+          } catch (error) {
+            console.warn('⚠️ Stored session invalid, clearing:', error);
+            localStorage.removeItem('current_user');
+            localStorage.removeItem('auth_token');
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('❌ Error parsing saved user:', error);
+          localStorage.removeItem('current_user');
+          localStorage.removeItem('auth_token');
+          setUser(null);
+        }
       }
-    }
+    };
+
+    validateStoredSession();
   }, []);
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
-      console.log('Attempting login for:', email);
+      console.log('🔑 Attempting login for:', email);
       setLoading(true);
       
       const response = await backendApiService.login(email, password);
@@ -79,15 +95,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('current_user', JSON.stringify(userData));
       dispatchAuthChange();
       
+      console.log('✅ Login successful:', userData.role);
       toast({
         title: "Success",
         description: `Logged in successfully as ${response.user.role}`
       });
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('❌ Login failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please check your credentials.';
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : 'Login failed',
+        title: "Login Failed",
+        description: errorMessage,
         variant: "destructive"
       });
       throw error;
@@ -98,7 +116,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (email: string, password: string): Promise<void> => {
     try {
-      console.log('Attempting registration for:', email);
+      console.log('📝 Attempting registration for:', email);
       setLoading(true);
       
       const response = await backendApiService.register(email, password);
@@ -114,15 +132,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('current_user', JSON.stringify(userData));
       dispatchAuthChange();
       
+      console.log('✅ Registration successful:', userData.role);
       toast({
         title: "Success",
         description: `Account created successfully with ${response.user.role} role`
       });
     } catch (error) {
-      console.error('Registration failed:', error);
+      console.error('❌ Registration failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : 'Registration failed',
+        title: "Registration Failed",
+        description: errorMessage,
         variant: "destructive"
       });
       throw error;
@@ -133,7 +153,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     try {
-      console.log('Logging out...');
+      console.log('🚪 Logging out...');
       backendApiService.logout();
       setUser(null);
       dispatchAuthChange();
@@ -143,7 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         description: "Logged out successfully"
       });
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('❌ Logout error:', error);
     }
   };
 
@@ -153,6 +173,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('No user logged in');
       }
 
+      console.log('🔒 Changing password for:', user.email);
       await backendApiService.changePassword(user.email, newPassword);
       
       toast({
@@ -162,10 +183,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       return true;
     } catch (error) {
-      console.error('Password change error:', error);
+      console.error('❌ Password change error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to change password';
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : 'Failed to change password',
+        description: errorMessage,
         variant: "destructive"
       });
       return false;

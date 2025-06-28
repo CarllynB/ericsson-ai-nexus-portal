@@ -2,75 +2,60 @@
 const { spawn } = require('child_process');
 const path = require('path');
 
-// Function to start a process and pipe its output
-function startProcess(command, args, name, color) {
-  const process = spawn(command, args, {
-    stdio: 'pipe',
-    shell: true,
-    cwd: __dirname
-  });
+console.log('🚀 Starting AI-DU Agent Portal Development Server...\n');
 
-  // Color codes for terminal output
-  const colors = {
-    red: '\x1b[31m',
-    green: '\x1b[32m',
-    yellow: '\x1b[33m',
-    blue: '\x1b[34m',
-    magenta: '\x1b[35m',
-    cyan: '\x1b[36m',
-    reset: '\x1b[0m'
-  };
+// Start the backend server
+const backendProcess = spawn('node', ['-r', 'ts-node/register', './src/server/index.ts'], {
+  stdio: 'inherit',
+  env: {
+    ...process.env,
+    NODE_ENV: 'development',
+    PORT: '8080'
+  }
+});
 
-  const colorCode = colors[color] || colors.reset;
+// Start the frontend dev server
+const frontendProcess = spawn('npm', ['run', 'dev'], {
+  stdio: 'inherit',
+  env: {
+    ...process.env,
+    VITE_API_URL: 'http://localhost:8080'
+  }
+});
 
-  process.stdout.on('data', (data) => {
-    console.log(`${colorCode}[${name}]${colors.reset} ${data.toString().trim()}`);
-  });
+// Handle process cleanup
+const cleanup = () => {
+  console.log('\n🛑 Shutting down servers...');
+  backendProcess.kill();
+  frontendProcess.kill();
+  process.exit();
+};
 
-  process.stderr.on('data', (data) => {
-    console.log(`${colorCode}[${name}]${colors.reset} ${data.toString().trim()}`);
-  });
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
 
-  process.on('close', (code) => {
-    console.log(`${colorCode}[${name}]${colors.reset} Process exited with code ${code}`);
-  });
+backendProcess.on('error', (err) => {
+  console.error('❌ Backend server error:', err);
+});
 
-  return process;
-}
+frontendProcess.on('error', (err) => {
+  console.error('❌ Frontend server error:', err);
+});
 
-console.log('🚀 Starting AI-DU Agent Portal...');
-console.log('📁 Backend will use SQLite database: shared_database.sqlite');
-console.log('🔒 HTTPS certificates will be used if available');
-console.log('');
+backendProcess.on('exit', (code) => {
+  if (code !== 0) {
+    console.error(`❌ Backend server exited with code ${code}`);
+  }
+});
 
-// Start backend server on port 3001
-const backend = startProcess(
-  'node',
-  ['-r', 'ts-node/register', 'src/server/index.ts'],
-  'Backend',
-  'green'
-);
+frontendProcess.on('exit', (code) => {
+  if (code !== 0) {
+    console.error(`❌ Frontend server exited with code ${code}`);
+  }
+});
 
-// Wait a moment for backend to start, then start frontend
-setTimeout(() => {
-  const frontend = startProcess(
-    'npm',
-    ['run', 'dev'],
-    'Frontend',
-    'blue'
-  );
-
-  // Handle cleanup on exit
-  process.on('SIGINT', () => {
-    console.log('\n🛑 Shutting down servers...');
-    backend.kill('SIGTERM');
-    frontend.kill('SIGTERM');
-    process.exit(0);
-  });
-
-  process.on('SIGTERM', () => {
-    backend.kill('SIGTERM');
-    frontend.kill('SIGTERM');
-    process.exit(0);
-  });
-}, 2000);
+console.log('✅ Both servers started successfully!');
+console.log('📱 Frontend: http://localhost:5173');
+console.log('🔧 Backend: http://localhost:8080');
+console.log('🔍 API Health: http://localhost:8080/api/health');
+console.log('\nPress Ctrl+C to stop both servers\n');

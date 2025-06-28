@@ -40,43 +40,63 @@ class BackendApiService {
   }
 
   private async request(endpoint: string, options: RequestInit = {}) {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      headers: {
-        ...this.getHeaders(),
-        ...options.headers,
-      },
-    });
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...options,
+        headers: {
+          ...this.getHeaders(),
+          ...options.headers,
+        },
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error(`API request failed for ${endpoint}:`, error);
+      throw error;
     }
-
-    return response.json();
   }
 
   // Authentication methods
   async login(email: string, password: string): Promise<LoginResponse> {
-    const response = await this.request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    
-    this.token = response.token;
-    localStorage.setItem('auth_token', this.token!);
-    return response;
+    try {
+      const response = await this.request('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      
+      this.token = response.token;
+      localStorage.setItem('auth_token', this.token!);
+      return response;
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
   }
 
   async register(email: string, password: string): Promise<LoginResponse> {
-    const response = await this.request('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    
-    this.token = response.token;
-    localStorage.setItem('auth_token', this.token!);
-    return response;
+    try {
+      const response = await this.request('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      
+      this.token = response.token;
+      localStorage.setItem('auth_token', this.token!);
+      return response;
+    } catch (error) {
+      console.error('Registration failed:', error);
+      throw error;
+    }
   }
 
   async changePassword(email: string, newPassword: string): Promise<void> {
@@ -94,7 +114,12 @@ class BackendApiService {
 
   // Agent methods
   async getAgents(): Promise<Agent[]> {
-    return this.request('/agents');
+    try {
+      return await this.request('/agents');
+    } catch (error) {
+      console.error('Failed to get agents:', error);
+      throw new Error('Failed to load agents from backend');
+    }
   }
 
   async createAgent(agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>): Promise<Agent> {
@@ -142,6 +167,11 @@ class BackendApiService {
 
   get isAuthenticated() {
     return !!this.token;
+  }
+
+  // Health check method
+  async healthCheck(): Promise<{ status: string; database: string; timestamp: string }> {
+    return this.request('/health');
   }
 }
 
