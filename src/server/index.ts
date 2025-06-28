@@ -55,7 +55,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Global error handler
+// Global error handler - MUST be last middleware
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('🚨 CRITICAL ERROR:', error);
   console.error('Stack trace:', error.stack);
