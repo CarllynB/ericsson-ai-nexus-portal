@@ -66,7 +66,17 @@ if (isMainModule) {
     try {
       const PORT = parseInt(process.env.PORT || '8080', 10);
 
-      // Check if SSL certificates exist for HTTPS
+      // For development, use HTTP to avoid compatibility issues
+      if (process.env.NODE_ENV === 'development') {
+        app.listen(PORT, '0.0.0.0', () => {
+          console.log(`🚀 HTTP Backend Server running on port ${PORT}`);
+          console.log(`🔧 Backend API: http://localhost:${PORT}`);
+          console.log(`🔍 API Health: http://localhost:${PORT}/api/health`);
+        });
+        return;
+      }
+
+      // For production, try HTTPS first, fall back to HTTP
       const sslCertExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');
       const sslKeyExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.key');
 
@@ -78,7 +88,7 @@ if (isMainModule) {
           };
 
           https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
-            console.log(`🚀 HTTPS All-in-One Server running on port ${PORT}`);
+            console.log(`🚀 HTTPS Production Server running on port ${PORT}`);
             console.log(`🔒 Access your app at: https://aiduagent-csstip.ckit1.explab.com/`);
             console.log(`🔍 API Health: https://aiduagent-csstip.ckit1.explab.com/api/health`);
           });
@@ -98,7 +108,7 @@ if (isMainModule) {
 
   const startHttpServer = (port: number) => {
     app.listen(port, '0.0.0.0', () => {
-      console.log(`🚀 HTTP All-in-One Server running on port ${port}`);
+      console.log(`🚀 HTTP Production Server running on port ${port}`);
       console.log(`🌐 Access your app at: http://localhost:${port}`);
       console.log(`🔍 API Health: http://localhost:${port}/api/health`);
     });
