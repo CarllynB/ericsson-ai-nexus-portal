@@ -35,7 +35,8 @@ router.post('/', authenticateToken, requireRole(['admin', 'super_admin']), async
     const { title, url } = req.body;
     
     if (!title || !url) {
-      return res.status(400).json({ error: 'Title and URL are required' });
+      res.status(400).json({ error: 'Title and URL are required' });
+      return;
     }
 
     console.log('➕ Creating new sidebar item:', title);
@@ -106,7 +107,8 @@ router.put('/:id', authenticateToken, requireRole(['admin', 'super_admin']), asy
     const updatedItem = await dbGet('SELECT * FROM sidebar_items WHERE id = ?', [id]);
     
     if (!updatedItem) {
-      return res.status(404).json({ error: 'Sidebar item not found' });
+      res.status(404).json({ error: 'Sidebar item not found' });
+      return;
     }
 
     const formattedItem = {
@@ -138,11 +140,13 @@ router.delete('/:id', authenticateToken, requireRole(['admin', 'super_admin']), 
     const item = await dbGet('SELECT is_default FROM sidebar_items WHERE id = ?', [id]);
     
     if (!item) {
-      return res.status(404).json({ error: 'Sidebar item not found' });
+      res.status(404).json({ error: 'Sidebar item not found' });
+      return;
     }
 
     if (item.is_default) {
-      return res.status(400).json({ error: 'Cannot delete default sidebar items' });
+      res.status(400).json({ error: 'Cannot delete default sidebar items' });
+      return;
     }
 
     await dbRun('DELETE FROM sidebar_items WHERE id = ?', [id]);
@@ -161,7 +165,8 @@ router.post('/reorder', authenticateToken, requireRole(['admin', 'super_admin'])
     const { items } = req.body;
 
     if (!Array.isArray(items)) {
-      return res.status(400).json({ error: 'Items must be an array' });
+      res.status(400).json({ error: 'Items must be an array' });
+      return;
     }
 
     console.log('🔄 Reordering sidebar items...');
