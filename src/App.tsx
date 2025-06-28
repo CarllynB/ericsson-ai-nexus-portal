@@ -12,21 +12,15 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { populateDefaultAgents, clearAllCachedAgents } from "./utils/populateAgents";
 import { clearAllAgents } from "./utils/clearDatabase";
-import "./utils/debugAgents"; // Import to auto-run debugging
 
 const queryClient = new QueryClient();
 
 // Initialize app with completely clean state
 const initializeApp = async () => {
-  console.log('🚀 App initializing - clearing ALL cached data and running diagnostics...');
+  console.log('🚀 App initializing - clearing ALL cached data...');
   
   // Clear any cached agent data first
   clearAllCachedAgents();
-  
-  // Run comprehensive debugging
-  console.log('🔍 Running comprehensive agent source debugging...');
-  const { debugAgentSources } = await import('./utils/debugAgents');
-  debugAgentSources();
   
   // CRITICAL: Clear the existing SQLite database completely
   console.log('🧹 CRITICAL: Clearing existing SQLite database...');
@@ -42,7 +36,6 @@ const initializeApp = async () => {
   await populateDefaultAgents();
   
   console.log('✅ App initialized with completely clean state');
-  console.log('🔥 CRITICAL: If you see agents after this point, they are hardcoded in React components!');
 };
 
 // Run initialization
