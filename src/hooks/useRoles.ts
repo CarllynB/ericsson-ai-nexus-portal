@@ -36,7 +36,7 @@ export const useRoles = () => {
 
       console.log('🔍 Fetching current user role for:', user.email);
       
-      // Get role from SQLite first
+      // Get role from SQLite ONLY - no Supabase dependency
       let role = await sqliteService.getUserRole(user.email);
       
       // If not found in SQLite, try backend as fallback
@@ -73,7 +73,7 @@ export const useRoles = () => {
         return;
       }
 
-      // Get users from SQLite
+      // Get users from SQLite ONLY - completely removed Supabase dependency
       const allUsers = await sqliteService.getAllUserRoles();
       console.log('✅ Fetched users with roles from SQLite:', allUsers);
       
