@@ -59,36 +59,50 @@ export const setupDatabase = async (): Promise<void> => {
           )
         `);
 
-        // Create default super admin users if they don't exist
-        const superAdmins = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
-        
-        for (const email of superAdmins) {
-          const userId = email.replace('@', '_').replace(/\./g, '_');
-          const defaultPassword = await bcrypt.hash('admin123', 10);
-          
-          // Insert user if not exists
-          await new Promise<void>((resolveUser, rejectUser) => {
-            db.run(
-              'INSERT OR IGNORE INTO users (id, email, password_hash) VALUES (?, ?, ?)',
-              [userId, email, defaultPassword],
-              (err) => {
-                if (err) rejectUser(err);
-                else resolveUser();
-              }
-            );
+        // Check if we need to seed super admin users (only if users table is empty)
+        const userCount = await new Promise<number>((resolveCount) => {
+          db.get('SELECT COUNT(*) as count FROM users', (err, row: any) => {
+            if (err) resolveCount(0);
+            else resolveCount(row.count);
           });
+        });
 
-          // Insert role if not exists
-          await new Promise<void>((resolveRole, rejectRole) => {
-            db.run(
-              'INSERT OR IGNORE INTO user_roles (id, user_id, email, role) VALUES (?, ?, ?, ?)',
-              [userId, userId, email, 'super_admin'],
-              (err) => {
-                if (err) rejectRole(err);
-                else resolveRole();
-              }
-            );
-          });
+        // Only create default super admin users if database is completely empty
+        if (userCount === 0) {
+          console.log('📝 Database is empty, creating default super admin users...');
+          const superAdmins = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
+          
+          for (const email of superAdmins) {
+            const userId = email.replace('@', '_').replace(/\./g, '_');
+            const defaultPassword = await bcrypt.hash('admin123', 10);
+            
+            // Insert user
+            await new Promise<void>((resolveUser, rejectUser) => {
+              db.run(
+                'INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)',
+                [userId, email, defaultPassword],
+                (err) => {
+                  if (err) rejectUser(err);
+                  else resolveUser();
+                }
+              );
+            });
+
+            // Insert role
+            await new Promise<void>((resolveRole, rejectRole) => {
+              db.run(
+                'INSERT INTO user_roles (id, user_id, email, role) VALUES (?, ?, ?, ?)',
+                [userId, userId, email, 'super_admin'],
+                (err) => {
+                  if (err) rejectRole(err);
+                  else resolveRole();
+                }
+              );
+            });
+          }
+          console.log('✅ Default super admin users created');
+        } else {
+          console.log('ℹ️ Database already contains users, skipping seeding');
         }
 
         console.log('✅ Database tables created and initialized');
