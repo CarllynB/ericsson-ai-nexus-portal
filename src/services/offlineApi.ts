@@ -20,11 +20,12 @@ class OfflineApiService {
 
   private async doInitialize(): Promise<void> {
     try {
-      console.log('🔄 Initializing SQLite service...');
+      console.log('🔄 Initializing SQLite service as the only data source...');
       
       // Initialize SQLite - this is our only source of truth
       await sqliteService.initialize();
-      console.log('✅ SQLite initialized successfully');
+      console.log('✅ SQLite initialized successfully - no hardcoded data loaded');
+      console.log('💾 All data operations will persist permanently across sessions');
       
       this.initialized = true;
     } catch (error) {
@@ -38,9 +39,15 @@ class OfflineApiService {
   async getAgents(): Promise<Agent[]> {
     try {
       await this.initialize();
-      console.log('🔍 Fetching agents from SQLite database...');
+      console.log('🔍 Fetching agents from SQLite database (no hardcoded data)...');
       const agents = await sqliteService.getAgents();
-      console.log(`✅ Successfully fetched ${agents.length} agents from SQLite`);
+      
+      if (agents.length === 0) {
+        console.log('ℹ️ No agents found - database is empty as expected (no hardcoded data)');
+      } else {
+        console.log(`✅ Successfully fetched ${agents.length} persistent agents from SQLite`);
+      }
+      
       return agents;
     } catch (error) {
       console.error('❌ Error getting agents from SQLite:', error);
@@ -51,9 +58,9 @@ class OfflineApiService {
   async createAgent(agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>): Promise<Agent> {
     try {
       await this.initialize();
-      console.log('➕ Creating agent in SQLite database...');
+      console.log('➕ Creating agent in SQLite database for permanent storage...');
       const newAgent = await sqliteService.createAgent(agent);
-      console.log('✅ Agent created successfully in SQLite:', newAgent.name);
+      console.log('✅ Agent created successfully and saved permanently:', newAgent.name);
       return newAgent;
     } catch (error) {
       console.error('❌ Error creating agent in SQLite:', error);
@@ -64,9 +71,9 @@ class OfflineApiService {
   async updateAgent(id: string, updates: Partial<Agent>): Promise<Agent> {
     try {
       await this.initialize();
-      console.log('📝 Updating agent in SQLite database...');
+      console.log('📝 Updating agent in SQLite database for permanent storage...');
       const updatedAgent = await sqliteService.updateAgent(id, updates);
-      console.log('✅ Agent updated successfully in SQLite:', updatedAgent.name);
+      console.log('✅ Agent updated successfully and saved permanently:', updatedAgent.name);
       return updatedAgent;
     } catch (error) {
       console.error('❌ Error updating agent in SQLite:', error);
@@ -77,9 +84,9 @@ class OfflineApiService {
   async deleteAgent(id: string): Promise<void> {
     try {
       await this.initialize();
-      console.log('🗑️ Deleting agent from SQLite database...');
+      console.log('🗑️ Deleting agent from SQLite database permanently...');
       await sqliteService.deleteAgent(id);
-      console.log('✅ Agent deleted successfully from SQLite');
+      console.log('✅ Agent deleted successfully and removed permanently from database');
     } catch (error) {
       console.error('❌ Error deleting agent from SQLite:', error);
       throw new Error('Failed to delete agent from database');

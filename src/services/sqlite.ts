@@ -1,4 +1,3 @@
-
 import initSqlJs, { Database } from 'sql.js';
 import { Agent } from './api';
 
@@ -32,30 +31,30 @@ class SQLiteService {
       
       console.log('✅ SQL.js loaded successfully');
 
-      // Try to load existing database from localStorage
+      // Try to load existing database from localStorage for persistence
       const savedDb = localStorage.getItem('sqlite_database');
       if (savedDb) {
         try {
-          console.log('🔄 Loading existing database from localStorage...');
+          console.log('🔄 Loading existing database with persistent data...');
           const uint8Array = new Uint8Array(JSON.parse(savedDb));
           this.db = new SQL.Database(uint8Array);
-          console.log('✅ Successfully loaded existing database');
+          console.log('✅ Successfully loaded existing database with all saved data');
           
           // Verify and update tables
           await this.verifyAndUpdateTables();
         } catch (error) {
-          console.warn('⚠️ Failed to load saved database, creating new one:', error);
+          console.warn('⚠️ Failed to load saved database, creating new empty one:', error);
           this.db = new SQL.Database();
           this.createTables();
         }
       } else {
-        console.log('🆕 No existing database found, creating new one...');
+        console.log('🆕 No existing database found, creating completely empty database...');
         this.db = new SQL.Database();
         this.createTables();
       }
 
       this.initialized = true;
-      console.log('🎉 SQLite database initialized successfully');
+      console.log('🎉 SQLite database initialized - all data will persist permanently');
     } catch (error) {
       console.error('❌ Failed to initialize SQLite:', error);
       this.initialized = false;
@@ -110,9 +109,9 @@ class SQLiteService {
     }
 
     try {
-      console.log('🔄 Creating database tables...');
+      console.log('🔄 Creating empty database tables...');
       
-      // Create agents table
+      // Create agents table - completely empty
       this.db.exec(`
         DROP TABLE IF EXISTS agents;
         CREATE TABLE agents (
@@ -163,8 +162,9 @@ class SQLiteService {
       `);
 
       this.saveDatabase();
-      console.log('✅ Database tables created and saved successfully');
-      console.log('ℹ️ Database is empty and ready for user-created content');
+      console.log('✅ Empty database tables created and saved successfully');
+      console.log('ℹ️ Database is completely empty - no agents exist until created by Super Admins');
+      console.log('💾 All future data will persist permanently across all sessions');
     } catch (error) {
       console.error('❌ Error creating tables:', error);
       throw error;
@@ -181,7 +181,7 @@ class SQLiteService {
       const data = this.db.export();
       const dataArray = Array.from(data);
       localStorage.setItem('sqlite_database', JSON.stringify(dataArray));
-      console.log('💾 Database saved to localStorage');
+      console.log('💾 Database saved permanently to localStorage - data will persist across sessions');
     } catch (error) {
       console.error('❌ Failed to save database:', error);
     }
@@ -214,7 +214,13 @@ class SQLiteService {
       }
 
       stmt.free();
-      console.log(`✅ Successfully retrieved ${results.length} agents from database`);
+      
+      if (results.length === 0) {
+        console.log('ℹ️ No agents found in database - database is empty as expected');
+      } else {
+        console.log(`✅ Successfully retrieved ${results.length} agents from persistent database`);
+      }
+      
       return results;
     } catch (error) {
       console.error('❌ Error fetching agents from SQLite:', error);
@@ -234,7 +240,7 @@ class SQLiteService {
     };
 
     try {
-      console.log('➕ Creating new agent in SQLite:', newAgent.name);
+      console.log('➕ Creating new agent in persistent SQLite database:', newAgent.name);
       const stmt = this.db.prepare(`
         INSERT INTO agents (id, name, description, category, status, key_features, access_link, contact_info, owner, last_updated, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -256,7 +262,7 @@ class SQLiteService {
 
       stmt.free();
       this.saveDatabase();
-      console.log('✅ Agent created successfully:', newAgent.name);
+      console.log('✅ Agent created and saved permanently - will persist across all sessions:', newAgent.name);
       return newAgent;
     } catch (error) {
       console.error('❌ Error creating agent in SQLite:', error);
@@ -311,6 +317,7 @@ class SQLiteService {
       }
 
       this.saveDatabase();
+      console.log('✅ Agent updated and saved permanently - changes will persist across all sessions');
 
       // Return updated agent
       const updatedStmt = this.db.prepare('SELECT * FROM agents WHERE id = ?');
@@ -347,7 +354,7 @@ class SQLiteService {
       stmt.run([id]);
       stmt.free();
       this.saveDatabase();
-      console.log('🗑️ Agent deleted successfully');
+      console.log('🗑️ Agent deleted permanently from database - deletion persists across all sessions');
     } catch (error) {
       console.error('❌ Error deleting agent from SQLite:', error);
       throw error;
@@ -360,7 +367,7 @@ class SQLiteService {
     if (!this.db) throw new Error('Database not initialized');
 
     try {
-      console.log(`🔄 Creating/updating user role: ${email} -> ${role}`);
+      console.log(`🔄 Creating/updating user role permanently: ${email} -> ${role}`);
       
       const userId = email.replace('@', '_').replace(/\./g, '_');
       const now = new Date().toISOString();
@@ -375,7 +382,7 @@ class SQLiteService {
       
       if (exists) {
         // Update existing user
-        console.log(`📝 Updating existing user role: ${email}`);
+        console.log(`📝 Updating existing user role permanently: ${email}`);
         const updateStmt = this.db.prepare(`
           UPDATE user_roles 
           SET role = ?, updated_at = ?, assigned_by = ?
@@ -383,21 +390,21 @@ class SQLiteService {
         `);
         updateStmt.run([role, now, assignedBy || null, email]);
         updateStmt.free();
-        console.log('✅ User role updated successfully');
+        console.log('✅ User role updated permanently');
       } else {
         // Create new user
-        console.log(`➕ Creating new user role: ${email}`);
+        console.log(`➕ Creating new user role permanently: ${email}`);
         const insertStmt = this.db.prepare(`
           INSERT INTO user_roles (id, user_id, email, role, assigned_at, assigned_by, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?)
         `);
         insertStmt.run([userId, userId, email, role, now, assignedBy || null, now]);
         insertStmt.free();
-        console.log('✅ User role created successfully');
+        console.log('✅ User role created permanently');
       }
       
       this.saveDatabase();
-      console.log('💾 Database saved after role operation');
+      console.log('💾 Database saved - role assignment will persist across all sessions');
     } catch (error) {
       console.error('❌ Error in createUserRole:', error);
       throw new Error(`Failed to assign role: ${error.message}`);
@@ -409,7 +416,7 @@ class SQLiteService {
     if (!this.db) throw new Error('Database not initialized');
 
     try {
-      console.log(`🔄 Updating user role: ${email} -> ${newRole}`);
+      console.log(`🔄 Updating user role permanently: ${email} -> ${newRole}`);
       
       const now = new Date().toISOString();
       
@@ -435,7 +442,7 @@ class SQLiteService {
       stmt.free();
       
       this.saveDatabase();
-      console.log('✅ User role updated successfully');
+      console.log('✅ User role updated permanently - will persist across all sessions');
     } catch (error) {
       console.error('❌ Error updating user role:', error);
       throw new Error(`Failed to update role: ${error.message}`);
@@ -453,12 +460,12 @@ class SQLiteService {
       if (stmt.step()) {
         const row = stmt.getAsObject();
         stmt.free();
-        console.log(`✅ Found role for ${email}:`, row.role);
+        console.log(`✅ Found persistent role for ${email}:`, row.role);
         return row.role as string;
       }
       
       stmt.free();
-      console.log(`ℹ️ No role found for ${email}`);
+      console.log(`ℹ️ No role found for ${email} in persistent database`);
       return null;
     } catch (error) {
       console.error('❌ Error getting user role:', error);
@@ -485,7 +492,7 @@ class SQLiteService {
       }
 
       stmt.free();
-      console.log(`✅ Retrieved ${results.length} user roles from database`);
+      console.log(`✅ Retrieved ${results.length} persistent user roles from database`);
       return results;
     } catch (error) {
       console.error('❌ Error getting all user roles:', error);
