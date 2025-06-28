@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowRight, Search, Mail, User, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useRoles } from "@/hooks/useRoles";
-import { getAgents } from "@/services/api";
+import { offlineApiService } from "@/services/offlineApi";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,6 +15,7 @@ const Index = () => {
   const [agents, setAgents] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { currentUserRole } = useRoles();
 
   const ITEMS_PER_PAGE = 12;
@@ -22,16 +23,27 @@ const Index = () => {
   useEffect(() => {
     const fetchAgents = async () => {
       try {
-        const agentsData = await getAgents();
+        setLoading(true);
+        console.log('🔍 Index: Fetching agents from SQLite only (no hardcoded data)...');
+        const agentsData = await offlineApiService.getAgents();
+        
         // Sort agents: active first, then by name
         const sortedAgents = agentsData.sort((a, b) => {
           if (a.status === 'active' && b.status !== 'active') return -1;
           if (a.status !== 'active' && b.status === 'active') return 1;
           return a.name.localeCompare(b.name);
         });
+        
         setAgents(sortedAgents);
+        console.log(`✅ Index: Loaded ${sortedAgents.length} agents from SQLite`);
+        if (sortedAgents.length === 0) {
+          console.log('📝 Index: No agents found - database is empty (no hardcoded fallbacks)');
+        }
       } catch (error) {
-        console.error('Error fetching agents:', error);
+        console.error('❌ Index: Error fetching agents from SQLite:', error);
+        setAgents([]); // Set empty array - NO hardcoded fallbacks
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -72,6 +84,14 @@ const Index = () => {
   const handleShowAll = () => {
     setShowAll(true);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen px-6 py-12 flex items-center justify-center">
+        <p className="text-lg text-muted-foreground">Loading agents from database...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-6 py-12">
@@ -114,7 +134,12 @@ const Index = () => {
         <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-8 mb-12">
           {displayedAgents.length === 0 ? (
             <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
+              <p className="text-muted-foreground text-lg">
+                {agents.length === 0 
+                  ? "No agents have been created yet. Super Admins can create agents in the Dashboard." 
+                  : "No agents found matching your search."
+                }
+              </p>
             </div>
           ) : (
             displayedAgents.map((agent) => {
