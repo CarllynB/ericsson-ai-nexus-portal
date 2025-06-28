@@ -1,4 +1,3 @@
-
 import { Agent } from './api';
 
 export interface UserWithRole {
@@ -41,6 +40,9 @@ class BackendApiService {
 
   private async request(endpoint: string, options: RequestInit = {}) {
     try {
+      console.log(`🔍 Making request to: ${this.baseUrl}${endpoint}`);
+      console.log('🔍 Request options:', { ...options, body: options.body ? 'REDACTED' : undefined });
+      
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
         headers: {
@@ -49,11 +51,14 @@ class BackendApiService {
         },
       });
 
+      console.log(`📊 Response status: ${response.status} ${response.statusText}`);
+      console.log(`📊 Response headers:`, Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
         let errorData;
         try {
           const text = await response.text();
-          console.log('Raw response text:', text);
+          console.log('❌ Error response text:', text);
           
           // Try to parse as JSON
           if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
@@ -62,29 +67,33 @@ class BackendApiService {
             errorData = { error: text || `HTTP ${response.status}: ${response.statusText}` };
           }
         } catch (parseError) {
-          console.error('Failed to parse error response:', parseError);
+          console.error('❌ Failed to parse error response:', parseError);
           errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
         }
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
       const text = await response.text();
-      console.log('Raw response text:', text);
+      console.log('✅ Success response text:', text);
       
       // Handle empty responses
       if (!text.trim()) {
+        console.log('ℹ️ Empty response, returning empty object');
         return {};
       }
       
       // Try to parse as JSON
       try {
-        return JSON.parse(text);
+        const parsed = JSON.parse(text);
+        console.log('✅ Parsed JSON response:', parsed);
+        return parsed;
       } catch (parseError) {
-        console.error('Failed to parse JSON response:', parseError);
-        throw new Error('Invalid response format from server');
+        console.error('❌ Failed to parse JSON response:', parseError);
+        console.error('❌ Raw response that failed to parse:', text);
+        throw new Error(`Invalid response format from server: ${text.substring(0, 100)}...`);
       }
     } catch (error) {
-      console.error(`API request failed for ${endpoint}:`, error);
+      console.error(`❌ API request failed for ${endpoint}:`, error);
       throw error;
     }
   }
@@ -92,32 +101,44 @@ class BackendApiService {
   // Authentication methods
   async login(email: string, password: string): Promise<LoginResponse> {
     try {
+      console.log('🔑 Starting login process for:', email);
       const response = await this.request('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
       
+      if (!response.token) {
+        throw new Error('Login response missing token');
+      }
+      
       this.token = response.token;
       localStorage.setItem('auth_token', this.token!);
+      console.log('✅ Login successful, token stored');
       return response;
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('❌ Login failed:', error);
       throw error;
     }
   }
 
   async register(email: string, password: string): Promise<LoginResponse> {
     try {
+      console.log('📝 Starting registration process for:', email);
       const response = await this.request('/auth/register', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
       
+      if (!response.token) {
+        throw new Error('Registration response missing token');
+      }
+      
       this.token = response.token;
       localStorage.setItem('auth_token', this.token!);
+      console.log('✅ Registration successful, token stored');
       return response;
     } catch (error) {
-      console.error('Registration failed:', error);
+      console.error('❌ Registration failed:', error);
       throw error;
     }
   }

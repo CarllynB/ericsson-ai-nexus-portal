@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
@@ -61,6 +60,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         console.log('🔍 Validating token with backend...');
         
+        // First check if backend is available
+        try {
+          await backendApiService.healthCheck();
+          console.log('✅ Backend health check passed');
+        } catch (healthError) {
+          console.warn('⚠️ Backend health check failed:', healthError);
+          throw new Error('Backend server is not available');
+        }
+        
         // Validate token by making a test API call
         const roleResponse = await backendApiService.getUserRole();
         console.log('✅ Session validation successful, role:', roleResponse.role);
@@ -97,6 +105,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🔑 Attempting login for:', email);
       setLoading(true);
       
+      // First check if backend is available
+      try {
+        await backendApiService.healthCheck();
+        console.log('✅ Backend health check passed for login');
+      } catch (healthError) {
+        console.error('❌ Backend health check failed:', healthError);
+        throw new Error('Cannot connect to server. Please try again later.');
+      }
+      
       const response = await backendApiService.login(email, password);
       
       // Ensure role is one of the valid types
@@ -121,7 +138,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
     } catch (error) {
       console.error('❌ Login failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please check your credentials.';
+      let errorMessage = 'Login failed. Please check your credentials.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('server') || error.message.includes('connect')) {
+          errorMessage = 'Cannot connect to server. Please try again later.';
+        } else if (error.message.includes('credentials')) {
+          errorMessage = 'Invalid email or password.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Login Failed",
         description: errorMessage,
@@ -137,6 +165,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('📝 Attempting registration for:', email);
       setLoading(true);
+      
+      // First check if backend is available
+      try {
+        await backendApiService.healthCheck();
+        console.log('✅ Backend health check passed for registration');
+      } catch (healthError) {
+        console.error('❌ Backend health check failed:', healthError);
+        throw new Error('Cannot connect to server. Please try again later.');
+      }
       
       const response = await backendApiService.register(email, password);
       
@@ -162,7 +199,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
     } catch (error) {
       console.error('❌ Registration failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('server') || error.message.includes('connect')) {
+          errorMessage = 'Cannot connect to server. Please try again later.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Registration Failed",
         description: errorMessage,
