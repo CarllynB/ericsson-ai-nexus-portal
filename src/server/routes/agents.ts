@@ -3,25 +3,32 @@ import express, { Request, Response } from 'express';
 import { dbAll, dbRun, dbGet } from '../database';
 import { authenticateToken, requireRole } from '../index';
 import { Agent } from '../../services/api';
-import { AuthenticatedRequest } from '../types';
 
 export const agentRoutes = express.Router();
 
-// Get all agents (public endpoint)
+// Get all agents (public endpoint) - ONLY from SQLite database
 agentRoutes.get('/', async (req: Request, res: Response) => {
   try {
+    console.log('🔍 Server: Fetching agents from SQLite database ONLY (no hardcoded data)...');
     const agents = await dbAll('SELECT * FROM agents ORDER BY last_updated DESC');
     
+    console.log(`📊 Server: SQLite returned ${agents.length} agents from database`);
+    if (agents.length === 0) {
+      console.log('✅ Server: Database is empty - this is expected (no hardcoded agents)');
+    }
+
     const formattedAgents = agents.map(agent => ({
       ...agent,
       key_features: JSON.parse(agent.key_features),
       contact_info: agent.contact_info ? JSON.parse(agent.contact_info) : undefined
     }));
 
+    console.log('🚫 Server: NO hardcoded agents, NO fallback data - only SQLite results');
     res.json(formattedAgents);
   } catch (error) {
-    console.error('Error fetching agents:', error);
-    res.status(500).json({ error: 'Failed to fetch agents' });
+    console.error('❌ Server: Error fetching agents from SQLite:', error);
+    console.log('🚫 Server: Returning empty array - NO hardcoded fallback data');
+    res.status(500).json([]);
   }
 });
 
@@ -36,6 +43,7 @@ agentRoutes.post('/', authenticateToken, requireRole(['admin', 'super_admin']), 
       last_updated: new Date().toISOString(),
     };
 
+    console.log('➕ Server: Creating agent in SQLite database permanently...');
     await dbRun(`
       INSERT INTO agents (id, name, description, category, status, key_features, access_link, contact_info, owner, last_updated, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -53,9 +61,10 @@ agentRoutes.post('/', authenticateToken, requireRole(['admin', 'super_admin']), 
       newAgent.created_at,
     ]);
 
+    console.log('✅ Server: Agent created and saved permanently to SQLite');
     res.json(newAgent);
   } catch (error) {
-    console.error('Error creating agent:', error);
+    console.error('❌ Server: Error creating agent in SQLite:', error);
     res.status(500).json({ error: 'Failed to create agent' });
   }
 });
@@ -104,9 +113,10 @@ agentRoutes.put('/:id', authenticateToken, requireRole(['admin', 'super_admin'])
       contact_info: updatedAgent.contact_info ? JSON.parse(updatedAgent.contact_info) : undefined
     };
 
+    console.log('✅ Server: Agent updated permanently in SQLite');
     res.json(formattedAgent);
   } catch (error) {
-    console.error('Error updating agent:', error);
+    console.error('❌ Server: Error updating agent in SQLite:', error);
     res.status(500).json({ error: 'Failed to update agent' });
   }
 });
@@ -123,9 +133,10 @@ agentRoutes.delete('/:id', authenticateToken, requireRole(['admin', 'super_admin
       return;
     }
 
+    console.log('🗑️ Server: Agent deleted permanently from SQLite');
     res.json({ message: 'Agent deleted successfully' });
   } catch (error) {
-    console.error('Error deleting agent:', error);
+    console.error('❌ Server: Error deleting agent from SQLite:', error);
     res.status(500).json({ error: 'Failed to delete agent' });
   }
 });

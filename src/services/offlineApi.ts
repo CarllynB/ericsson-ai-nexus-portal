@@ -20,12 +20,12 @@ class OfflineApiService {
 
   private async doInitialize(): Promise<void> {
     try {
-      console.log('🔄 Initializing SQLite service - NO hardcoded data will be loaded...');
+      console.log('🔄 Initializing SQLite service - ABSOLUTELY NO data will be seeded...');
       
       await sqliteService.initialize();
-      console.log('✅ SQLite initialized - database starts completely empty');
-      console.log('🚫 NO hardcoded agents, NO fallback data, NO sample data');
-      console.log('💾 Only user-created data will exist and persist permanently');
+      console.log('✅ SQLite initialized - database starts COMPLETELY EMPTY');
+      console.log('🚫 ZERO hardcoded agents, ZERO fallback data, ZERO sample data');
+      console.log('💾 Database is 100% empty - only user-created data will exist');
       
       this.initialized = true;
     } catch (error) {
@@ -39,20 +39,23 @@ class OfflineApiService {
   async getAgents(): Promise<Agent[]> {
     try {
       await this.initialize();
-      console.log('🔍 Fetching agents from SQLite - NO fallback data will be used...');
+      console.log('🔍 Fetching agents from SQLite - ABSOLUTELY NO fallback data...');
       const agents = await sqliteService.getAgents();
       
-      console.log(`📊 SQLite returned ${agents.length} agents from database`);
+      console.log(`📊 SQLite returned exactly ${agents.length} agents from database`);
+      console.log('🔥 CRITICAL: If you see agents but database says 0, there is STILL hardcoded data somewhere!');
+      
       if (agents.length === 0) {
-        console.log('✅ Database is empty as expected - no hardcoded agents exist');
+        console.log('✅ Database is empty - this is CORRECT (no hardcoded agents should exist)');
+      } else {
+        console.log(`ℹ️ Found ${agents.length} real agents from SQLite database`);
       }
       
-      // CRITICAL: Return exactly what SQLite returns - NO fallbacks, NO defaults
+      // CRITICAL: Return EXACTLY what SQLite returns - NO exceptions, NO fallbacks
       return agents;
     } catch (error) {
       console.error('❌ Error getting agents from SQLite:', error);
-      // CRITICAL: Even on error, return empty array - NO hardcoded fallbacks
-      console.log('🚫 Returning empty array - NO hardcoded fallback data');
+      console.log('🚫 CRITICAL: Returning empty array - NO hardcoded fallback data EVER');
       return [];
     }
   }

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,15 +17,21 @@ const queryClient = new QueryClient();
 
 // Initialize app with completely clean state
 const initializeApp = async () => {
-  console.log('🚀 App initializing - clearing all cached data...');
+  console.log('🚀 App initializing - clearing ALL cached data and running diagnostics...');
   
   // Clear any cached agent data first
   clearAllCachedAgents();
   
+  // Run comprehensive debugging
+  console.log('🔍 Running comprehensive agent source debugging...');
+  const { debugAgentSources } = await import('./utils/debugAgents');
+  debugAgentSources();
+  
   // Initialize empty SQLite database
   await populateDefaultAgents();
   
-  console.log('✅ App initialized with clean state');
+  console.log('✅ App initialized with completely clean state');
+  console.log('🔥 CRITICAL: If you see agents after this point, they are hardcoded in React components!');
 };
 
 // Run initialization

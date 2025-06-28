@@ -23,27 +23,35 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔍 useAgents: Fetching agents - NO hardcoded fallbacks...');
+      console.log('🔍 useAgents: Fetching agents from SQLite ONLY - NO hardcoded fallbacks...');
+      console.log('🔥 CRITICAL: If agents appear but this logs 0, hardcoded data still exists!');
       
       const response = await offlineApiService.getAgents();
-      console.log('📊 useAgents: Received agents from SQLite:', response);
+      console.log('📊 useAgents: Raw response from SQLite:', response);
+      console.log(`📊 useAgents: Response type: ${typeof response}, Array: ${Array.isArray(response)}, Length: ${response?.length || 'undefined'}`);
       
       if (Array.isArray(response)) {
         const sortedAgents = sortAgents(response);
         setAgents(sortedAgents);
-        console.log(`✅ useAgents: Loaded ${sortedAgents.length} agents from SQLite (no hardcoded data)`);
+        console.log(`✅ useAgents: Set ${sortedAgents.length} agents from SQLite (ZERO hardcoded data)`);
+        
         if (sortedAgents.length === 0) {
-          console.log('📝 useAgents: Database is empty - this is expected (no hardcoded agents)');
+          console.log('✅ useAgents: Database is empty - this is CORRECT (no hardcoded agents should exist)');
+          console.log('🔥 CRITICAL: If you still see agents on screen, they are coming from hardcoded data!');
+        } else {
+          console.log(`ℹ️ useAgents: Displaying ${sortedAgents.length} real user-created agents from SQLite`);
         }
         setError(null);
       } else {
-        console.warn('⚠️ useAgents: Invalid response format:', response);
-        setAgents([]); // Set empty array - NO hardcoded fallbacks
+        console.error('❌ useAgents: Invalid response format from SQLite:', response);
+        console.log('🚫 useAgents: Setting empty array - NO hardcoded fallbacks');
+        setAgents([]);
         setError('Invalid data format received from database');
       }
     } catch (err) {
-      console.error('❌ useAgents: Failed to fetch agents:', err);
-      setAgents([]); // Set empty array - NO hardcoded fallbacks
+      console.error('❌ useAgents: Failed to fetch agents from SQLite:', err);
+      console.log('🚫 useAgents: Setting empty array - NO hardcoded fallbacks EVER');
+      setAgents([]);
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(`Failed to load agents: ${errorMessage}`);
     } finally {
@@ -52,7 +60,7 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
   };
 
   useEffect(() => {
-    console.log('🔄 useAgents: Effect triggered - fetching from SQLite only');
+    console.log('🔄 useAgents: Effect triggered - fetching from SQLite ONLY (no hardcoded data)');
     fetchAgents();
   }, [page, pageSize, showAll]);
 
