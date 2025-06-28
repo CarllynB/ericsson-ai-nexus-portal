@@ -11,8 +11,28 @@ import Login from "./pages/Login";
 import Agents from "./pages/Agents";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import { populateDefaultAgents, clearAllCachedAgents } from "./utils/populateAgents";
+import "./utils/debugAgents"; // Import to auto-run debugging
 
 const queryClient = new QueryClient();
+
+// Initialize app with completely clean state
+const initializeApp = async () => {
+  console.log('🚀 App initializing - clearing all cached data...');
+  
+  // Clear any cached agent data first
+  clearAllCachedAgents();
+  
+  // Initialize empty SQLite database
+  await populateDefaultAgents();
+  
+  console.log('✅ App initialized with clean state');
+};
+
+// Run initialization
+initializeApp().catch(error => {
+  console.error('❌ Failed to initialize app:', error);
+});
 
 const AppRoutes = () => {
   return (
