@@ -5,7 +5,7 @@ console.log('🚀 Starting AI-DU Agent Portal Development Server (HTTPS)...\n');
 
 // Start the backend server on port 8081
 console.log('🔧 Starting backend server on port 8081...');
-const backendProcess = spawn('node', ['-r', 'ts-node/register', './src/server/index.ts'], {
+const backendProcess = spawn('npx', ['tsx', './src/server/index.ts'], {
   stdio: 'inherit',
   env: {
     ...process.env,

@@ -27,15 +27,6 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Add error handling middleware for JSON parsing
-app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (error instanceof SyntaxError && 'status' in error && error.status === 400 && 'body' in error) {
-    console.error('❌ JSON Parse Error:', error.message);
-    return res.status(400).json({ error: 'Invalid JSON' });
-  }
-  next(error);
-});
-
 // API Routes with error handling
 app.use('/api/auth', (req, res, next) => {
   console.log('🔑 Auth route accessed:', req.method, req.url);
@@ -69,7 +60,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Global error handler - MUST be last middleware
-app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('🚨 CRITICAL ERROR:', error);
   console.error('Stack trace:', error.stack);
   res.status(500).json({ error: 'Internal server error' });
