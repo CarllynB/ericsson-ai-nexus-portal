@@ -1,15 +1,12 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { sidebarApiService, SidebarItem } from '@/services/sidebarApi';
+import { sidebarApiService, SidebarItem as ApiSidebarItem } from '@/services/sidebarApi';
 import { useRoles } from '@/hooks/useRoles';
 
-// Keep the original interface for backward compatibility
-export interface SidebarItem {
-  id: string;
-  title: string;
-  url: string;
-  order: number;
-  created_at?: string;
+// Local interface for component usage - extends API interface for compatibility
+export interface SidebarItem extends ApiSidebarItem {
+  // All properties are inherited from ApiSidebarItem
 }
 
 export const useSidebarItems = () => {
@@ -29,13 +26,16 @@ export const useSidebarItems = () => {
         
         const sidebarItems = await sidebarApiService.getSidebarItems();
         
-        // Transform database items to match the expected interface
-        const transformedItems = sidebarItems.map(item => ({
+        // Transform database items to include all required properties
+        const transformedItems: SidebarItem[] = sidebarItems.map(item => ({
           id: item.id,
           title: item.title,
           url: item.url,
           order: item.order,
-          created_at: item.created_at
+          is_default: item.is_default,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          created_by: item.created_by
         }));
         
         setItems(transformedItems);
@@ -73,12 +73,15 @@ export const useSidebarItems = () => {
                 
                 // Reload items after migration
                 const updatedItems = await sidebarApiService.getSidebarItems();
-                const transformedUpdatedItems = updatedItems.map(item => ({
+                const transformedUpdatedItems: SidebarItem[] = updatedItems.map(item => ({
                   id: item.id,
                   title: item.title,
                   url: item.url,
                   order: item.order,
-                  created_at: item.created_at
+                  is_default: item.is_default,
+                  created_at: item.created_at,
+                  updated_at: item.updated_at,
+                  created_by: item.created_by
                 }));
                 setItems(transformedUpdatedItems);
               }
@@ -100,11 +103,43 @@ export const useSidebarItems = () => {
         });
         
         // Fallback to default items if database fails
-        const defaultItems = [
-          { id: 'home', title: 'Home', url: '/', order: 1 },
-          { id: 'agents', title: 'Agents', url: '/agents', order: 2 },
-          { id: 'dashboard', title: 'Dashboard', url: '/dashboard', order: 3 },
-          { id: 'pitchbox', title: 'Pitch Box', url: 'https://apps.powerapps.com/play/e/default-92e84ceb-fbfd-47ab-be52-080c6b87953f/a/549a8af5-f6ba-4b8b-824c-dfdfcf6f3740?tenantId=92e84ceb-fbfd-47ab-be52-080c6b87953f&hint=ec5023c9-376e-41fb-9280-10bd9f925919&source=sharebutton&sourcetime=1750260233474', order: 4 }
+        const defaultItems: SidebarItem[] = [
+          { 
+            id: 'home', 
+            title: 'Home', 
+            url: '/', 
+            order: 1, 
+            is_default: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          { 
+            id: 'agents', 
+            title: 'Agents', 
+            url: '/agents', 
+            order: 2, 
+            is_default: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          { 
+            id: 'dashboard', 
+            title: 'Dashboard', 
+            url: '/dashboard', 
+            order: 3, 
+            is_default: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          { 
+            id: 'pitchbox', 
+            title: 'Pitch Box', 
+            url: 'https://apps.powerapps.com/play/e/default-92e84ceb-fbfd-47ab-be52-080c6b87953f/a/549a8af5-f6ba-4b8b-824c-dfdfcf6f3740?tenantId=92e84ceb-fbfd-47ab-be52-080c6b87953f&hint=ec5023c9-376e-41fb-9280-10bd9f925919&source=sharebutton&sourcetime=1750260233474', 
+            order: 4, 
+            is_default: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
         ];
         setItems(defaultItems);
       } finally {
@@ -130,12 +165,15 @@ export const useSidebarItems = () => {
       const newItem = await sidebarApiService.createSidebarItem(title, url);
       
       // Transform and add to local state
-      const transformedItem = {
+      const transformedItem: SidebarItem = {
         id: newItem.id,
         title: newItem.title,
         url: newItem.url,
         order: newItem.order,
-        created_at: newItem.created_at
+        is_default: newItem.is_default,
+        created_at: newItem.created_at,
+        updated_at: newItem.updated_at,
+        created_by: newItem.created_by
       };
       
       setItems(prev => [...prev, transformedItem].sort((a, b) => a.order - b.order));
@@ -183,12 +221,15 @@ export const useSidebarItems = () => {
       const updatedItem = await sidebarApiService.updateSidebarItem(id, updates.title, updates.url);
       
       // Transform and update local state
-      const transformedItem = {
+      const transformedItem: SidebarItem = {
         id: updatedItem.id,
         title: updatedItem.title,
         url: updatedItem.url,
         order: updatedItem.order,
-        created_at: updatedItem.created_at
+        is_default: updatedItem.is_default,
+        created_at: updatedItem.created_at,
+        updated_at: updatedItem.updated_at,
+        created_by: updatedItem.created_by
       };
       
       setItems(prev => prev.map(item => 
@@ -267,15 +308,18 @@ export const useSidebarItems = () => {
         order: index + 1
       }));
       
-      const updatedItems = await sidebarApiService.reorderSidebarItems(dbItems as any);
+      const updatedItems = await sidebarApiService.reorderSidebarItems(dbItems);
       
       // Transform back to local interface
-      const transformedItems = updatedItems.map(item => ({
+      const transformedItems: SidebarItem[] = updatedItems.map(item => ({
         id: item.id,
         title: item.title,
         url: item.url,
         order: item.order,
-        created_at: item.created_at
+        is_default: item.is_default,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        created_by: item.created_by
       }));
       
       setItems(transformedItems);
