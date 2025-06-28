@@ -23,24 +23,24 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔍 useAgents: Fetching agents from backend API...');
+      console.log('🔍 useAgents: Fetching agents from SQLite backend API...');
       
       const response = await backendApiService.getAgents();
-      console.log('📊 useAgents: Raw response from backend:', response);
+      console.log('📊 useAgents: Raw response from SQLite backend:', response);
       console.log(`📊 useAgents: Response type: ${typeof response}, Array: ${Array.isArray(response)}, Length: ${response?.length || 'undefined'}`);
       
       if (Array.isArray(response)) {
         const sortedAgents = sortAgents(response);
         setAgents(sortedAgents);
-        console.log(`✅ useAgents: Set ${sortedAgents.length} agents from backend database`);
+        console.log(`✅ useAgents: Set ${sortedAgents.length} agents from SQLite database`);
         setError(null);
       } else {
-        console.error('❌ useAgents: Invalid response format from backend:', response);
+        console.error('❌ useAgents: Invalid response format from SQLite backend:', response);
         setAgents([]);
         setError('Invalid data format received from backend');
       }
     } catch (err) {
-      console.error('❌ useAgents: Failed to fetch agents from backend:', err);
+      console.error('❌ useAgents: Failed to fetch agents from SQLite backend:', err);
       setAgents([]);
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(`Failed to load agents: ${errorMessage}`);
@@ -50,7 +50,7 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
   };
 
   useEffect(() => {
-    console.log('🔄 useAgents: Effect triggered - fetching from backend API');
+    console.log('🔄 useAgents: Effect triggered - fetching from SQLite backend API');
     fetchAgents();
   }, [page, pageSize, showAll]);
 
