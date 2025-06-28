@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { fileStorageService } from '@/services/fileStorage';
+import { backendApiService } from '@/services/backendApi';
 
 export type UserRole = 'super_admin' | 'admin' | 'viewer';
 
@@ -25,16 +25,17 @@ export const useRoles = () => {
         const userData = JSON.parse(savedUser);
         console.log('🔍 Current user data:', userData);
         
-        // Always check file storage for the most up-to-date role
-        const roleFromStorage = await fileStorageService.getUserRole(userData.email);
-        
-        if (roleFromStorage) {
-          // Update localStorage with the latest role from storage
-          userData.role = roleFromStorage;
+        // Get role from backend
+        try {
+          const roleResponse = await backendApiService.getUserRole();
+          setCurrentUserRole(roleResponse.role as UserRole);
+          
+          // Update localStorage with the latest role
+          userData.role = roleResponse.role;
           localStorage.setItem('current_user', JSON.stringify(userData));
-          setCurrentUserRole(roleFromStorage as UserRole);
-          console.log('✅ Updated user role from persistent storage:', roleFromStorage);
-        } else {
+          console.log('✅ Updated user role from backend:', roleResponse.role);
+        } catch (error) {
+          // If backend call fails, use stored role
           setCurrentUserRole(userData.role || 'viewer');
         }
       } else {
@@ -48,9 +49,9 @@ export const useRoles = () => {
 
   const fetchAllUsers = async () => {
     try {
-      const allUsers = await fileStorageService.getAllUserRoles();
+      const allUsers = await backendApiService.getAllUserRoles();
       
-      console.log('✅ Fetched users with roles from persistent storage:', allUsers);
+      console.log('✅ Fetched users with roles from backend:', allUsers);
       setUsers(allUsers.map(user => ({
         id: user.id,
         email: user.email,
@@ -68,13 +69,8 @@ export const useRoles = () => {
       console.log(`🔄 Starting role assignment: ${userEmail} -> ${role}`);
       setLoading(true);
       
-      // Get current user for assignedBy
-      const savedUser = localStorage.getItem('current_user');
-      const assignedBy = savedUser ? JSON.parse(savedUser).email : undefined;
-      
-      // Create or update the user role in persistent storage
-      await fileStorageService.createUserRole(userEmail, role, assignedBy);
-      console.log('✅ Role assignment completed in persistent storage');
+      await backendApiService.assignRole(userEmail, role);
+      console.log('✅ Role assignment completed via backend');
       
       // Refresh the users list
       await fetchAllUsers();
@@ -107,9 +103,8 @@ export const useRoles = () => {
         throw new Error('User not found');
       }
       
-      // Update the role using the email
-      await fileStorageService.updateUserRole(user.email, newRole);
-      console.log('✅ Role update completed in persistent storage');
+      await backendApiService.updateUserRole(userId, newRole);
+      console.log('✅ Role update completed via backend');
       
       // Update current user if it's the same user
       const savedUser = localStorage.getItem('current_user');
@@ -153,7 +148,9 @@ export const useRoles = () => {
     const initRoles = async () => {
       setLoading(true);
       await fetchCurrentUserRole();
-      await fetchAllUsers();
+      if (isSuperAdmin) {
+        await fetchAllUsers();
+      }
       setLoading(false);
     };
 
@@ -169,7 +166,9 @@ export const useRoles = () => {
     // Also listen for custom events when user logs in/out
     const handleAuthChange = () => {
       fetchCurrentUserRole();
-      fetchAllUsers();
+      if (isSuperAdmin) {
+        fetchAllUsers();
+      }
     };
 
     window.addEventListener('authChange', handleAuthChange);
@@ -178,7 +177,7 @@ export const useRoles = () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('authChange', handleAuthChange);
     };
-  }, []);
+  }, [isSuperAdmin]);
 
   return {
     currentUserRole,

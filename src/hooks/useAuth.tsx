@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
 import { useInitializeApp } from '@/hooks/useInitializeApp';
-import { fileStorageService } from '@/services/fileStorage';
+import { backendApiService } from '@/services/backendApi';
 
 interface AuthContextType {
   user: User | null;
@@ -37,9 +38,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Initialize app (populate agents if needed)
   useInitializeApp();
 
-  // Default super admin users - Fixed email addresses
-  const SUPER_ADMINS = ['muhammad.mahmood@ericsson.com', 'carllyn.barfi@ericsson.com'];
-
   // Dispatch custom event when auth state changes
   const dispatchAuthChange = () => {
     window.dispatchEvent(new CustomEvent('authChange'));
@@ -48,7 +46,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Check localStorage for existing user session
     const savedUser = localStorage.getItem('current_user');
-    if (savedUser) {
+    const token = localStorage.getItem('auth_token');
+    
+    if (savedUser && token) {
       try {
         const userData = JSON.parse(savedUser);
         setUser(userData);
@@ -56,6 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch (error) {
         console.error('Error parsing saved user:', error);
         localStorage.removeItem('current_user');
+        localStorage.removeItem('auth_token');
       }
     }
   }, []);
@@ -65,71 +66,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Attempting login for:', email);
       setLoading(true);
       
-      // Check if it's a super admin
-      if (SUPER_ADMINS.includes(email)) {
-        // Check for custom password first
-        const savedPassword = localStorage.getItem(`password_${email}`);
-        const correctPassword = savedPassword || 'admin123';
-        
-        if (password === correctPassword) {
-          const userData: User = {
-            id: email.replace('@', '_').replace(/\./g, '_'),
-            email,
-            role: 'super_admin',
-            created_at: new Date().toISOString(),
-          };
-          
-          setUser(userData);
-          localStorage.setItem('current_user', JSON.stringify(userData));
-          dispatchAuthChange();
-          
-          toast({
-            title: "Success",
-            description: "Logged in successfully"
-          });
-        } else {
-          throw new Error('Invalid password');
-        }
-      } else {
-        // For other users, check if they have a password set
-        const savedPassword = localStorage.getItem(`password_${email}`);
-        
-        if (savedPassword) {
-          // User exists, check password
-          if (password === savedPassword) {
-            // Get user role from persistent storage
-            let role = await fileStorageService.getUserRole(email);
-            console.log('Retrieved role from persistent storage for', email, ':', role);
-            
-            if (!role) {
-              // If no role assigned, default to viewer and create the role
-              role = 'viewer';
-              await fileStorageService.createUserRole(email, 'viewer');
-              console.log('Created default viewer role for', email);
-            }
-            
-            const userData: User = {
-              id: email.replace('@', '_').replace(/\./g, '_'),
-              email,
-              role: role as 'super_admin' | 'admin' | 'viewer',
-              created_at: new Date().toISOString(),
-            };
-            
-            setUser(userData);
-            localStorage.setItem('current_user', JSON.stringify(userData));
-            dispatchAuthChange();
-            
-            toast({
-              title: "Success",
-              description: `Logged in successfully as ${role}`
-            });
-          } else {
-            throw new Error('Invalid password');
-          }
-        } else {
-          throw new Error('Account not found. Please create an account first.');
-        }
-      }
+      const response = await backendApiService.login(email, password);
+      
+      const userData: User = {
+        id: response.user.id,
+        email: response.user.email,
+        role: response.user.role,
+        created_at: response.user.created_at,
+      };
+      
+      setUser(userData);
+      localStorage.setItem('current_user', JSON.stringify(userData));
+      dispatchAuthChange();
+      
+      toast({
+        title: "Success",
+        description: `Logged in successfully as ${response.user.role}`
+      });
     } catch (error) {
       console.error('Login failed:', error);
       toast({
@@ -148,36 +101,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Attempting registration for:', email);
       setLoading(true);
       
-      // Check if user already exists
-      const existingPassword = localStorage.getItem(`password_${email}`);
-      if (existingPassword) {
-        throw new Error('Account already exists. Please sign in instead.');
-      }
-      
-      // Validate password
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters long');
-      }
-      
-      // Create new user account
-      localStorage.setItem(`password_${email}`, password);
-      
-      // Check if there's already a role assigned for this email
-      let role = await fileStorageService.getUserRole(email);
-      console.log('Found existing role for new user', email, ':', role);
-      
-      if (!role) {
-        // If no role was pre-assigned, default to viewer
-        role = 'viewer';
-        await fileStorageService.createUserRole(email, 'viewer');
-        console.log('Created default viewer role for new user', email);
-      }
+      const response = await backendApiService.register(email, password);
       
       const userData: User = {
-        id: email.replace('@', '_').replace(/\./g, '_'),
-        email,
-        role: role as 'super_admin' | 'admin' | 'viewer',
-        created_at: new Date().toISOString(),
+        id: response.user.id,
+        email: response.user.email,
+        role: response.user.role,
+        created_at: response.user.created_at,
       };
       
       setUser(userData);
@@ -186,7 +116,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       toast({
         title: "Success",
-        description: `Account created successfully with ${role} role`
+        description: `Account created successfully with ${response.user.role} role`
       });
     } catch (error) {
       console.error('Registration failed:', error);
@@ -204,8 +134,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       console.log('Logging out...');
+      backendApiService.logout();
       setUser(null);
-      localStorage.removeItem('current_user');
       dispatchAuthChange();
       
       toast({
@@ -223,8 +153,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('No user logged in');
       }
 
-      // Save new password to localStorage
-      localStorage.setItem(`password_${user.email}`, newPassword);
+      await backendApiService.changePassword(user.email, newPassword);
       
       toast({
         title: "Success",

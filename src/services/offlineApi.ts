@@ -1,52 +1,51 @@
 
 import { Agent } from './api';
-import { fileStorageService } from './fileStorage';
+import { backendApiService } from './backendApi';
 
 class OfflineApiService {
   private initialized = false;
 
   constructor() {
-    // File storage is always ready, no async initialization needed
     this.initialized = true;
   }
 
   async getAgents(): Promise<Agent[]> {
     try {
-      console.log('Fetching agents from persistent file storage');
-      return await fileStorageService.getAgents();
+      console.log('Fetching agents from backend API');
+      return await backendApiService.getAgents();
     } catch (error) {
       console.error('Error getting agents:', error);
-      throw new Error('Failed to load agents from persistent storage');
+      throw new Error('Failed to load agents from backend');
     }
   }
 
   async createAgent(agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>): Promise<Agent> {
     try {
-      console.log('Creating agent in persistent file storage');
-      return await fileStorageService.createAgent(agent);
+      console.log('Creating agent via backend API');
+      return await backendApiService.createAgent(agent);
     } catch (error) {
       console.error('Error creating agent:', error);
-      throw new Error('Failed to create agent in persistent storage');
+      throw new Error('Failed to create agent via backend');
     }
   }
 
   async updateAgent(id: string, updates: Partial<Agent>): Promise<Agent> {
     try {
-      console.log('Updating agent in persistent file storage');
-      return await fileStorageService.updateAgent(id, updates);
+      console.log('Updating agent via backend API');
+      return await backendApiService.updateAgent(id, updates);
     } catch (error) {
       console.error('Error updating agent:', error);
-      throw new Error('Failed to update agent in persistent storage');
+      throw new Error('Failed to update agent via backend');
     }
   }
 
   async deleteAgent(id: string): Promise<void> {
     try {
-      console.log('Deleting agent from persistent file storage');
-      await fileStorageService.deleteAgent(id);
+      console.log('Deleting agent via backend API');
+      await backendApiService.deleteAgent(id);
     } catch (error) {
       console.error('Error deleting agent:', error);
-      throw new Error('Failed to delete agent from persistent storage');
+      throw new Error('Failed to delete agent via backend');
     }
   }
 
@@ -55,7 +54,7 @@ class OfflineApiService {
   }
 
   get isOffline() {
-    return true; // Always offline in this mode
+    return false; // Now we're using backend API
   }
 }
 
