@@ -22,8 +22,8 @@ export const Layout = ({ children }: LayoutProps) => {
   const [roleManagementOpen, setRoleManagementOpen] = useState(false);
   const [agentManagementOpen, setAgentManagementOpen] = useState(false);
   const [sidebarManagementOpen, setSidebarManagementOpen] = useState(false);
-  const { currentUserRole } = useRoles();
-  const { user } = useAuth();
+  const { currentUserRole, loading: rolesLoading } = useRoles();
+  const { user, loading: authLoading } = useAuth();
   const { items } = useSidebarItems();
 
   const handleNavigation = (url: string) => {
@@ -34,6 +34,21 @@ export const Layout = ({ children }: LayoutProps) => {
     }
     setSidebarOpen(false);
   };
+
+  // Don't show admin panels if loading or not authenticated
+  const isAuthenticated = !!user && !authLoading;
+  const isAdmin = isAuthenticated && !rolesLoading && (currentUserRole === 'admin' || currentUserRole === 'super_admin');
+  const isSuperAdmin = isAuthenticated && !rolesLoading && currentUserRole === 'super_admin';
+
+  console.log('Layout debug:', { 
+    user: !!user, 
+    authLoading, 
+    rolesLoading, 
+    currentUserRole, 
+    isAuthenticated, 
+    isAdmin, 
+    isSuperAdmin 
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,7 +120,7 @@ export const Layout = ({ children }: LayoutProps) => {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">AI-DU Agent Portal</p>
-              {currentUserRole && (
+              {isAuthenticated && currentUserRole && (
                 <p className="text-xs text-primary font-medium">
                   {currentUserRole.replace('_', ' ').toUpperCase()}
                 </p>
@@ -137,8 +152,8 @@ export const Layout = ({ children }: LayoutProps) => {
             </button>
           ))}
 
-          {/* Admin Section - Only show for regular admin, not super admin */}
-          {currentUserRole === 'admin' && (
+          {/* Admin Section - Only show for admin (not super admin) */}
+          {isAdmin && currentUserRole === 'admin' && (
             <div className="pt-4 border-t border-border">
               <div className="px-4 py-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -164,7 +179,7 @@ export const Layout = ({ children }: LayoutProps) => {
           )}
 
           {/* Super Admin Section - Only show for super admin */}
-          {currentUserRole === 'super_admin' && (
+          {isSuperAdmin && (
             <div className="pt-4 border-t border-border">
               <div className="px-4 py-2">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">

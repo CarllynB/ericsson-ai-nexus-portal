@@ -32,7 +32,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   // Initialize app (populate agents if needed)
@@ -46,31 +46,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Validate stored session on mount
   useEffect(() => {
     const validateStoredSession = async () => {
+      console.log('🔄 Validating stored session...');
+      setLoading(true);
+      
       const savedUser = localStorage.getItem('current_user');
       const token = localStorage.getItem('auth_token');
       
-      if (savedUser && token) {
+      if (!savedUser || !token) {
+        console.log('ℹ️ No stored session found');
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userData = JSON.parse(savedUser);
+        console.log('🔍 Found stored user:', userData.email);
+        
+        // Validate token by making a test API call
         try {
-          const userData = JSON.parse(savedUser);
+          const roleResponse = await backendApiService.getUserRole();
+          console.log('✅ Session validation successful, role:', roleResponse.role);
           
-          // Validate token by making a test API call
-          try {
-            await backendApiService.getUserRole();
-            setUser(userData);
-            dispatchAuthChange();
-            console.log('✅ Session validated successfully');
-          } catch (error) {
-            console.warn('⚠️ Stored session invalid, clearing:', error);
-            localStorage.removeItem('current_user');
-            localStorage.removeItem('auth_token');
-            setUser(null);
-          }
+          // Update user data with latest role
+          const updatedUser = { ...userData, role: roleResponse.role };
+          setUser(updatedUser);
+          localStorage.setItem('current_user', JSON.stringify(updatedUser));
+          dispatchAuthChange();
         } catch (error) {
-          console.error('❌ Error parsing saved user:', error);
+          console.warn('⚠️ Stored session invalid, clearing:', error);
           localStorage.removeItem('current_user');
           localStorage.removeItem('auth_token');
           setUser(null);
         }
+      } catch (error) {
+        console.error('❌ Error parsing saved user:', error);
+        localStorage.removeItem('current_user');
+        localStorage.removeItem('auth_token');
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
 

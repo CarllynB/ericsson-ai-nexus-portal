@@ -18,7 +18,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
   }
   
   if (!user) {
@@ -29,7 +33,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
   
   return (
     <Routes>
@@ -40,25 +52,31 @@ const AppRoutes = () => {
       <Route 
         path="/" 
         element={
-          <Layout>
-            <Index />
-          </Layout>
+          <ProtectedRoute>
+            <Layout>
+              <Index />
+            </Layout>
+          </ProtectedRoute>
         } 
       />
       <Route 
         path="/agents" 
         element={
-          <Layout>
-            <Agents />
-          </Layout>
+          <ProtectedRoute>
+            <Layout>
+              <Agents />
+            </Layout>
+          </ProtectedRoute>
         } 
       />
       <Route 
         path="/dashboard" 
         element={
-          <Layout>
-            <Dashboard />
-          </Layout>
+          <ProtectedRoute>
+            <Layout>
+              <Dashboard />
+            </Layout>
+          </ProtectedRoute>
         } 
       />
       <Route path="*" element={<NotFound />} />

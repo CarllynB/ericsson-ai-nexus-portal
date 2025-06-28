@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { backendApiService } from '@/services/backendApi';
+import { useAuth } from '@/hooks/useAuth';
 
 export type UserRole = 'super_admin' | 'admin' | 'viewer';
 
@@ -17,40 +17,59 @@ export const useRoles = () => {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const fetchCurrentUserRole = async () => {
     try {
-      const savedUser = localStorage.getItem('current_user');
-      if (savedUser) {
-        const userData = JSON.parse(savedUser);
-        console.log('🔍 Current user data:', userData);
-        
-        // Get role from backend
+      if (!user) {
+        setCurrentUserRole(null);
+        setLoading(false);
+        return;
+      }
+
+      console.log('🔍 Fetching current user role for:', user.email);
+      
+      // First try to get from stored user data
+      if (user.role) {
+        setCurrentUserRole(user.role as UserRole);
+        console.log('✅ Using stored user role:', user.role);
+      }
+      
+      // Then verify with backend if authenticated
+      if (backendApiService.isAuthenticated) {
         try {
           const roleResponse = await backendApiService.getUserRole();
+          console.log('✅ Backend role response:', roleResponse);
           setCurrentUserRole(roleResponse.role as UserRole);
           
           // Update localStorage with the latest role
-          userData.role = roleResponse.role;
-          localStorage.setItem('current_user', JSON.stringify(userData));
-          console.log('✅ Updated user role from backend:', roleResponse.role);
+          const savedUser = localStorage.getItem('current_user');
+          if (savedUser) {
+            const userData = JSON.parse(savedUser);
+            userData.role = roleResponse.role;
+            localStorage.setItem('current_user', JSON.stringify(userData));
+          }
         } catch (error) {
-          // If backend call fails, use stored role
-          setCurrentUserRole(userData.role || 'viewer');
+          console.warn('⚠️ Could not fetch role from backend, using stored role');
+          // Keep the stored role if backend call fails
         }
-      } else {
-        setCurrentUserRole('viewer');
       }
     } catch (error) {
       console.error('❌ Error in fetchCurrentUserRole:', error);
-      setCurrentUserRole('viewer');
+      setCurrentUserRole('viewer'); // Default fallback
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchAllUsers = async () => {
     try {
+      if (!user || !backendApiService.isAuthenticated) {
+        console.log('Not authenticated, skipping user fetch');
+        return;
+      }
+
       const allUsers = await backendApiService.getAllUserRoles();
-      
       console.log('✅ Fetched users with roles from backend:', allUsers);
       setUsers(allUsers.map(user => ({
         id: user.id,
@@ -67,7 +86,6 @@ export const useRoles = () => {
   const assignRole = async (userEmail: string, role: UserRole) => {
     try {
       console.log(`🔄 Starting role assignment: ${userEmail} -> ${role}`);
-      setLoading(true);
       
       await backendApiService.assignRole(userEmail, role);
       console.log('✅ Role assignment completed via backend');
@@ -88,18 +106,15 @@ export const useRoles = () => {
         variant: "destructive"
       });
       return false;
-    } finally {
-      setLoading(false);
     }
   };
 
   const updateUserRole = async (userId: string, newRole: UserRole) => {
     try {
       console.log(`🔄 Starting role update: ${userId} -> ${newRole}`);
-      setLoading(true);
       
-      const user = users.find(u => u.id === userId);
-      if (!user) {
+      const userToUpdate = users.find(u => u.id === userId);
+      if (!userToUpdate) {
         throw new Error('User not found');
       }
       
@@ -107,13 +122,14 @@ export const useRoles = () => {
       console.log('✅ Role update completed via backend');
       
       // Update current user if it's the same user
-      const savedUser = localStorage.getItem('current_user');
-      if (savedUser) {
-        const userData = JSON.parse(savedUser);
-        if (userData.email === user.email) {
+      if (user && user.email === userToUpdate.email) {
+        setCurrentUserRole(newRole);
+        // Update localStorage
+        const savedUser = localStorage.getItem('current_user');
+        if (savedUser) {
+          const userData = JSON.parse(savedUser);
           userData.role = newRole;
           localStorage.setItem('current_user', JSON.stringify(userData));
-          setCurrentUserRole(newRole);
         }
       }
       
@@ -133,8 +149,6 @@ export const useRoles = () => {
         variant: "destructive"
       });
       return false;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -146,11 +160,21 @@ export const useRoles = () => {
 
   useEffect(() => {
     const initRoles = async () => {
+      if (!user) {
+        setCurrentUserRole(null);
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       await fetchCurrentUserRole();
-      if (isSuperAdmin) {
+      
+      // Only fetch all users if current user is super admin
+      if (currentUserRole === 'super_admin') {
         await fetchAllUsers();
       }
+      
       setLoading(false);
     };
 
@@ -158,16 +182,23 @@ export const useRoles = () => {
 
     // Listen for storage changes to update roles without page reload
     const handleStorageChange = () => {
-      fetchCurrentUserRole();
+      if (user) {
+        fetchCurrentUserRole();
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
     
     // Also listen for custom events when user logs in/out
     const handleAuthChange = () => {
-      fetchCurrentUserRole();
-      if (isSuperAdmin) {
-        fetchAllUsers();
+      if (user) {
+        fetchCurrentUserRole();
+        if (currentUserRole === 'super_admin') {
+          fetchAllUsers();
+        }
+      } else {
+        setCurrentUserRole(null);
+        setUsers([]);
       }
     };
 
@@ -177,7 +208,7 @@ export const useRoles = () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('authChange', handleAuthChange);
     };
-  }, [isSuperAdmin]);
+  }, [user, currentUserRole]);
 
   return {
     currentUserRole,
