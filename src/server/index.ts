@@ -9,6 +9,7 @@ import { authRoutes } from './routes/auth';
 import { agentRoutes } from './routes/agents';
 import { roleRoutes } from './routes/roles';
 import { authenticateToken, requireRole } from './middleware/auth';
+import { fileURLToPath } from 'url';
 
 const app = express();
 
@@ -56,8 +57,11 @@ setupDatabase().then(() => {
 // Export the app and middleware for use in other files
 export { app, authenticateToken, requireRole };
 
-// Only start standalone server if this file is run directly
-if (require.main === module) {
+// Only start standalone server if this file is run directly (ES modules way)
+const __filename = fileURLToPath(import.meta.url);
+const isMainModule = process.argv[1] === __filename;
+
+if (isMainModule) {
   const startServer = async () => {
     try {
       const PORT = parseInt(process.env.PORT || '8080', 10);
