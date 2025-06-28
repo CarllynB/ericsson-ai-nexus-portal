@@ -11,6 +11,7 @@ import Agents from "./pages/Agents";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { populateDefaultAgents, clearAllCachedAgents } from "./utils/populateAgents";
+import { clearAllAgents } from "./utils/clearDatabase";
 import "./utils/debugAgents"; // Import to auto-run debugging
 
 const queryClient = new QueryClient();
@@ -26,6 +27,16 @@ const initializeApp = async () => {
   console.log('🔍 Running comprehensive agent source debugging...');
   const { debugAgentSources } = await import('./utils/debugAgents');
   debugAgentSources();
+  
+  // CRITICAL: Clear the existing SQLite database completely
+  console.log('🧹 CRITICAL: Clearing existing SQLite database...');
+  const cleared = await clearAllAgents();
+  
+  if (cleared) {
+    console.log('✅ SUCCESS: Database cleared completely');
+  } else {
+    console.error('❌ FAILED: Could not clear database - manual intervention needed');
+  }
   
   // Initialize empty SQLite database
   await populateDefaultAgents();
