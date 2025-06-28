@@ -12,6 +12,11 @@ export interface SidebarItem {
   updated_at?: string;
 }
 
+// Custom event for sidebar changes
+const dispatchSidebarChange = () => {
+  window.dispatchEvent(new CustomEvent('sidebarChange'));
+};
+
 export const useSidebarItems = () => {
   const [items, setItems] = useState<SidebarItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -20,6 +25,16 @@ export const useSidebarItems = () => {
   // Load items from backend API on mount
   useEffect(() => {
     fetchItems();
+  }, []);
+
+  // Listen for sidebar changes from other components
+  useEffect(() => {
+    const handleSidebarChange = () => {
+      fetchItems();
+    };
+
+    window.addEventListener('sidebarChange', handleSidebarChange);
+    return () => window.removeEventListener('sidebarChange', handleSidebarChange);
   }, []);
 
   const fetchItems = async () => {
@@ -61,6 +76,7 @@ export const useSidebarItems = () => {
       }
 
       await fetchItems(); // Refresh the list
+      dispatchSidebarChange(); // Notify other components
 
       toast({
         title: "Success",
@@ -99,6 +115,7 @@ export const useSidebarItems = () => {
       }
 
       await fetchItems(); // Refresh the list
+      dispatchSidebarChange(); // Notify other components
 
       toast({
         title: "Success",
@@ -135,6 +152,7 @@ export const useSidebarItems = () => {
       }
 
       await fetchItems(); // Refresh the list
+      dispatchSidebarChange(); // Notify other components
 
       toast({
         title: "Success",
@@ -173,6 +191,7 @@ export const useSidebarItems = () => {
       }
 
       await fetchItems(); // Refresh the list
+      dispatchSidebarChange(); // Notify other components
 
       toast({
         title: "Success",

@@ -3,6 +3,11 @@ import { useState, useEffect } from 'react';
 import { Agent } from '@/services/api';
 import { backendApiService } from '@/services/backendApi';
 
+// Custom event for agent changes
+const dispatchAgentChange = () => {
+  window.dispatchEvent(new CustomEvent('agentChange'));
+};
+
 export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +59,16 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     fetchAgents();
   }, [page, pageSize, showAll]);
 
+  // Listen for agent changes from other components
+  useEffect(() => {
+    const handleAgentChange = () => {
+      fetchAgents();
+    };
+
+    window.addEventListener('agentChange', handleAgentChange);
+    return () => window.removeEventListener('agentChange', handleAgentChange);
+  }, []);
+
   const updateAgentStatus = async (id: string, status: Agent['status']) => {
     try {
       await backendApiService.updateAgent(id, { status });
@@ -62,6 +77,7 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
           agent.id === id ? { ...agent, status, last_updated: new Date().toISOString() } : agent
         ))
       );
+      dispatchAgentChange(); // Notify other components
     } catch (err) {
       console.error('❌ useAgents: Failed to update agent status:', err);
       setError('Failed to update agent status');
@@ -72,6 +88,7 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     try {
       await backendApiService.deleteAgent(id);
       setAgents(prev => prev.filter(agent => agent.id !== id));
+      dispatchAgentChange(); // Notify other components
     } catch (err) {
       console.error('❌ useAgents: Failed to delete agent:', err);
       setError('Failed to delete agent');

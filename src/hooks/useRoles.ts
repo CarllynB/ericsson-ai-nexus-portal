@@ -14,6 +14,11 @@ export interface UserWithRole {
   assigned_at: string;
 }
 
+// Custom event for role changes
+const dispatchRoleChange = () => {
+  window.dispatchEvent(new CustomEvent('roleChange'));
+};
+
 export const useRoles = () => {
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
   const [users, setUsers] = useState<UserWithRole[]>([]);
@@ -104,6 +109,7 @@ export const useRoles = () => {
       
       // Refresh the users list
       await fetchAllUsers();
+      dispatchRoleChange(); // Notify other components
       
       toast({
         title: "Success",
@@ -151,6 +157,7 @@ export const useRoles = () => {
       
       // Refresh the users list
       await fetchAllUsers();
+      dispatchRoleChange(); // Notify other components
       
       toast({
         title: "Success",
@@ -209,10 +216,20 @@ export const useRoles = () => {
       }
     };
 
+    // Listen for role changes from other components
+    const handleRoleChange = () => {
+      fetchCurrentUserRole();
+      if (currentUserRole === 'super_admin') {
+        fetchAllUsers();
+      }
+    };
+
     window.addEventListener('authChange', handleAuthChange);
+    window.addEventListener('roleChange', handleRoleChange);
 
     return () => {
       window.removeEventListener('authChange', handleAuthChange);
+      window.removeEventListener('roleChange', handleRoleChange);
     };
   }, [user, currentUserRole]);
 
