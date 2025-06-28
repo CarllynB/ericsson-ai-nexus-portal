@@ -1,5 +1,6 @@
+
 // This file is fully deprecated - SQLite is now the only source of truth
-// Keeping minimal interface for backwards compatibility during transition
+// NO hardcoded data, NO localStorage usage, NO fallback data
 
 import { Agent } from './api';
 import { sqliteService } from './sqlite';
@@ -20,21 +21,25 @@ export interface DatabaseData {
   lastUpdated: string;
 }
 
-// All methods now proxy directly to SQLite service - no localStorage usage
+// All methods proxy directly to SQLite - NO hardcoded data, NO fallbacks
 class FileStorageService {
   async getAgents(): Promise<Agent[]> {
+    console.log('🔍 FileStorage.getAgents() - proxying to SQLite (no hardcoded data)');
     return sqliteService.getAgents();
   }
 
   async createAgent(agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>): Promise<Agent> {
+    console.log('➕ FileStorage.createAgent() - proxying to SQLite');
     return sqliteService.createAgent(agent);
   }
 
   async updateAgent(id: string, updates: Partial<Agent>): Promise<Agent> {
+    console.log('📝 FileStorage.updateAgent() - proxying to SQLite');
     return sqliteService.updateAgent(id, updates);
   }
 
   async deleteAgent(id: string): Promise<void> {
+    console.log('🗑️ FileStorage.deleteAgent() - proxying to SQLite');
     return sqliteService.deleteAgent(id);
   }
 
@@ -54,18 +59,18 @@ class FileStorageService {
     return sqliteService.getAllUserRoles();
   }
 
-  // Deprecated methods - no longer use localStorage
+  // Deprecated methods - no functionality
   exportData(): string {
-    console.warn('Export functionality moved to SQLite service');
-    return JSON.stringify({ message: "Data export now handled by SQLite service" });
+    console.warn('🚫 Export functionality deprecated - no hardcoded data exists');
+    return JSON.stringify({ message: "No hardcoded data to export - all data in SQLite" });
   }
 
   importData(jsonData: string): void {
-    console.warn('Import functionality moved to SQLite service');
+    console.warn('🚫 Import functionality deprecated - use SQLite directly');
   }
 
   clearAllData(): void {
-    console.warn('Clear data functionality moved to SQLite service');
+    console.warn('🚫 Clear functionality deprecated - use SQLite directly');
   }
 }
 

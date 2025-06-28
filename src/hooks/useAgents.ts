@@ -23,24 +23,27 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Starting to fetch agents...');
+      console.log('🔍 useAgents: Fetching agents - NO hardcoded fallbacks...');
       
       const response = await offlineApiService.getAgents();
-      console.log('Successfully received agents:', response);
+      console.log('📊 useAgents: Received agents from SQLite:', response);
       
       if (Array.isArray(response)) {
         const sortedAgents = sortAgents(response);
         setAgents(sortedAgents);
-        console.log(`Successfully loaded ${sortedAgents.length} agents`);
+        console.log(`✅ useAgents: Loaded ${sortedAgents.length} agents from SQLite (no hardcoded data)`);
+        if (sortedAgents.length === 0) {
+          console.log('📝 useAgents: Database is empty - this is expected (no hardcoded agents)');
+        }
         setError(null);
       } else {
-        console.warn('Invalid response format:', response);
-        setAgents([]);
+        console.warn('⚠️ useAgents: Invalid response format:', response);
+        setAgents([]); // Set empty array - NO hardcoded fallbacks
         setError('Invalid data format received from database');
       }
     } catch (err) {
-      console.error('Failed to fetch agents:', err);
-      setAgents([]);
+      console.error('❌ useAgents: Failed to fetch agents:', err);
+      setAgents([]); // Set empty array - NO hardcoded fallbacks
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(`Failed to load agents: ${errorMessage}`);
     } finally {
@@ -49,7 +52,7 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
   };
 
   useEffect(() => {
-    console.log('useAgents effect triggered');
+    console.log('🔄 useAgents: Effect triggered - fetching from SQLite only');
     fetchAgents();
   }, [page, pageSize, showAll]);
 
@@ -62,7 +65,7 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
         ))
       );
     } catch (err) {
-      console.error('Failed to update agent status:', err);
+      console.error('❌ useAgents: Failed to update agent status:', err);
       setError('Failed to update agent status');
     }
   };
@@ -72,7 +75,7 @@ export const useAgents = (page = 1, pageSize = 12, showAll = false) => {
       await offlineApiService.deleteAgent(id);
       setAgents(prev => prev.filter(agent => agent.id !== id));
     } catch (err) {
-      console.error('Failed to delete agent:', err);
+      console.error('❌ useAgents: Failed to delete agent:', err);
       setError('Failed to delete agent');
     }
   };

@@ -18,8 +18,24 @@ export interface Agent {
   created_at: string;
 }
 
-// Export the getAgents function to maintain compatibility
-export const getAgents = () => offlineApiService.getAgents();
-export const createAgent = (agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>) => offlineApiService.createAgent(agent);
-export const updateAgent = (id: string, updates: Partial<Agent>) => offlineApiService.updateAgent(id, updates);
-export const deleteAgent = (id: string) => offlineApiService.deleteAgent(id);
+// Export functions that proxy to offlineApiService (which uses SQLite only)
+// NO hardcoded data, NO fallbacks, NO mock data
+export const getAgents = () => {
+  console.log('📡 api.getAgents() - proxying to SQLite (no hardcoded data)');
+  return offlineApiService.getAgents();
+};
+
+export const createAgent = (agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>) => {
+  console.log('➕ api.createAgent() - proxying to SQLite');
+  return offlineApiService.createAgent(agent);
+};
+
+export const updateAgent = (id: string, updates: Partial<Agent>) => {
+  console.log('📝 api.updateAgent() - proxying to SQLite');
+  return offlineApiService.updateAgent(id, updates);
+};
+
+export const deleteAgent = (id: string) => {
+  console.log('🗑️ api.deleteAgent() - proxying to SQLite');
+  return offlineApiService.deleteAgent(id);
+};
