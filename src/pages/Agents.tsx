@@ -148,7 +148,12 @@ const Agents = () => {
         <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-8 mb-12">
           {displayedAgents.length === 0 ? (
             <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground text-lg">No agents found matching your search.</p>
+              <p className="text-muted-foreground text-lg">
+                {agents.length === 0 
+                  ? "No agents have been created yet. Super Admins can create agents in the Dashboard." 
+                  : "No agents found matching your search."
+                }
+              </p>
             </div>
           ) : (
             displayedAgents.map((agent) => {

@@ -7,48 +7,17 @@ import { Input } from "@/components/ui/input";
 import { ArrowRight, Search, Mail, User, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useRoles } from "@/hooks/useRoles";
-import { offlineApiService } from "@/services/offlineApi";
+import { useAgents } from "@/hooks/useAgents";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
-  const [agents, setAgents] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showAll, setShowAll] = useState(false);
-  const [loading, setLoading] = useState(true);
   const { currentUserRole } = useRoles();
+  const { agents, loading, error } = useAgents();
 
   const ITEMS_PER_PAGE = 12;
-
-  useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        setLoading(true);
-        console.log('🔍 Index: Fetching agents from SQLite only (no hardcoded data)...');
-        const agentsData = await offlineApiService.getAgents();
-        
-        // Sort agents: active first, then by name
-        const sortedAgents = agentsData.sort((a, b) => {
-          if (a.status === 'active' && b.status !== 'active') return -1;
-          if (a.status !== 'active' && b.status === 'active') return 1;
-          return a.name.localeCompare(b.name);
-        });
-        
-        setAgents(sortedAgents);
-        console.log(`✅ Index: Loaded ${sortedAgents.length} agents from SQLite`);
-        if (sortedAgents.length === 0) {
-          console.log('📝 Index: No agents found - database is empty (no hardcoded fallbacks)');
-        }
-      } catch (error) {
-        console.error('❌ Index: Error fetching agents from SQLite:', error);
-        setAgents([]); // Set empty array - NO hardcoded fallbacks
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAgents();
-  }, []);
 
   const filteredAgents = agents.filter(agent =>
     agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -116,6 +85,13 @@ const Index = () => {
       )}
 
       <div className="max-w-7xl mx-auto">
+        {/* Error Banner */}
+        {error && (
+          <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+            {error}
+          </div>
+        )}
+
         {/* Search Bar */}
         <div className="max-w-2xl mx-auto mb-12">
           <div className="relative">
