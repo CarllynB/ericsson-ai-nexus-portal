@@ -1,22 +1,22 @@
 
 const { spawn } = require('child_process');
 
-console.log('🚀 Starting AI-DU Agent Portal Development Server (Simplified)...\n');
+console.log('🚀 Starting AI-DU Agent Portal Development Server (HTTPS)...\n');
 
-// Start the backend server on port 8080
-console.log('🔧 Starting backend server on port 8080...');
+// Start the backend server on port 8081
+console.log('🔧 Starting backend server on port 8081...');
 const backendProcess = spawn('node', ['-r', 'ts-node/register', './src/server/index.ts'], {
   stdio: 'inherit',
   env: {
     ...process.env,
     NODE_ENV: 'development',
-    PORT: '8080'
+    PORT: '8081'
   }
 });
 
 // Wait a moment then start the frontend
 setTimeout(() => {
-  console.log('📱 Starting frontend dev server on port 5173...');
+  console.log('📱 Starting frontend dev server on port 8080 (HTTPS)...');
   const frontendProcess = spawn('npm', ['run', 'dev'], {
     stdio: 'inherit',
     env: {
@@ -57,7 +57,7 @@ backendProcess.on('exit', (code) => {
 });
 
 console.log('✅ Backend server starting...');
-console.log('🔧 Backend API: http://localhost:8080');
-console.log('📱 Frontend will start at: http://localhost:5173');
-console.log('🔍 API Health: http://localhost:8080/api/health');
+console.log('🔒 Backend API: https://localhost:8081');
+console.log('🔒 Frontend will start at: https://localhost:8080');
+console.log('🔍 API Health: https://localhost:8081/api/health');
 console.log('\nPress Ctrl+C to stop both servers\n');

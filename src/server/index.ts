@@ -1,6 +1,7 @@
 
 import express from 'express';
 import https from 'https';
+import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import cors from 'cors';
@@ -49,7 +50,7 @@ if (process.env.NODE_ENV === 'production') {
 
 // Initialize database when the module is loaded
 setupDatabase().then(() => {
-  console.log('✅ Database initialized for all-in-one server');
+  console.log('✅ Database initialized for backend server');
 }).catch((error) => {
   console.error('❌ Failed to initialize database:', error);
 });
@@ -64,19 +65,10 @@ const isMainModule = process.argv[1] === __filename;
 if (isMainModule) {
   const startServer = async () => {
     try {
-      const PORT = parseInt(process.env.PORT || '8080', 10);
+      // Backend runs on port 8081, Vite frontend on 8080
+      const PORT = parseInt(process.env.PORT || '8081', 10);
 
-      // For development, use HTTP to avoid compatibility issues
-      if (process.env.NODE_ENV === 'development') {
-        app.listen(PORT, '0.0.0.0', () => {
-          console.log(`🚀 HTTP Backend Server running on port ${PORT}`);
-          console.log(`🔧 Backend API: http://localhost:${PORT}`);
-          console.log(`🔍 API Health: http://localhost:${PORT}/api/health`);
-        });
-        return;
-      }
-
-      // For production, try HTTPS first, fall back to HTTP
+      // Check for SSL certificates
       const sslCertExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');
       const sslKeyExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.key');
 
@@ -84,13 +76,15 @@ if (isMainModule) {
         try {
           const httpsOptions = {
             cert: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.crt'),
-            key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key')
+            key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key'),
+            // Force HTTP/1.1 to avoid Node.js HTTP/2 issues
+            allowHTTP1: true
           };
 
           https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
-            console.log(`🚀 HTTPS Production Server running on port ${PORT}`);
-            console.log(`🔒 Access your app at: https://aiduagent-csstip.ckit1.explab.com/`);
-            console.log(`🔍 API Health: https://aiduagent-csstip.ckit1.explab.com/api/health`);
+            console.log(`🔒 HTTPS Backend Server running on port ${PORT}`);
+            console.log(`🔧 Backend API: https://localhost:${PORT}`);
+            console.log(`🔍 API Health: https://localhost:${PORT}/api/health`);
           });
         } catch (sslError) {
           console.warn('⚠️ SSL certificate error, falling back to HTTP:', sslError.message);
@@ -107,9 +101,9 @@ if (isMainModule) {
   };
 
   const startHttpServer = (port: number) => {
-    app.listen(port, '0.0.0.0', () => {
-      console.log(`🚀 HTTP Production Server running on port ${port}`);
-      console.log(`🌐 Access your app at: http://localhost:${port}`);
+    http.createServer(app).listen(port, '0.0.0.0', () => {
+      console.log(`🌐 HTTP Backend Server running on port ${port}`);
+      console.log(`🔧 Backend API: http://localhost:${port}`);
       console.log(`🔍 API Health: http://localhost:${port}/api/health`);
     });
   };

@@ -13,19 +13,24 @@ const sslKeyExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.key');
 export default defineConfig(({ mode }) => ({
   server: {
     host: "0.0.0.0",
-    port: 5173,
-    // Simplify HTTPS configuration to avoid HTTP2 issues
+    port: 8080,
+    // Use HTTPS with SSL certificates if they exist, but force HTTP/1.1 to avoid Vite HTTP/2 bug
     https: sslCertExists && sslKeyExists ? {
       cert: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.crt'),
       key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key'),
+      // Force HTTP/1.1 to avoid the req.url undefined bug in HTTP/2
+      allowHTTP1: true,
+      // Disable HTTP/2 to prevent the Vite crash
+      http2: false
     } : false,
     cors: true,
     // Proxy API requests to the backend server
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: sslCertExists && sslKeyExists ? 'https://localhost:8081' : 'http://localhost:8081',
         changeOrigin: true,
-        secure: false
+        secure: false,
+        rejectUnauthorized: false
       }
     }
   },
