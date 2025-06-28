@@ -64,9 +64,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen px-6 py-12">
-      {/* Welcome Banner - Updated styling to match pitch section */}
+      {/* Welcome Banner - Updated with darker background */}
       {showWelcome && (
-        <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 mb-8 relative">
+        <div className="bg-gray-200 dark:bg-gray-700 rounded-2xl p-8 mb-8 relative">
           <Button
             variant="ghost"
             size="sm"
@@ -246,8 +246,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* Pitch Section */}
-        <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 text-center">
+        {/* Pitch Section - Updated with darker background and no external link icon */}
+        <div className="bg-gray-200 dark:bg-gray-700 rounded-2xl p-8 text-center">
           <h2 className="text-2xl font-bold text-foreground mb-4">
             Got an Idea? Pitch It!
           </h2>
