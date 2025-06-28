@@ -1,6 +1,7 @@
 
 import { Agent } from './api';
 import { backendApiService } from './backendApi';
+import { sqliteService } from './sqlite';
 
 class OfflineApiService {
   private initialized = false;
@@ -20,69 +21,77 @@ class OfflineApiService {
 
   private async doInitialize(): Promise<void> {
     try {
-      console.log('🔄 Initializing backend connection...');
+      console.log('🔄 Initializing services...');
+      
+      // Initialize SQLite first
+      await sqliteService.initialize();
+      console.log('✅ SQLite initialized');
       
       // Test backend connection
-      const healthCheck = await backendApiService.healthCheck();
-      console.log('✅ Backend connection established:', healthCheck);
+      try {
+        const healthCheck = await backendApiService.healthCheck();
+        console.log('✅ Backend connection established:', healthCheck);
+      } catch (error) {
+        console.warn('⚠️ Backend not available, using SQLite only:', error);
+      }
       
       this.initialized = true;
     } catch (error) {
-      console.error('❌ Failed to connect to backend:', error);
+      console.error('❌ Failed to initialize services:', error);
       this.initialized = false;
       this.initializationPromise = null;
-      throw new Error('Backend service unavailable. Please ensure the server is running.');
+      throw new Error('Services unavailable. Please refresh the page.');
     }
   }
 
   async getAgents(): Promise<Agent[]> {
     try {
       await this.initialize();
-      console.log('🔍 Fetching agents from backend API...');
-      const agents = await backendApiService.getAgents();
+      console.log('🔍 Fetching agents from SQLite...');
+      const agents = await sqliteService.getAgents();
       console.log(`✅ Successfully fetched ${agents.length} agents`);
       return agents;
     } catch (error) {
       console.error('❌ Error getting agents:', error);
-      throw new Error('Failed to load agents from backend. Please check if the server is running.');
+      throw new Error('Failed to load agents from database.');
     }
   }
 
   async createAgent(agent: Omit<Agent, 'id' | 'created_at' | 'last_updated'>): Promise<Agent> {
     try {
       await this.initialize();
-      console.log('➕ Creating agent via backend API...');
-      const newAgent = await backendApiService.createAgent(agent);
+      console.log('➕ Creating agent via SQLite...');
+      const newAgent = await sqliteService.createAgent(agent);
       console.log('✅ Agent created successfully:', newAgent.name);
       return newAgent;
     } catch (error) {
       console.error('❌ Error creating agent:', error);
-      throw new Error('Failed to create agent via backend');
+      throw new Error('Failed to create agent');
     }
   }
 
   async updateAgent(id: string, updates: Partial<Agent>): Promise<Agent> {
     try {
       await this.initialize();
-      console.log('📝 Updating agent via backend API...');
-      const updatedAgent = await backendApiService.updateAgent(id, updates);
+      console.log('📝 Updating agent via SQLite...');
+      const updatedAgent = await sqliteService.updateAgent(id, updates);
       console.log('✅ Agent updated successfully:', updatedAgent.name);
       return updatedAgent;
     } catch (error) {
       console.error('❌ Error updating agent:', error);
-      throw new Error('Failed to update agent via backend');
+      throw new Error('Failed to update agent');
     }
   }
 
   async deleteAgent(id: string): Promise<void> {
     try {
       await this.initialize();
-      console.log('🗑️ Deleting agent via backend API...');
-      await backendApiService.deleteAgent(id);
+      console.log('🗑️ Deleting agent via SQLite...');
+      await sqliteService.deleteAgent(id);
       console.log('✅ Agent deleted successfully');
     } catch (error) {
       console.error('❌ Error deleting agent:', error);
-      throw new Error('Failed to delete agent via backend');
+      throw new Error('Failed to delete agent');
     }
   }
 

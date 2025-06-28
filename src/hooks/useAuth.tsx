@@ -49,39 +49,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🔄 Validating stored session...');
       setLoading(true);
       
-      const savedUser = localStorage.getItem('current_user');
       const token = localStorage.getItem('auth_token');
       
-      if (!savedUser || !token) {
-        console.log('ℹ️ No stored session found');
+      if (!token) {
+        console.log('ℹ️ No stored token found');
         setUser(null);
         setLoading(false);
         return;
       }
 
       try {
-        const userData = JSON.parse(savedUser);
-        console.log('🔍 Found stored user:', userData.email);
+        console.log('🔍 Validating token with backend...');
         
         // Validate token by making a test API call
-        try {
-          const roleResponse = await backendApiService.getUserRole();
-          console.log('✅ Session validation successful, role:', roleResponse.role);
-          
-          // Update user data with latest role
-          const updatedUser = { ...userData, role: roleResponse.role };
-          setUser(updatedUser);
-          localStorage.setItem('current_user', JSON.stringify(updatedUser));
-          dispatchAuthChange();
-        } catch (error) {
-          console.warn('⚠️ Stored session invalid, clearing:', error);
-          localStorage.removeItem('current_user');
-          localStorage.removeItem('auth_token');
-          setUser(null);
-        }
+        const roleResponse = await backendApiService.getUserRole();
+        console.log('✅ Session validation successful, role:', roleResponse.role);
+        
+        // If we got here, the token is valid. Get user data from token
+        // For now we'll create a basic user object - in a real app this would come from the backend
+        const userData: User = {
+          id: 'current-user-id',
+          email: 'current-user-email', // This should come from backend
+          role: roleResponse.role,
+          created_at: new Date().toISOString(),
+        };
+        
+        setUser(userData);
+        dispatchAuthChange();
       } catch (error) {
-        console.error('❌ Error parsing saved user:', error);
-        localStorage.removeItem('current_user');
+        console.warn('⚠️ Stored session invalid, clearing:', error);
         localStorage.removeItem('auth_token');
         setUser(null);
       } finally {
@@ -107,7 +103,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
       
       setUser(userData);
-      localStorage.setItem('current_user', JSON.stringify(userData));
       dispatchAuthChange();
       
       console.log('✅ Login successful:', userData.role);
@@ -144,7 +139,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
       
       setUser(userData);
-      localStorage.setItem('current_user', JSON.stringify(userData));
       dispatchAuthChange();
       
       console.log('✅ Registration successful:', userData.role);

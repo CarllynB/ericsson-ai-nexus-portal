@@ -17,6 +17,8 @@ const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
+  console.log('ProtectedRoute - user:', !!user, 'loading:', loading);
+  
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -26,6 +28,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   if (!user) {
+    console.log('ProtectedRoute - No user, redirecting to login');
     return <Navigate to="/login" replace />;
   }
   
@@ -34,6 +37,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();
+  
+  console.log('AppRoutes - user:', !!user, 'loading:', loading);
   
   if (loading) {
     return (
@@ -49,6 +54,7 @@ const AppRoutes = () => {
         path="/login" 
         element={user ? <Navigate to="/" replace /> : <Login />} 
       />
+      {/* ALL routes now require authentication */}
       <Route 
         path="/" 
         element={

@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { backendApiService } from '@/services/backendApi';
+import { sqliteService } from '@/services/sqlite';
 import { useAuth } from '@/hooks/useAuth';
 
 export type UserRole = 'super_admin' | 'admin' | 'viewer';
@@ -29,31 +31,28 @@ export const useRoles = () => {
 
       console.log('🔍 Fetching current user role for:', user.email);
       
-      // First try to get from stored user data
-      if (user.role) {
-        setCurrentUserRole(user.role as UserRole);
-        console.log('✅ Using stored user role:', user.role);
-      }
+      // Get role from SQLite first
+      let role = await sqliteService.getUserRole(user.email);
       
-      // Then verify with backend if authenticated
-      if (backendApiService.isAuthenticated) {
+      // If not found in SQLite, try backend as fallback
+      if (!role && backendApiService.isAuthenticated) {
         try {
           const roleResponse = await backendApiService.getUserRole();
-          console.log('✅ Backend role response:', roleResponse);
-          setCurrentUserRole(roleResponse.role as UserRole);
-          
-          // Update localStorage with the latest role
-          const savedUser = localStorage.getItem('current_user');
-          if (savedUser) {
-            const userData = JSON.parse(savedUser);
-            userData.role = roleResponse.role;
-            localStorage.setItem('current_user', JSON.stringify(userData));
+          role = roleResponse.role;
+          // Store in SQLite for future use
+          if (role) {
+            await sqliteService.createUserRole(user.email, role as UserRole);
           }
         } catch (error) {
-          console.warn('⚠️ Could not fetch role from backend, using stored role');
-          // Keep the stored role if backend call fails
+          console.warn('⚠️ Could not fetch role from backend');
         }
       }
+      
+      // Default to viewer if no role found
+      const finalRole = (role as UserRole) || 'viewer';
+      setCurrentUserRole(finalRole);
+      console.log('✅ User role determined:', finalRole);
+      
     } catch (error) {
       console.error('❌ Error in fetchCurrentUserRole:', error);
       setCurrentUserRole('viewer'); // Default fallback
@@ -64,13 +63,15 @@ export const useRoles = () => {
 
   const fetchAllUsers = async () => {
     try {
-      if (!user || !backendApiService.isAuthenticated) {
+      if (!user) {
         console.log('Not authenticated, skipping user fetch');
         return;
       }
 
-      const allUsers = await backendApiService.getAllUserRoles();
-      console.log('✅ Fetched users with roles from backend:', allUsers);
+      // Get users from SQLite
+      const allUsers = await sqliteService.getAllUserRoles();
+      console.log('✅ Fetched users with roles from SQLite:', allUsers);
+      
       setUsers(allUsers.map(user => ({
         id: user.id,
         email: user.email,
@@ -87,8 +88,19 @@ export const useRoles = () => {
     try {
       console.log(`🔄 Starting role assignment: ${userEmail} -> ${role}`);
       
-      await backendApiService.assignRole(userEmail, role);
-      console.log('✅ Role assignment completed via backend');
+      // Assign role in SQLite
+      await sqliteService.createUserRole(userEmail, role, user?.email);
+      console.log('✅ Role assignment completed in SQLite');
+      
+      // Try to sync with backend if available
+      try {
+        if (backendApiService.isAuthenticated) {
+          await backendApiService.assignRole(userEmail, role);
+          console.log('✅ Role synced with backend');
+        }
+      } catch (error) {
+        console.warn('⚠️ Could not sync with backend:', error);
+      }
       
       // Refresh the users list
       await fetchAllUsers();
@@ -118,19 +130,23 @@ export const useRoles = () => {
         throw new Error('User not found');
       }
       
-      await backendApiService.updateUserRole(userId, newRole);
-      console.log('✅ Role update completed via backend');
+      // Update role in SQLite
+      await sqliteService.updateUserRole(userToUpdate.email, newRole);
+      console.log('✅ Role update completed in SQLite');
+      
+      // Try to sync with backend if available
+      try {
+        if (backendApiService.isAuthenticated) {
+          await backendApiService.updateUserRole(userId, newRole);
+          console.log('✅ Role synced with backend');
+        }
+      } catch (error) {
+        console.warn('⚠️ Could not sync with backend:', error);
+      }
       
       // Update current user if it's the same user
       if (user && user.email === userToUpdate.email) {
         setCurrentUserRole(newRole);
-        // Update localStorage
-        const savedUser = localStorage.getItem('current_user');
-        if (savedUser) {
-          const userData = JSON.parse(savedUser);
-          userData.role = newRole;
-          localStorage.setItem('current_user', JSON.stringify(userData));
-        }
       }
       
       // Refresh the users list
@@ -180,16 +196,7 @@ export const useRoles = () => {
 
     initRoles();
 
-    // Listen for storage changes to update roles without page reload
-    const handleStorageChange = () => {
-      if (user) {
-        fetchCurrentUserRole();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also listen for custom events when user logs in/out
+    // Listen for auth changes
     const handleAuthChange = () => {
       if (user) {
         fetchCurrentUserRole();
@@ -205,7 +212,6 @@ export const useRoles = () => {
     window.addEventListener('authChange', handleAuthChange);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('authChange', handleAuthChange);
     };
   }, [user, currentUserRole]);
