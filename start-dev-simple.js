@@ -44,7 +44,7 @@ setTimeout(() => {
       console.error(`❌ Frontend server exited with code ${code}`);
     }
   });
-}, 2000);
+}, 3000); // Increased delay to ensure backend starts properly
 
 backendProcess.on('error', (err) => {
   console.error('❌ Backend server error:', err);
