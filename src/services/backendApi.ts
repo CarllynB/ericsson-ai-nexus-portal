@@ -52,14 +52,37 @@ class BackendApiService {
       if (!response.ok) {
         let errorData;
         try {
-          errorData = await response.json();
-        } catch {
+          const text = await response.text();
+          console.log('Raw response text:', text);
+          
+          // Try to parse as JSON
+          if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+            errorData = JSON.parse(text);
+          } else {
+            errorData = { error: text || `HTTP ${response.status}: ${response.statusText}` };
+          }
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
           errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
         }
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
-      return response.json();
+      const text = await response.text();
+      console.log('Raw response text:', text);
+      
+      // Handle empty responses
+      if (!text.trim()) {
+        return {};
+      }
+      
+      // Try to parse as JSON
+      try {
+        return JSON.parse(text);
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError);
+        throw new Error('Invalid response format from server');
+      }
     } catch (error) {
       console.error(`API request failed for ${endpoint}:`, error);
       throw error;

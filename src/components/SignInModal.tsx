@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -76,6 +76,9 @@ export const SignInModal = ({ open, onOpenChange }: SignInModalProps) => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>AI-DU Agent Portal</DialogTitle>
+            <DialogDescription>
+              Sign in to your account or create a new one to access the AI-DU Agent Portal.
+            </DialogDescription>
           </DialogHeader>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
