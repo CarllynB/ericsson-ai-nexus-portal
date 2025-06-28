@@ -52,7 +52,6 @@ class BackendApiService {
       });
 
       console.log(`📊 Response status: ${response.status} ${response.statusText}`);
-      console.log(`📊 Response headers:`, Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         let errorData;
@@ -89,8 +88,7 @@ class BackendApiService {
         return parsed;
       } catch (parseError) {
         console.error('❌ Failed to parse JSON response:', parseError);
-        console.error('❌ Raw response that failed to parse:', text);
-        throw new Error(`Invalid response format from server: ${text.substring(0, 100)}...`);
+        throw new Error(`Invalid response format from server`);
       }
     } catch (error) {
       console.error(`❌ API request failed for ${endpoint}:`, error);

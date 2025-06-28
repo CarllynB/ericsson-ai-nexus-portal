@@ -19,17 +19,20 @@ export default defineConfig(({ mode }) => ({
       key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key'),
     } : undefined,
     cors: true,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        secure: false,
-      }
-    }
+    // Remove proxy - we'll handle API routes directly in the same server
   },
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
+    // Custom plugin to integrate Express backend
+    {
+      name: 'integrated-backend',
+      configureServer(server) {
+        // Import and set up the Express app
+        const { app } = require('./src/server/index.ts');
+        server.middlewares.use('/api', app);
+      }
+    }
   ].filter(Boolean),
   resolve: {
     alias: {

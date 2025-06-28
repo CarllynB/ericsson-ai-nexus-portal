@@ -56,12 +56,12 @@ export const requireRole = (allowedRoles: string[]) => {
 };
 
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/agents', agentRoutes);
-app.use('/api/roles', roleRoutes);
+app.use('/auth', authRoutes);
+app.use('/agents', agentRoutes);
+app.use('/roles', roleRoutes);
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     database: 'connected',
@@ -69,62 +69,57 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../../dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../dist/index.html'));
-  });
-}
+// Initialize database when the module is loaded
+setupDatabase().then(() => {
+  console.log('✅ Database initialized for all-in-one server');
+}).catch((error) => {
+  console.error('❌ Failed to initialize database:', error);
+});
 
-// Initialize database and start server
-const startServer = async () => {
-  try {
-    console.log('🔄 Initializing database...');
-    await setupDatabase();
-    console.log('✅ Database initialized successfully');
+// Export the app for use as middleware in Vite
+export { app };
 
-    const PORT = parseInt(process.env.PORT || '8080', 10);
+// Only start standalone server if this file is run directly
+if (require.main === module) {
+  const startServer = async () => {
+    try {
+      const PORT = parseInt(process.env.PORT || '8080', 10);
 
-    // Check if SSL certificates exist for HTTPS
-    const sslCertExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');
-    const sslKeyExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.key');
+      // Check if SSL certificates exist for HTTPS
+      const sslCertExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');
+      const sslKeyExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.key');
 
-    if (sslCertExists && sslKeyExists) {
-      try {
-        const httpsOptions = {
-          cert: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.crt'),
-          key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key')
-        };
+      if (sslCertExists && sslKeyExists) {
+        try {
+          const httpsOptions = {
+            cert: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.crt'),
+            key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key')
+          };
 
-        https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
-          console.log(`🚀 HTTPS Server running on port ${PORT}`);
-          console.log(`🔒 Access your app at: https://aiduagent-csstip.ckit1.explab.com/`);
-        });
-      } catch (sslError) {
-        console.warn('⚠️ SSL certificate error, falling back to HTTP:', sslError.message);
+          https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
+            console.log(`🚀 HTTPS Server running on port ${PORT}`);
+            console.log(`🔒 Access your app at: https://aiduagent-csstip.ckit1.explab.com/`);
+          });
+        } catch (sslError) {
+          console.warn('⚠️ SSL certificate error, falling back to HTTP:', sslError.message);
+          startHttpServer(PORT);
+        }
+      } else {
+        console.log('ℹ️ SSL certificates not found, starting HTTP server');
         startHttpServer(PORT);
       }
-    } else {
-      console.log('ℹ️ SSL certificates not found, starting HTTP server');
-      startHttpServer(PORT);
+    } catch (error) {
+      console.error('❌ Failed to start server:', error);
+      process.exit(1);
     }
-  } catch (error) {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
-  }
-};
+  };
 
-const startHttpServer = (port: number) => {
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`🚀 HTTP Server running on port ${port}`);
-    console.log(`🌐 Access your app at: http://localhost:${port}`);
-  });
-};
+  const startHttpServer = (port: number) => {
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`🚀 HTTP Server running on port ${port}`);
+      console.log(`🌐 Access your app at: http://localhost:${port}`);
+    });
+  };
 
-// Only start server if this file is run directly (not during Vite dev)
-if (require.main === module) {
   startServer();
 }
-
-export { app };
