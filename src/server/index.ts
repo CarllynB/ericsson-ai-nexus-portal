@@ -1,4 +1,3 @@
-
 import express from 'express';
 import https from 'https';
 import http from 'http';
@@ -9,6 +8,7 @@ import { setupDatabase } from './database';
 import { authRoutes } from './routes/auth';
 import { agentRoutes } from './routes/agents';
 import { roleRoutes } from './routes/roles';
+import { sidebarRoutes } from './routes/sidebar';
 import { authenticateToken, requireRole } from './middleware/auth';
 import { fileURLToPath } from 'url';
 
@@ -35,6 +35,7 @@ app.use('/api/auth', (req, res, next) => {
 
 app.use('/api/agents', agentRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/sidebar', sidebarRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

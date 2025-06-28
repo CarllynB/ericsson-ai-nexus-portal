@@ -61,7 +61,62 @@ export const setupDatabase = async (): Promise<void> => {
           )
         `);
 
+        // Create sidebar_items table
+        db.run(`
+          CREATE TABLE IF NOT EXISTS sidebar_items (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            url TEXT NOT NULL,
+            order_index INTEGER NOT NULL,
+            is_default BOOLEAN NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+          )
+        `);
+
         console.log('🗄️ Database tables created');
+
+        // Check if we need to seed default sidebar items
+        const sidebarCount = await new Promise<number>((resolveSidebar) => {
+          db.get('SELECT COUNT(*) as count FROM sidebar_items', (err, row: any) => {
+            if (err) {
+              console.error('❌ Error counting sidebar items:', err);
+              resolveSidebar(0);
+            } else {
+              resolveSidebar(row.count);
+            }
+          });
+        });
+
+        // Only create default sidebar items if table is empty
+        if (sidebarCount === 0) {
+          console.log('📝 Creating default sidebar items...');
+          const defaultItems = [
+            { id: 'home', title: 'Home', url: '/', order: 1, is_default: 1 },
+            { id: 'agents', title: 'Agents', url: '/agents', order: 2, is_default: 1 },
+            { id: 'dashboard', title: 'Dashboard', url: '/dashboard', order: 3, is_default: 1 },
+            { id: 'pitchbox', title: 'Pitch Box', url: 'https://apps.powerapps.com/play/e/default-92e84ceb-fbfd-47ab-be52-080c6b87953f/a/549a8af5-f6ba-4b8b-824c-dfdfcf6f3740?tenantId=92e84ceb-fbfd-47ab-be52-080c6b87953f&hint=ec5023c9-376e-41fb-9280-10bd9f925919&source=sharebutton&sourcetime=1750260233474', order: 4, is_default: 1 }
+          ];
+
+          for (const item of defaultItems) {
+            await new Promise<void>((resolveItem, rejectItem) => {
+              db.run(
+                'INSERT INTO sidebar_items (id, title, url, order_index, is_default) VALUES (?, ?, ?, ?, ?)',
+                [item.id, item.title, item.url, item.order, item.is_default],
+                (err) => {
+                  if (err) {
+                    console.error('❌ Error creating sidebar item:', err);
+                    rejectItem(err);
+                  } else {
+                    console.log('✅ Sidebar item created:', item.title);
+                    resolveItem();
+                  }
+                }
+              );
+            });
+          }
+          console.log('✅ Default sidebar items created');
+        }
 
         // Check if we need to seed super admin users (only if users table is empty)
         const userCount = await new Promise<number>((resolveCount) => {

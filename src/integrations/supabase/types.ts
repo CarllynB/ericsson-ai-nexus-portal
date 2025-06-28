@@ -285,6 +285,39 @@ export type Database = {
           },
         ]
       }
+      sidebar_items: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_default: boolean
+          order: number
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          order: number
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          order?: number
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           assigned_at: string

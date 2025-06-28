@@ -77,8 +77,8 @@ export const SidebarManagement = () => {
     setDraggedItem(null);
   };
 
-  const isDefaultItem = (id: string) => {
-    return ['home', 'agents', 'dashboard', 'pitchbox'].includes(id);
+  const isDefaultItem = (item: SidebarItem) => {
+    return item.is_default || ['home', 'agents', 'dashboard', 'pitchbox'].includes(item.id);
   };
 
   return (
@@ -160,7 +160,7 @@ export const SidebarManagement = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{item.title}</span>
-                      {isDefaultItem(item.id) && (
+                      {isDefaultItem(item) && (
                         <Badge variant="secondary" className="text-xs">
                           Default
                         </Badge>
@@ -178,7 +178,7 @@ export const SidebarManagement = () => {
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
-                  {!isDefaultItem(item.id) && (
+                  {!isDefaultItem(item) && (
                     <Button
                       size="sm"
                       variant="ghost"
