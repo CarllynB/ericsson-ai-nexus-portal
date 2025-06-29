@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,12 +29,13 @@ const TalkToNova = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    }
   }, [messages, isTyping]);
 
   const sendMessage = async () => {
@@ -55,6 +57,7 @@ const TalkToNova = () => {
     try {
       console.log('Sending message to NOVA API:', currentMessage);
       
+      // Use the backend API endpoint for NOVA chat
       const response = await fetch('/api/nova/chat', {
         method: 'POST',
         headers: {
@@ -70,6 +73,9 @@ const TalkToNova = () => {
         const data = await response.json();
         console.log('NOVA response received:', data.source || 'unknown');
         
+        // Simulate typing delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         const novaMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           type: 'nova',
@@ -80,11 +86,11 @@ const TalkToNova = () => {
 
         setMessages(prev => [...prev, novaMessage]);
         
-        // Show connection status only for Ollama
+        // Show connection status
         if (data.source === 'ollama') {
           toast({
-            title: "🤖 AI Connected",
-            description: "NOVA is using local AI",
+            title: "🤖 Ollama Connected",
+            description: "NOVA is using local AI for responses",
             duration: 2000
           });
         }
@@ -97,7 +103,7 @@ const TalkToNova = () => {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'nova',
-        content: "I'm having trouble connecting right now. Please check that the backend server is running and try again.",
+        content: "I'm sorry, I'm having trouble connecting right now. Please check that the backend server is running and try again.",
         timestamp: new Date()
       };
 
@@ -105,7 +111,7 @@ const TalkToNova = () => {
       
       toast({
         title: "Connection Error",
-        description: "Failed to connect to NOVA",
+        description: "Failed to connect to NOVA. Check backend server.",
         variant: "destructive"
       });
     } finally {
@@ -141,12 +147,12 @@ const TalkToNova = () => {
             <img 
               src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
               alt="NOVA" 
-              className="w-12 h-12"
+              className="w-8 h-8"
             />
             Talk to NOVA
           </h1>
           <p className="text-muted-foreground mt-2">
-            Your AI-DU Portal Assistant
+            Your AI-DU Portal assistant powered by local AI
           </p>
         </div>
 
@@ -183,7 +189,7 @@ const TalkToNova = () => {
                           : 'bg-muted'
                       }`}
                     >
-                      <div className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-break-word">
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                         {message.content}
                       </div>
                       <div className="flex items-center justify-between mt-2">
@@ -229,11 +235,11 @@ const TalkToNova = () => {
                           <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                           <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                         </div>
+                        <span className="text-sm text-muted-foreground">NOVA is thinking...</span>
                       </div>
                     </div>
                   </div>
                 )}
-                <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
 
