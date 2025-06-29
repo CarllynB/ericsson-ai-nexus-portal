@@ -102,14 +102,14 @@ ${agents.map(agent => `
     
     if (ollamaConnected) {
       try {
-        console.log('🔄 Sending request to Ollama with llama3.2 model...');
+        console.log('🔄 Sending request to Ollama...');
         const ollamaResponse = await fetch('http://localhost:11434/api/generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'llama3.2',
+            model: 'mistral',
             prompt: `You are NOVA, the AI-DU Portal assistant. You help users navigate GenAI agents, answer technical questions, and explain portal features.
 
 Context about the AI-DU Portal:
@@ -131,7 +131,7 @@ Provide a helpful, accurate response as NOVA using the real agent data above. Ke
 
         if (ollamaResponse.ok) {
           const ollamaData = await ollamaResponse.json();
-          console.log('✅ NOVA response from Ollama (llama3.2) received');
+          console.log('✅ NOVA response from Ollama received');
           res.json({ response: ollamaData.response, source: 'ollama' });
           return;
         } else {
@@ -206,7 +206,7 @@ router.get('/status', authenticateToken, requireRole(['super_admin']), async (re
     res.json({
       status: 'active',
       ollama: ollamaStatus,
-      model: 'llama3.2',
+      model: 'mistral',
       is_live: settings.is_live,
       available_to_all: settings.available_to_all,
       access_level: settings.available_to_all ? 'all_users' : 'super_admin_only'
