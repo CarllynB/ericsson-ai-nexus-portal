@@ -3,7 +3,6 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { addNovaToSidebar } from './utils/populateAgents';
 
 const container = document.getElementById('root');
 if (!container) {
@@ -18,6 +17,14 @@ root.render(
 );
 
 // Add NOVA to sidebar after app loads (non-blocking)
-setTimeout(() => {
-  addNovaToSidebar().catch(console.error);
-}, 1000);
+// Only run in browser environment
+if (typeof window !== 'undefined') {
+  setTimeout(async () => {
+    try {
+      const { addNovaToSidebar } = await import('./utils/populateAgents');
+      await addNovaToSidebar();
+    } catch (error) {
+      console.log('Could not add NOVA to sidebar:', error);
+    }
+  }, 2000);
+}

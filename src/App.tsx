@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
+  console.log('🔄 AppRoutes rendering...');
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -58,6 +59,8 @@ const AppRoutes = () => {
 };
 
 const App = () => {
+  console.log('🚀 App component rendering...');
+  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
