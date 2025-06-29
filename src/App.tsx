@@ -12,38 +12,8 @@ import Agents from "./pages/Agents";
 import Dashboard from "./pages/Dashboard";
 import TalkToNova from "./pages/TalkToNova";
 import NotFound from "./pages/NotFound";
-import { populateDefaultAgents, clearAllCachedAgents } from "./utils/populateAgents";
-import { clearAllAgents } from "./utils/clearDatabase";
 
 const queryClient = new QueryClient();
-
-// Initialize app with completely clean state
-const initializeApp = async () => {
-  console.log('🚀 App initializing - clearing ALL cached data...');
-  
-  // Clear any cached agent data first
-  clearAllCachedAgents();
-  
-  // CRITICAL: Clear the existing SQLite database completely
-  console.log('🧹 CRITICAL: Clearing existing SQLite database...');
-  const cleared = await clearAllAgents();
-  
-  if (cleared) {
-    console.log('✅ SUCCESS: Database cleared completely');
-  } else {
-    console.error('❌ FAILED: Could not clear database - manual intervention needed');
-  }
-  
-  // Initialize empty SQLite database
-  await populateDefaultAgents();
-  
-  console.log('✅ App initialized with completely clean state');
-};
-
-// Run initialization
-initializeApp().catch(error => {
-  console.error('❌ Failed to initialize app:', error);
-});
 
 const AppRoutes = () => {
   return (

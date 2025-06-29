@@ -1,167 +1,315 @@
-import { dbRun, dbAll, dbGet } from '../server/database';
+import { dbRun } from "@/server/database";
+import { v4 as uuidv4 } from 'uuid';
 
-export const clearAllCachedAgents = () => {
-  localStorage.removeItem('agents');
-  localStorage.removeItem('roles');
-  localStorage.removeItem('sidebar_items');
-  console.log('🧹 Cleared ALL cached agent data from localStorage');
+// Function to clear all agents from the database
+export const clearAllAgents = async (): Promise<boolean> => {
+  try {
+    console.log('🧹 Clearing all agents from the database...');
+    await dbRun('DELETE FROM agents');
+    console.log('✅ All agents cleared');
+    return true;
+  } catch (error) {
+    console.error('❌ Error clearing agents:', error);
+    return false;
+  }
 };
 
-const agentData = [
-  {
-    id: 'navigator365',
-    name: 'Navigator365',
-    description: 'Your AI-powered productivity automation agent. Automate tasks across Microsoft 365 apps.',
-    category: 'Productivity',
-    use_cases: 'Automated report generation, calendar management, email filtering',
-    access_level: 'internal',
-    cost_per_use: 0.05,
-    average_time_saved: 60,
-    usage_count: 1200,
-    impact_score: 0.85,
-    user_feedback: 'Great for automating routine tasks, saves a lot of time!',
-    security_compliance: 'SOC2, GDPR',
-    integrations: 'Microsoft 365 Suite',
-    agent_persona: 'Efficient, reliable, and detail-oriented',
-    agent_limitations: 'Limited to Microsoft 365 apps, requires specific instructions',
-    agent_version: '2.1',
-    release_date: '2023-08-15',
-    last_updated: '2024-01-20',
-    developer: 'AI & Data Unit',
-    known_issues: 'Occasional delays in report generation',
-    suggested_improvements: 'Add support for Google Workspace',
-    related_agents: 'Explorer, 5GC FA Agent',
-    tags: 'automation, productivity, microsoft 365',
-    is_active: 1,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'explorer',
-    name: 'Explorer',
-    description: 'Advanced data analysis agent. Explore datasets, generate insights, and create visualizations.',
-    category: 'Analytics',
-    use_cases: 'Data mining, trend analysis, predictive modeling',
-    access_level: 'internal',
-    cost_per_use: 0.10,
-    average_time_saved: 120,
-    usage_count: 800,
-    impact_score: 0.92,
-    user_feedback: 'Powerful tool for data analysis, provides valuable insights.',
-    security_compliance: 'SOC2, HIPAA',
-    integrations: 'SQL Databases, Cloud Storage',
-    agent_persona: 'Analytical, insightful, and data-driven',
-    agent_limitations: 'Requires large datasets, may produce false positives',
-    agent_version: '1.5',
-    release_date: '2023-11-01',
-    last_updated: '2024-02-28',
-    developer: 'AI & Data Unit',
-    known_issues: 'High memory usage with large datasets',
-    suggested_improvements: 'Improve performance with big data',
-    related_agents: 'Navigator365, 5GC FA Agent',
-    tags: 'data analysis, analytics, visualization',
-    is_active: 1,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: '5gc-fa-agent',
-    name: '5GC FA Agent',
-    description: '5G Core Fault Analysis Agent. Detect and resolve network faults in real-time.',
-    category: 'Network Optimization',
-    use_cases: 'Fault detection, root cause analysis, automated remediation',
-    access_level: 'external',
-    cost_per_use: 0.15,
-    average_time_saved: 180,
-    usage_count: 500,
-    impact_score: 0.95,
-    user_feedback: 'Critical for maintaining network stability, reduces downtime significantly.',
-    security_compliance: 'GDPR, PCI DSS',
-    integrations: '5G Core Network Elements',
-    agent_persona: 'Proactive, efficient, and solution-oriented',
-    agent_limitations: 'Limited to 5G core network, requires network access',
-    agent_version: '3.0',
-    release_date: '2024-01-15',
-    last_updated: '2024-03-10',
-    developer: 'AI & Data Unit',
-    known_issues: 'Occasional false alarms during peak hours',
-    suggested_improvements: 'Improve accuracy of fault detection',
-    related_agents: 'Navigator365, Explorer',
-    tags: '5g, network optimization, fault analysis',
-    is_active: 1,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-];
-
-export const populateDefaultAgents = async () => {
-  console.log('🚀 Populating default agents and sidebar items...');
-  
+// Function to clear all cached agent data (localStorage)
+export const clearAllCachedAgents = () => {
   try {
-    // Populate agents table
-    console.log('🤖 Adding default agents...');
-    for (const agent of agentData) {
-      const existing = await dbGet('SELECT id FROM agents WHERE id = ?', [agent.id]);
-      if (!existing) {
-        await dbRun(
-          'INSERT INTO agents (id, name, description, category, use_cases, access_level, cost_per_use, average_time_saved, usage_count, impact_score, user_feedback, security_compliance, integrations, agent_persona, agent_limitations, agent_version, release_date, last_updated, developer, known_issues, suggested_improvements, related_agents, tags, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [
-            agent.id,
-            agent.name,
-            agent.description,
-            agent.category,
-            agent.use_cases,
-            agent.access_level,
-            agent.cost_per_use,
-            agent.average_time_saved,
-            agent.usage_count,
-            agent.impact_score,
-            agent.user_feedback,
-            agent.security_compliance,
-            agent.integrations,
-            agent.agent_persona,
-            agent.agent_limitations,
-            agent.agent_version,
-            agent.release_date,
-            agent.last_updated,
-            agent.developer,
-            agent.known_issues,
-            agent.suggested_improvements,
-            agent.related_agents,
-            agent.tags,
-            agent.is_active,
-            agent.created_at,
-            agent.updated_at
-          ]
-        );
-        console.log(`✅ Added agent: ${agent.name}`);
-      }
-    }
+    console.log('🧹 Clearing all cached agent data from localStorage...');
+    
+    // Get all keys in localStorage
+    const keys = Object.keys(localStorage);
+    
+    // Filter keys that start with 'agent_'
+    const agentKeys = keys.filter(key => key.startsWith('agent_'));
+    
+    // Remove each agent key from localStorage
+    agentKeys.forEach(key => {
+      localStorage.removeItem(key);
+      console.log('🗑️  Removed cached agent:', key);
+    });
 
-    // Add default sidebar items including NOVA
-    const defaultSidebarItems = [
-      { id: 'home', title: 'Home', url: '/', order_index: 1, is_default: 1 },
-      { id: 'agents', title: 'Agents', url: '/agents', order_index: 2, is_default: 1 },
-      { id: 'dashboard', title: 'Dashboard', url: '/dashboard', order_index: 3, is_default: 1 },
-      { id: 'talk-to-nova', title: 'Talk to NOVA', url: '/talk-to-nova', order_index: 4, is_default: 1 },
-      { id: 'pitchbox', title: 'PitchBox', url: 'https://pitchbox.csstip.ckit1.explab.com', order_index: 5, is_default: 1 }
+    console.log('✅ All cached agent data cleared');
+  } catch (error) {
+    console.error('❌ Error clearing cached agent data:', error);
+  }
+};
+
+// Function to populate default agents into the database
+export const populateDefaultAgents = async () => {
+  try {
+    console.log('📝 Populating default agents into the database...');
+
+    const defaultAgents = [
+      {
+        id: uuidv4(),
+        name: 'Code Companion',
+        description: 'Assists with code generation, debugging, and documentation.',
+        category: 'Development',
+        status: 'active',
+        key_features: ['Code generation', 'Debugging', 'Documentation'],
+        access_link: null,
+        contact_info: null,
+        owner: 'AI-DU',
+        last_updated: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        is_active: 1,
+        use_cases: 'Software development, code review, technical writing',
+        access_level: 'internal',
+        usage_count: 150,
+        average_time_saved: 30,
+        impact_score: 8
+      },
+      {
+        id: uuidv4(),
+        name: 'Content Curator',
+        description: 'Generates engaging content for marketing and social media.',
+        category: 'Marketing',
+        status: 'active',
+        key_features: ['Content creation', 'Social media management', 'SEO optimization'],
+        access_link: null,
+        contact_info: null,
+        owner: 'AI-DU',
+        last_updated: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        is_active: 1,
+        use_cases: 'Content marketing, social media campaigns, brand awareness',
+        access_level: 'internal',
+        usage_count: 200,
+        average_time_saved: 45,
+        impact_score: 9
+      },
+      {
+        id: uuidv4(),
+        name: 'Data Detective',
+        description: 'Analyzes data to provide insights and improve decision-making.',
+        category: 'Analytics',
+        status: 'active',
+        key_features: ['Data analysis', 'Reporting', 'Visualization'],
+        access_link: null,
+        contact_info: null,
+        owner: 'AI-DU',
+        last_updated: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        is_active: 1,
+        use_cases: 'Business intelligence, data-driven decisions, performance tracking',
+        access_level: 'internal',
+        usage_count: 120,
+        average_time_saved: 60,
+        impact_score: 7
+      },
+      {
+        id: uuidv4(),
+        name: 'HR Helper',
+        description: 'Automates HR tasks such as onboarding and policy updates.',
+        category: 'HR',
+        status: 'coming_soon',
+        key_features: ['Onboarding', 'Policy updates', 'Employee support'],
+        access_link: null,
+        contact_info: {
+          name: 'Carl Barfi',
+          email: 'carllyn.barfi@ericsson.com'
+        },
+        owner: 'AI-DU',
+        last_updated: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        is_active: 1,
+        use_cases: 'Employee onboarding, HR policy management, employee self-service',
+        access_level: 'internal',
+        usage_count: 0,
+        average_time_saved: 0,
+        impact_score: 0
+      },
+      {
+        id: uuidv4(),
+        name: 'Sales Navigator',
+        description: 'Provides sales teams with real-time leads and customer insights.',
+        category: 'Sales',
+        status: 'inactive',
+        key_features: ['Lead generation', 'Customer insights', 'Sales automation'],
+        access_link: null,
+        contact_info: null,
+        owner: 'AI-DU',
+        last_updated: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        is_active: 1,
+        use_cases: 'Sales prospecting, customer relationship management, sales forecasting',
+        access_level: 'internal',
+        usage_count: 80,
+        average_time_saved: 90,
+        impact_score: 6
+      },
+      {
+        id: uuidv4(),
+        name: 'Legal Eagle',
+        description: 'Assists with legal research, contract review, and compliance.',
+        category: 'Legal',
+        status: 'active',
+        key_features: ['Legal research', 'Contract review', 'Compliance'],
+        access_link: null,
+        contact_info: {
+          name: 'Muhammad Mahmood',
+          email: 'muhammad.mahmood@ericsson.com'
+        },
+        owner: 'AI-DU',
+        last_updated: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        is_active: 1,
+        use_cases: 'Legal research, contract management, regulatory compliance',
+        access_level: 'internal',
+        usage_count: 50,
+        average_time_saved: 120,
+        impact_score: 5
+      },
+      {
+        id: uuidv4(),
+        name: 'Market Maven',
+        description: 'Analyzes market trends and customer behavior to optimize marketing strategies.',
+        category: 'Marketing',
+        status: 'active',
+        key_features: ['Market analysis', 'Customer behavior', 'Marketing optimization'],
+        access_link: null,
+        contact_info: null,
+        owner: 'AI-DU',
+        last_updated: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        is_active: 1,
+        use_cases: 'Market research, customer segmentation, marketing campaign optimization',
+        access_level: 'external',
+        usage_count: 90,
+        average_time_saved: 75,
+        impact_score: 8
+      },
+      {
+        id: uuidv4(),
+        name: 'Financial Forecaster',
+        description: 'Predicts financial trends and provides investment recommendations.',
+        category: 'Finance',
+        status: 'active',
+        key_features: ['Financial analysis', 'Investment recommendations', 'Risk management'],
+        access_link: null,
+        contact_info: null,
+        owner: 'AI-DU',
+        last_updated: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        is_active: 1,
+        use_cases: 'Financial planning, investment management, risk assessment',
+        access_level: 'external',
+        usage_count: 60,
+        average_time_saved: 105,
+        impact_score: 7
+      },
+      {
+        id: uuidv4(),
+        name: 'Supply Chain Sage',
+        description: 'Optimizes supply chain operations and reduces costs.',
+        category: 'Supply Chain',
+        status: 'active',
+        key_features: ['Supply chain optimization', 'Cost reduction', 'Logistics management'],
+        access_link: null,
+        contact_info: null,
+        owner: 'AI-DU',
+        last_updated: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        is_active: 1,
+        use_cases: 'Supply chain planning, logistics optimization, inventory management',
+        access_level: 'external',
+        usage_count: 110,
+        average_time_saved: 135,
+        impact_score: 9
+      },
+      {
+        id: uuidv4(),
+        name: 'Customer Care Champ',
+        description: 'Enhances customer service and improves customer satisfaction.',
+        category: 'Customer Service',
+        status: 'active',
+        key_features: ['Customer service', 'Customer satisfaction', 'Support automation'],
+        access_link: null,
+        contact_info: null,
+        owner: 'AI-DU',
+        last_updated: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        is_active: 1,
+        use_cases: 'Customer support, customer feedback analysis, customer engagement',
+        access_level: 'external',
+        usage_count: 180,
+        average_time_saved: 150,
+        impact_score: 10
+      }
     ];
 
-    console.log('📋 Adding default sidebar items...');
-    for (const item of defaultSidebarItems) {
-      const existing = await dbGet('SELECT id FROM sidebar_items WHERE id = ?', [item.id]);
-      if (!existing) {
-        await dbRun(
-          'INSERT INTO sidebar_items (id, title, url, order_index, is_default) VALUES (?, ?, ?, ?, ?)',
-          [item.id, item.title, item.url, item.order_index, item.is_default]
-        );
-        console.log(`✅ Added sidebar item: ${item.title}`);
-      }
+    // Insert each agent into the database
+    for (const agent of defaultAgents) {
+      await dbRun(
+        `INSERT INTO agents (
+          id, name, description, category, status, key_features, access_link, contact_info, owner, last_updated, created_at, is_active, use_cases, access_level, usage_count, average_time_saved, impact_score
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          agent.id,
+          agent.name,
+          agent.description,
+          agent.category,
+          agent.status,
+          JSON.stringify(agent.key_features), // Store key_features as JSON
+          agent.access_link,
+          agent.contact_info ? JSON.stringify(agent.contact_info) : null, // Store contact_info as JSON
+          agent.owner,
+          agent.last_updated,
+          agent.created_at,
+          agent.is_active,
+          agent.use_cases,
+          agent.access_level,
+          agent.usage_count,
+          agent.average_time_saved,
+          agent.impact_score
+        ]
+      );
+      console.log('✅ Agent created:', agent.name);
     }
 
-    console.log('✅ Default agents and sidebar items populated successfully');
+    console.log('✅ Default agents populated');
   } catch (error) {
-    console.error('❌ Error populating default data:', error);
-    throw error;
+    console.error('❌ Error populating default agents:', error);
+  }
+};
+
+export const addNovaToSidebar = async () => {
+  try {
+    console.log('🤖 Adding NOVA to sidebar...');
+    
+    // Check if NOVA sidebar item already exists
+    const response = await fetch('/api/sidebar');
+    if (response.ok) {
+      const items = await response.json();
+      const novaExists = items.some((item: any) => item.id === 'talk-to-nova');
+      
+      if (!novaExists) {
+        // Add NOVA to sidebar
+        const addResponse = await fetch('/api/sidebar', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          },
+          body: JSON.stringify({
+            title: 'Talk to NOVA',
+            url: '/talk-to-nova'
+          })
+        });
+        
+        if (addResponse.ok) {
+          console.log('✅ NOVA added to sidebar');
+        } else {
+          console.log('ℹ️ Could not add NOVA to sidebar (may need admin access)');
+        }
+      } else {
+        console.log('ℹ️ NOVA already exists in sidebar');
+      }
+    }
+  } catch (error) {
+    console.log('ℹ️ Could not add NOVA to sidebar:', error);
   }
 };
