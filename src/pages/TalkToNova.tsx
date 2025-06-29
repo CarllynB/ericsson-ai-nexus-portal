@@ -28,9 +28,28 @@ const TalkToNova = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [novaAvailable, setNovaAvailable] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Check if NOVA is available to this user
+  useEffect(() => {
+    const checkNovaAvailability = async () => {
+      try {
+        const response = await fetch('/api/nova/status');
+        if (response.ok) {
+          const data = await response.json();
+          setNovaAvailable(data.available_to_all || (user && ['super_admin'].includes(user.role)));
+        }
+      } catch (error) {
+        console.error('Error checking NOVA availability:', error);
+        setNovaAvailable(false);
+      }
+    };
+
+    checkNovaAvailability();
+  }, [user]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -72,9 +91,6 @@ const TalkToNova = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('NOVA response received:', data.source || 'unknown');
-        
-        // Simulate typing delay for better UX
-        await new Promise(resolve => setTimeout(resolve, 1000));
         
         const novaMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
@@ -127,12 +143,18 @@ const TalkToNova = () => {
     }
   };
 
-  if (!user) {
+  // Show access denied message if NOVA is not available to this user
+  if (!novaAvailable) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">Please sign in to access NOVA.</p>
+            <p className="text-muted-foreground">
+              {user ? 
+                "NOVA is not available to your role yet. Please contact a Super Admin." :
+                "Please sign in to access NOVA."
+              }
+            </p>
           </CardContent>
         </Card>
       </div>
