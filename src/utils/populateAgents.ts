@@ -279,31 +279,3 @@ export const populateDefaultAgents = async () => {
     console.error('❌ Error populating default agents:', error);
   }
 };
-
-// Function to add NOVA to sidebar directly in SQLite
-export const addNovaToSidebar = async () => {
-  try {
-    console.log('🤖 Adding NOVA to sidebar...');
-    
-    // Check if NOVA sidebar item already exists
-    const novaExists = await dbGet('SELECT * FROM sidebar_items WHERE id = ?', ['talk-to-nova']);
-    
-    if (!novaExists) {
-      // Get the highest order to append the new item
-      const maxOrderResult = await dbGet('SELECT MAX(order_index) as max_order FROM sidebar_items');
-      const nextOrder = (maxOrderResult?.max_order || 0) + 1;
-
-      // Add NOVA to sidebar
-      await dbRun(
-        'INSERT INTO sidebar_items (id, title, url, order_index, is_default) VALUES (?, ?, ?, ?, ?)',
-        ['talk-to-nova', 'Talk to NOVA', '/talk-to-nova', nextOrder, 0]
-      );
-      
-      console.log('✅ NOVA added to sidebar');
-    } else {
-      console.log('ℹ️ NOVA already exists in sidebar');
-    }
-  } catch (error) {
-    console.log('❌ Could not add NOVA to sidebar:', error);
-  }
-};

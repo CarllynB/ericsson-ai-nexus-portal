@@ -1,3 +1,4 @@
+
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import bcrypt from 'bcryptjs';
@@ -112,7 +113,8 @@ export const setupDatabase = async (): Promise<void> => {
             { id: 'home', title: 'Home', url: '/', order: 1, is_default: 1 },
             { id: 'agents', title: 'Agents', url: '/agents', order: 2, is_default: 1 },
             { id: 'dashboard', title: 'Dashboard', url: '/dashboard', order: 3, is_default: 1 },
-            { id: 'pitchbox', title: 'Pitch Box', url: 'https://apps.powerapps.com/play/e/default-92e84ceb-fbfd-47ab-be52-080c6b87953f/a/549a8af5-f6ba-4b8b-824c-dfdfcf6f3740?tenantId=92e84ceb-fbfd-47ab-be52-080c6b87953f&hint=ec5023c9-376e-41fb-9280-10bd9f925919&source=sharebutton&sourcetime=1750260233474', order: 4, is_default: 1 }
+            { id: 'talk-to-nova', title: 'Talk to NOVA', url: '/talk-to-nova', order: 4, is_default: 1 },
+            { id: 'pitchbox', title: 'Pitch Box', url: 'https://apps.powerapps.com/play/e/default-92e84ceb-fbfd-47ab-be52-080c6b87953f/a/549a8af5-f6ba-4b8b-824c-dfdfcf6f3740?tenantId=92e84ceb-fbfd-47ab-be52-080c6b87953f&hint=ec5023c9-376e-41fb-9280-10bd9f925919&source=sharebutton&sourcetime=1750260233474', order: 5, is_default: 1 }
           ];
 
           for (const item of defaultItems) {

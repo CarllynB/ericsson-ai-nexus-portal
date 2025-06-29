@@ -4,11 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Send, User, Loader2, Settings } from "lucide-react";
+import { Send, User, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useRoles } from "@/hooks/useRoles";
 import { useToast } from "@/components/ui/use-toast";
 
 interface ChatMessage {
@@ -18,85 +15,20 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-interface NovaSettings {
-  available_to_all: boolean;
-  is_live: boolean;
-}
-
 const TalkToNova = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
       type: 'nova',
-      content: "Hello! I'm NOVA, your AI-DU Portal assistant. I can help you understand our GenAI agents, navigate the portal, and answer questions about the AI & Data Unit. I have access to real-time agent data and metrics. How can I assist you today?",
+      content: "Hello! I'm NOVA, your AI-DU Portal assistant. I can help you understand our GenAI agents, navigate the portal, and answer questions about the AI & Data Unit. How can I assist you today?",
       timestamp: new Date()
     }
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [novaSettings, setNovaSettings] = useState<NovaSettings>({ available_to_all: false, is_live: false });
-  const [showSettings, setShowSettings] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const { currentUserRole } = useRoles();
   const { toast } = useToast();
-
-  const isSuperAdmin = currentUserRole === 'super_admin';
-
-  // Load NOVA settings for Super Admins
-  useEffect(() => {
-    if (isSuperAdmin) {
-      loadNovaSettings();
-    }
-  }, [isSuperAdmin]);
-
-  const loadNovaSettings = async () => {
-    try {
-      const response = await fetch('/api/nova/status', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setNovaSettings({
-          available_to_all: data.available_to_all,
-          is_live: data.is_live
-        });
-      }
-    } catch (error) {
-      console.error('Error loading NOVA settings:', error);
-    }
-  };
-
-  const updateNovaSettings = async (newSettings: Partial<NovaSettings>) => {
-    try {
-      const response = await fetch('/api/nova/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: JSON.stringify(newSettings)
-      });
-
-      if (response.ok) {
-        setNovaSettings(prev => ({ ...prev, ...newSettings }));
-        toast({
-          title: "Settings Updated",
-          description: `NOVA is now ${newSettings.available_to_all ? 'available to all users' : 'restricted to Super Admins'}`,
-        });
-      }
-    } catch (error) {
-      console.error('Error updating NOVA settings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update NOVA settings",
-        variant: "destructive"
-      });
-    }
-  };
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -119,48 +51,76 @@ const TalkToNova = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/nova/chat', {
+      // Try to connect to Ollama first
+      const response = await fetch('http://localhost:11434/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
-        body: JSON.stringify({ message: inputMessage })
+        body: JSON.stringify({
+          model: 'llama3.2', // or 'mistral' depending on what's installed
+          prompt: `You are NOVA, the AI-DU Portal assistant. You help users navigate GenAI agents, answer technical questions, and explain portal features.
+
+Context about the AI-DU Portal:
+- This is an internal portal for the AI & Data Unit at Ericsson
+- It manages various GenAI agents and tracks their performance
+- Users can view agent metrics, time savings, and usage statistics
+- The portal has different user roles and permissions
+
+User question: ${inputMessage}
+
+Provide a helpful, accurate response as NOVA:`,
+          stream: false
+        })
       });
 
-      if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error('NOVA is not available to your role yet. Please contact a Super Admin.');
-        }
-        throw new Error('Failed to get response from NOVA');
+      if (response.ok) {
+        const data = await response.json();
+        
+        const novaMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          type: 'nova',
+          content: data.response,
+          timestamp: new Date()
+        };
+
+        setMessages(prev => [...prev, novaMessage]);
+      } else {
+        throw new Error('Ollama connection failed');
+      }
+    } catch (error) {
+      console.error('Error connecting to Ollama:', error);
+      
+      // Fallback response when Ollama is not available
+      let fallbackResponse = "I'm NOVA, your AI-DU Portal assistant! ";
+      
+      const lowerMessage = inputMessage.toLowerCase();
+      
+      if (lowerMessage.includes('agent') || lowerMessage.includes('genai')) {
+        fallbackResponse += "I can help you understand our GenAI agents in the portal. Each agent has specific capabilities like code generation, content creation, data analysis, and more. Would you like to know about any specific agent category?";
+      } else if (lowerMessage.includes('dashboard') || lowerMessage.includes('metric')) {
+        fallbackResponse += "The dashboard shows key metrics like time savings, usage counts, and adoption rates for each agent. These help track the impact and effectiveness of our AI tools. What specific metrics would you like to understand?";
+      } else if (lowerMessage.includes('role') || lowerMessage.includes('permission')) {
+        fallbackResponse += "Our portal has different user roles: Super Admins can manage everything, Admins can manage agents and users, and Viewers have read-only access. Your role determines what features you can access.";
+      } else {
+        fallbackResponse += `I'm here to help with the AI-DU Portal! I can explain GenAI agents, dashboard metrics, user roles, navigation, and troubleshooting. What would you like to know about?
+
+Note: I'm currently running in fallback mode. For full AI capabilities, make sure Ollama is running with a compatible model like llama3.2 or mistral.`;
       }
 
-      const data = await response.json();
-      
-      const novaMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'nova',
-        content: data.response,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, novaMessage]);
-    } catch (error) {
-      console.error('Error sending message to NOVA:', error);
-      
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'nova',
-        content: error.message || "I'm having trouble connecting right now. Please try again later or contact support.",
+        content: fallbackResponse,
         timestamp: new Date()
       };
 
       setMessages(prev => [...prev, errorMessage]);
       
       toast({
-        title: "Connection Issue",
-        description: error.message || "NOVA is temporarily unavailable",
-        variant: "destructive"
+        title: "Using Fallback Mode",
+        description: "NOVA is running with limited responses. Install Ollama for full AI capabilities.",
+        variant: "default"
       });
     } finally {
       setIsLoading(false);
@@ -186,91 +146,26 @@ const TalkToNova = () => {
     );
   }
 
-  // Check access based on settings
-  const hasAccess = isSuperAdmin || novaSettings.available_to_all;
-
-  if (!hasAccess) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="p-6 text-center">
-            <img 
-              src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
-              alt="NOVA" 
-              className="w-12 h-12 mx-auto mb-4"
-            />
-            <h2 className="text-xl font-semibold mb-2">NOVA Not Available</h2>
-            <p className="text-muted-foreground">
-              NOVA is currently restricted to Super Admins. Please contact your administrator for access.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <img 
-                src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
-                alt="NOVA" 
-                className="w-8 h-8"
-              />
-              Talk to NOVA
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Your AI-DU Portal assistant with access to real agent data and metrics
-            </p>
-          </div>
-          
-          {isSuperAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowSettings(!showSettings)}
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Button>
-          )}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <img 
+              src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
+              alt="NOVA" 
+              className="w-8 h-8"
+            />
+            Talk to NOVA
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Your AI-DU Portal assistant powered by Llama
+          </p>
         </div>
-
-        {/* Super Admin Settings Panel */}
-        {isSuperAdmin && showSettings && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>NOVA Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="available-to-all">Make NOVA available to all users</Label>
-                <Switch
-                  id="available-to-all"
-                  checked={novaSettings.available_to_all}
-                  onCheckedChange={(checked) => updateNovaSettings({ available_to_all: checked })}
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                When enabled, all users (Admin, Viewer) can access NOVA. When disabled, only Super Admins can use it.
-              </p>
-            </CardContent>
-          </Card>
-        )}
 
         <Card className="h-[calc(100vh-200px)] flex flex-col">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg flex items-center justify-between">
-              Chat with NOVA
-              {!isSuperAdmin && (
-                <span className="text-sm font-normal text-muted-foreground">
-                  Available to: {novaSettings.available_to_all ? 'All Users' : 'Super Admins Only'}
-                </span>
-              )}
-            </CardTitle>
+            <CardTitle className="text-lg">Chat with NOVA</CardTitle>
           </CardHeader>
           
           <CardContent className="flex-1 flex flex-col p-0">
@@ -348,6 +243,9 @@ const TalkToNova = () => {
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Powered by Ollama Llama - Install Ollama and run 'ollama run llama3.2' for full AI capabilities
+              </p>
             </div>
           </CardContent>
         </Card>

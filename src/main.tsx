@@ -15,16 +15,3 @@ root.render(
     <App />
   </StrictMode>
 );
-
-// Add NOVA to sidebar after app loads (non-blocking)
-// Only run in browser environment
-if (typeof window !== 'undefined') {
-  setTimeout(async () => {
-    try {
-      const { addNovaToSidebar } = await import('./utils/populateAgents');
-      await addNovaToSidebar();
-    } catch (error) {
-      console.log('Could not add NOVA to sidebar:', error);
-    }
-  }, 2000);
-}
