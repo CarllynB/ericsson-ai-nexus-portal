@@ -60,8 +60,28 @@ const testOllamaConnection = async () => {
   }
 };
 
-// Chat endpoint for NOVA
-router.post('/chat', authenticateToken, async (req: AuthenticatedRequest, res) => {
+// Helper function to try to authenticate a user (optional)
+const tryAuthenticate = (req: any) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const jwt = require('jsonwebtoken');
+    const { JWT_SECRET } = require('../middleware/auth');
+    const user = jwt.verify(token, JWT_SECRET) as any;
+    return user;
+  } catch (err) {
+    console.log('Optional authentication failed, continuing as anonymous user');
+    return null;
+  }
+};
+
+// Chat endpoint for NOVA - Allow both authenticated and anonymous users
+router.post('/chat', async (req: any, res) => {
   try {
     const { message } = req.body;
     
@@ -72,14 +92,18 @@ router.post('/chat', authenticateToken, async (req: AuthenticatedRequest, res) =
 
     // Check if user has access to NOVA
     const settings = await getNovaSettings();
-    const userRole = req.user?.role || 'viewer';
     
+    // Try to authenticate user (optional)
+    const user = tryAuthenticate(req);
+    const userRole = user?.role || null;
+    
+    // Allow access if NOVA is available to all OR if user is super admin
     if (!settings.available_to_all && userRole !== 'super_admin') {
       res.status(403).json({ error: 'NOVA is not available to your role yet' });
       return;
     }
 
-    console.log('🤖 NOVA chat request from', req.user?.email, ':', message);
+    console.log('🤖 NOVA chat request from', user?.email || 'anonymous user', ':', message);
 
     // Get real agent data from database
     const agents = await getAgentData();
