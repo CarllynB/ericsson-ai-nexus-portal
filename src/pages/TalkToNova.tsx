@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Send, Bot, User, Loader2, Settings } from "lucide-react";
+import { Send, User, Loader2, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRoles } from "@/hooks/useRoles";
 import { useToast } from "@/components/ui/use-toast";
@@ -194,7 +194,11 @@ const TalkToNova = () => {
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="p-6 text-center">
-            <Bot className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <img 
+              src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
+              alt="NOVA" 
+              className="w-12 h-12 mx-auto mb-4"
+            />
             <h2 className="text-xl font-semibold mb-2">NOVA Not Available</h2>
             <p className="text-muted-foreground">
               NOVA is currently restricted to Super Admins. Please contact your administrator for access.
@@ -211,7 +215,11 @@ const TalkToNova = () => {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Bot className="w-8 h-8 text-primary" />
+              <img 
+                src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
+                alt="NOVA" 
+                className="w-8 h-8"
+              />
               Talk to NOVA
             </h1>
             <p className="text-muted-foreground mt-2">
@@ -277,7 +285,11 @@ const TalkToNova = () => {
                 >
                   {message.type === 'nova' && (
                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                      <Bot className="w-4 h-4 text-primary-foreground" />
+                      <img 
+                        src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
+                        alt="NOVA" 
+                        className="w-6 h-6"
+                      />
                     </div>
                   )}
                   
@@ -305,7 +317,11 @@ const TalkToNova = () => {
               {isLoading && (
                 <div className="flex gap-3 justify-start">
                   <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-4 h-4 text-primary-foreground" />
+                    <img 
+                      src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
+                      alt="NOVA" 
+                      className="w-6 h-6"
+                    />
                   </div>
                   <div className="bg-muted rounded-lg p-3">
                     <Loader2 className="w-4 h-4 animate-spin" />

@@ -56,7 +56,13 @@ export const setupDatabase = async (): Promise<void> => {
             contact_info TEXT,
             owner TEXT NOT NULL,
             last_updated TEXT NOT NULL,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            is_active INTEGER DEFAULT 1,
+            use_cases TEXT DEFAULT '',
+            access_level TEXT DEFAULT 'internal',
+            usage_count INTEGER DEFAULT 0,
+            average_time_saved INTEGER DEFAULT 0,
+            impact_score INTEGER DEFAULT 0
           )
         `);
 

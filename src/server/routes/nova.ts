@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { dbAll, dbGet, dbRun } from '../database';
+import { AuthenticatedRequest } from '../types';
 
 const router = Router();
 
@@ -38,7 +39,7 @@ const getNovaSettings = async () => {
 };
 
 // Chat endpoint for NOVA
-router.post('/chat', authenticateToken, async (req, res) => {
+router.post('/chat', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const { message } = req.body;
     
@@ -209,7 +210,7 @@ router.get('/status', authenticateToken, requireRole(['super_admin']), async (re
 });
 
 // Update NOVA settings (Super Admin only)
-router.put('/settings', authenticateToken, requireRole(['super_admin']), async (req, res) => {
+router.put('/settings', authenticateToken, requireRole(['super_admin']), async (req: AuthenticatedRequest, res) => {
   try {
     const { available_to_all, is_live } = req.body;
     
