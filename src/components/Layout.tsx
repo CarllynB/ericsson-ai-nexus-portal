@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { X, LogIn, Settings, Shield, UserPlus, ExternalLink, Menu } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, LogIn, Settings, Shield, UserPlus, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
@@ -22,9 +22,33 @@ export const Layout = ({ children }: LayoutProps) => {
   const [roleManagementOpen, setRoleManagementOpen] = useState(false);
   const [agentManagementOpen, setAgentManagementOpen] = useState(false);
   const [sidebarManagementOpen, setSidebarManagementOpen] = useState(false);
+  const [novaSettings, setNovaSettings] = useState({ available_to_all: false });
   const { currentUserRole, loading: rolesLoading } = useRoles();
   const { user, loading: authLoading } = useAuth();
   const { items } = useSidebarItems();
+
+  // Fetch NOVA settings
+  useEffect(() => {
+    const fetchNovaSettings = async () => {
+      try {
+        const response = await fetch('/api/nova/status', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setNovaSettings({ available_to_all: data.available_to_all });
+        }
+      } catch (error) {
+        console.error('Error fetching NOVA settings:', error);
+      }
+    };
+
+    if (user) {
+      fetchNovaSettings();
+    }
+  }, [user]);
 
   const handleNavigation = (url: string) => {
     if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -40,11 +64,11 @@ export const Layout = ({ children }: LayoutProps) => {
   const isAdmin = isAuthenticated && !rolesLoading && (currentUserRole === 'admin' || currentUserRole === 'super_admin');
   const isSuperAdmin = isAuthenticated && !rolesLoading && currentUserRole === 'super_admin';
 
-  // Filter sidebar items based on user role
+  // Filter sidebar items based on user role and NOVA settings
   const filteredItems = items.filter(item => {
-    // NOVA is only visible to Super Admins for now
+    // NOVA visibility logic
     if (item.id === 'talk-to-nova') {
-      return isSuperAdmin;
+      return novaSettings.available_to_all || isSuperAdmin;
     }
     return true;
   });
@@ -56,7 +80,8 @@ export const Layout = ({ children }: LayoutProps) => {
     currentUserRole, 
     isAuthenticated, 
     isAdmin, 
-    isSuperAdmin 
+    isSuperAdmin,
+    novaAvailableToAll: novaSettings.available_to_all
   });
 
   return (
@@ -155,9 +180,6 @@ export const Layout = ({ children }: LayoutProps) => {
             >
               <div className="w-2 h-2 bg-primary rounded-full" />
               <span className="font-medium">{item.title}</span>
-              {(item.url.startsWith('http://') || item.url.startsWith('https://')) && (
-                <ExternalLink className="w-3 h-3 ml-auto text-muted-foreground" />
-              )}
             </button>
           ))}
 
