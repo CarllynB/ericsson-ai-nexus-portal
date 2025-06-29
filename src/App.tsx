@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,7 +13,6 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { populateDefaultAgents, clearAllCachedAgents } from "./utils/populateAgents";
 import { clearAllAgents } from "./utils/clearDatabase";
-import TalkToNova from "./pages/TalkToNova";
 
 const queryClient = new QueryClient();
 
@@ -70,14 +70,6 @@ const AppRoutes = () => {
         element={
           <Layout>
             <Dashboard />
-          </Layout>
-        } 
-      />
-      <Route 
-        path="/talk-to-nova" 
-        element={
-          <Layout>
-            <TalkToNova />
           </Layout>
         } 
       />

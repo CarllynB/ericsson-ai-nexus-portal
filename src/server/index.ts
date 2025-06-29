@@ -9,7 +9,6 @@ import { authRoutes } from './routes/auth';
 import { agentRoutes } from './routes/agents';
 import { roleRoutes } from './routes/roles';
 import { sidebarRoutes } from './routes/sidebar';
-import { novaRoutes } from './routes/nova';
 import { authenticateToken, requireRole } from './middleware/auth';
 import { fileURLToPath } from 'url';
 
@@ -37,9 +36,6 @@ app.use('/api/auth', (req, res, next) => {
 app.use('/api/agents', agentRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/sidebar', sidebarRoutes);
-
-// NOVA chat routes
-app.use('/api/nova', novaRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
