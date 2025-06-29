@@ -28,9 +28,27 @@ const TalkToNova = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [novaAvailable, setNovaAvailable] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Check NOVA availability
+  useEffect(() => {
+    const checkNovaAvailability = async () => {
+      try {
+        const response = await fetch('/api/nova/status');
+        if (response.ok) {
+          const data = await response.json();
+          setNovaAvailable(data.available_to_all || false);
+        }
+      } catch (error) {
+        console.error('Error checking NOVA availability:', error);
+      }
+    };
+
+    checkNovaAvailability();
+  }, []);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -127,12 +145,13 @@ const TalkToNova = () => {
     }
   };
 
-  if (!user) {
+  // Show access denied if NOVA is not available to all users and user is not super admin
+  if (!novaAvailable && (!user || user.role !== 'super_admin')) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">
           <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">Please sign in to access NOVA.</p>
+            <p className="text-muted-foreground">NOVA is not currently available. Please contact a Super Admin to enable access.</p>
           </CardContent>
         </Card>
       </div>
@@ -147,7 +166,7 @@ const TalkToNova = () => {
             <img 
               src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
               alt="NOVA" 
-              className="w-12 h-12"
+              className="w-16 h-16"
             />
             Talk to NOVA
           </h1>

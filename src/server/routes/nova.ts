@@ -187,8 +187,8 @@ Provide a helpful, accurate response as NOVA using the real agent data above. Ke
   }
 });
 
-// Get NOVA status/settings
-router.get('/status', authenticateToken, requireRole(['super_admin']), async (req, res) => {
+// Get NOVA status/settings - Make this publicly accessible (no auth required)
+router.get('/status', async (req, res) => {
   try {
     // Check if Ollama is available
     let ollamaStatus = 'disconnected';

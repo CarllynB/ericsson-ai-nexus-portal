@@ -27,15 +27,12 @@ export const Layout = ({ children }: LayoutProps) => {
   const { user, loading: authLoading } = useAuth();
   const { items } = useSidebarItems();
 
-  // Fetch NOVA settings
+  // Fetch NOVA settings - make this publicly accessible
   useEffect(() => {
     const fetchNovaSettings = async () => {
       try {
-        const response = await fetch('/api/nova/status', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-          }
-        });
+        // Make request without authentication token so it works for all users
+        const response = await fetch('/api/nova/status');
         if (response.ok) {
           const data = await response.json();
           setNovaSettings({ available_to_all: data.available_to_all });
@@ -45,10 +42,8 @@ export const Layout = ({ children }: LayoutProps) => {
       }
     };
 
-    if (user) {
-      fetchNovaSettings();
-    }
-  }, [user]);
+    fetchNovaSettings();
+  }, []);
 
   const handleNavigation = (url: string) => {
     if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -66,7 +61,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
   // Filter sidebar items based on user role and NOVA settings
   const filteredItems = items.filter(item => {
-    // NOVA visibility logic
+    // NOVA visibility logic - show if available to all OR if user is super admin
     if (item.id === 'talk-to-nova') {
       return novaSettings.available_to_all || isSuperAdmin;
     }
