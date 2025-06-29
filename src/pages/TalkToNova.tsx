@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, User, Loader2 } from "lucide-react";
+import { Send, User, Loader2, Bot } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -13,6 +13,7 @@ interface ChatMessage {
   type: 'user' | 'nova';
   content: string;
   timestamp: Date;
+  source?: 'ollama' | 'fallback';
 }
 
 const TalkToNova = () => {
@@ -26,6 +27,7 @@ const TalkToNova = () => {
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -34,7 +36,7 @@ const TalkToNova = () => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isTyping]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -50,13 +52,17 @@ const TalkToNova = () => {
     const currentMessage = inputMessage;
     setInputMessage("");
     setIsLoading(true);
+    setIsTyping(true);
 
     try {
+      console.log('Sending message to NOVA API:', currentMessage);
+      
       // Use the backend API endpoint for NOVA chat
       const response = await fetch('/api/nova/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify({
           message: currentMessage
@@ -65,46 +71,52 @@ const TalkToNova = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('NOVA response received:', data.source || 'unknown');
+        
+        // Simulate typing delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         const novaMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           type: 'nova',
           content: data.response,
-          timestamp: new Date()
+          timestamp: new Date(),
+          source: data.source
         };
 
         setMessages(prev => [...prev, novaMessage]);
+        
+        // Show connection status
+        if (data.source === 'ollama') {
+          toast({
+            title: "🤖 Ollama Connected",
+            description: "NOVA is using local AI for responses",
+            duration: 2000
+          });
+        }
       } else {
         throw new Error(`API call failed: ${response.status}`);
       }
     } catch (error) {
       console.error('Error connecting to NOVA API:', error);
       
-      // Enhanced fallback response
-      let fallbackResponse = "I'm NOVA, your AI-DU Portal assistant! ";
-      
-      const lowerMessage = currentMessage.toLowerCase();
-      
-      if (lowerMessage.includes('agent') || lowerMessage.includes('genai')) {
-        fallbackResponse += "I can help you understand our GenAI agents in the portal. Each agent has specific capabilities like code generation, content creation, data analysis, and more. Would you like to know about any specific agent category?";
-      } else if (lowerMessage.includes('dashboard') || lowerMessage.includes('metric')) {
-        fallbackResponse += "The dashboard shows key metrics like time savings, usage counts, and adoption rates for each agent. These help track the impact and effectiveness of our AI tools. What specific metrics would you like to understand?";
-      } else if (lowerMessage.includes('role') || lowerMessage.includes('permission')) {
-        fallbackResponse += "Our portal has different user roles: Super Admins can manage everything, Admins can manage agents and users, and Viewers have read-only access. Your role determines what features you can access.";
-      } else {
-        fallbackResponse += "I'm here to help with the AI-DU Portal! I can explain GenAI agents, dashboard metrics, user roles, navigation, and troubleshooting. What would you like to know about?";
-      }
-
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'nova',
-        content: fallbackResponse,
+        content: "I'm sorry, I'm having trouble connecting right now. Please check that the backend server is running and try again.",
         timestamp: new Date()
       };
 
       setMessages(prev => [...prev, errorMessage]);
+      
+      toast({
+        title: "Connection Error",
+        description: "Failed to connect to NOVA. Check backend server.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
+      setIsTyping(false);
     }
   };
 
@@ -140,7 +152,7 @@ const TalkToNova = () => {
             Talk to NOVA
           </h1>
           <p className="text-muted-foreground mt-2">
-            Your AI-DU Portal assistant
+            Your AI-DU Portal assistant powered by local AI
           </p>
         </div>
 
@@ -171,7 +183,7 @@ const TalkToNova = () => {
                     )}
                     
                     <div
-                      className={`max-w-[75%] rounded-lg p-4 ${
+                      className={`max-w-[80%] rounded-lg p-4 ${
                         message.type === 'user'
                           ? 'bg-primary text-primary-foreground ml-auto'
                           : 'bg-muted'
@@ -180,8 +192,22 @@ const TalkToNova = () => {
                       <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                         {message.content}
                       </div>
-                      <div className="text-xs opacity-60 mt-2">
-                        {message.timestamp.toLocaleTimeString()}
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="text-xs opacity-60">
+                          {message.timestamp.toLocaleTimeString()}
+                        </div>
+                        {message.type === 'nova' && message.source && (
+                          <div className="text-xs opacity-60 flex items-center gap-1">
+                            {message.source === 'ollama' ? (
+                              <>
+                                <Bot className="w-3 h-3" />
+                                <span>AI</span>
+                              </>
+                            ) : (
+                              <span>Fallback</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -193,7 +219,7 @@ const TalkToNova = () => {
                   </div>
                 ))}
                 
-                {isLoading && (
+                {isTyping && (
                   <div className="flex gap-3 justify-start">
                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-1">
                       <img 
@@ -202,9 +228,13 @@ const TalkToNova = () => {
                         className="w-5 h-5"
                       />
                     </div>
-                    <div className="bg-muted rounded-lg p-4">
+                    <div className="bg-muted rounded-lg p-4 max-w-[80%]">
                       <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
                         <span className="text-sm text-muted-foreground">NOVA is thinking...</span>
                       </div>
                     </div>
@@ -228,7 +258,11 @@ const TalkToNova = () => {
                   disabled={!inputMessage.trim() || isLoading}
                   size="icon"
                 >
-                  <Send className="w-4 h-4" />
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
             </div>

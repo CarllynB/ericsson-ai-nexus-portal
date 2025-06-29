@@ -38,6 +38,28 @@ const getNovaSettings = async () => {
   }
 };
 
+// Test Ollama connection
+const testOllamaConnection = async () => {
+  try {
+    const response = await fetch('http://localhost:11434/api/tags', {
+      method: 'GET',
+      signal: AbortSignal.timeout(5000) // 5 second timeout
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Ollama connected successfully. Available models:', data.models?.map(m => m.name));
+      return true;
+    } else {
+      console.log('❌ Ollama responded with error:', response.status);
+      return false;
+    }
+  } catch (error) {
+    console.log('❌ Ollama connection failed:', error.message);
+    return false;
+  }
+};
+
 // Chat endpoint for NOVA
 router.post('/chat', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
@@ -57,7 +79,7 @@ router.post('/chat', authenticateToken, async (req: AuthenticatedRequest, res) =
       return;
     }
 
-    console.log('🤖 NOVA chat request:', message);
+    console.log('🤖 NOVA chat request from', req.user?.email, ':', message);
 
     // Get real agent data from database
     const agents = await getAgentData();
@@ -75,16 +97,20 @@ ${agents.map(agent => `
 `).join('')}
 ` : 'No active agents found in the database.';
 
-    try {
-      // Try to connect to Ollama
-      const ollamaResponse = await fetch('http://localhost:11434/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'mistral',
-          prompt: `You are NOVA, the AI-DU Portal assistant. You help users navigate GenAI agents, answer technical questions, and explain portal features.
+    // Test Ollama connection first
+    const ollamaConnected = await testOllamaConnection();
+    
+    if (ollamaConnected) {
+      try {
+        console.log('🔄 Sending request to Ollama...');
+        const ollamaResponse = await fetch('http://localhost:11434/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'mistral',
+            prompt: `You are NOVA, the AI-DU Portal assistant. You help users navigate GenAI agents, answer technical questions, and explain portal features.
 
 Context about the AI-DU Portal:
 - This is an internal portal for the AI & Data Unit at Ericsson
@@ -96,39 +122,44 @@ Context about the AI-DU Portal:
 
 ${agentContext}
 
-Common questions you should be able to answer:
-- What each GenAI agent does and their specific purpose
-- How to navigate the portal and access different features
-- Difference between user roles and permissions
-- How metrics like time savings and usage are calculated
-- How to request new agents or report issues
-- General troubleshooting and portal guidance
-- Agent categories (Internal vs External access levels)
-- Dashboard metrics explanations
-
 User question: ${message}
 
-Provide a helpful, accurate response as NOVA using the real agent data above:`,
-          stream: false
-        })
-      });
+Provide a helpful, accurate response as NOVA using the real agent data above. Keep responses concise and focused on the AI-DU Portal context:`,
+            stream: false
+          })
+        });
 
-      if (ollamaResponse.ok) {
-        const ollamaData = await ollamaResponse.json();
-        console.log('✅ NOVA response from Ollama with real data');
-        res.json({ response: ollamaData.response });
-        return;
+        if (ollamaResponse.ok) {
+          const ollamaData = await ollamaResponse.json();
+          console.log('✅ NOVA response from Ollama received');
+          res.json({ response: ollamaData.response, source: 'ollama' });
+          return;
+        } else {
+          console.log('❌ Ollama API error:', ollamaResponse.status);
+        }
+      } catch (ollamaError) {
+        console.log('❌ Ollama request failed:', ollamaError.message);
       }
-    } catch (ollamaError) {
-      console.log('⚠️ Ollama not available, using enhanced fallback response');
     }
 
     // Enhanced fallback response with real agent data
+    console.log('📝 Using enhanced fallback response with real data');
     let response = "I'm NOVA, your AI-DU Portal assistant! ";
     
     const lowerMessage = message.toLowerCase();
     
-    if (lowerMessage.includes('agent') || lowerMessage.includes('genai')) {
+    if (lowerMessage.includes('devmate') || lowerMessage.includes('dev mate')) {
+      const devmateAgent = agents.find(a => a.name.toLowerCase().includes('devmate') || a.name.toLowerCase().includes('dev mate'));
+      if (devmateAgent) {
+        response += `DevMate is one of our GenAI agents: ${devmateAgent.description}\n\n`;
+        response += `**Use Cases:** ${devmateAgent.use_cases}\n`;
+        response += `**Access Level:** ${devmateAgent.access_level}\n`;
+        response += `**Usage:** ${devmateAgent.usage_count} times with ${devmateAgent.average_time_saved} minutes saved per use\n`;
+        response += `**Impact Score:** ${devmateAgent.impact_score}`;
+      } else {
+        response += "I don't see a DevMate agent in our current database. Could you check the agent name or ask about other available agents?";
+      }
+    } else if (lowerMessage.includes('agent') || lowerMessage.includes('genai')) {
       if (agents.length > 0) {
         const topAgents = agents.slice(0, 3);
         response += `We currently have ${agents.length} active agents in the portal. Our top agents include:\n\n`;
@@ -140,28 +171,6 @@ Provide a helpful, accurate response as NOVA using the real agent data above:`,
       } else {
         response += "I can help you understand GenAI agents, but it looks like no agents are currently active in the database. Super Admins can add agents through the portal.";
       }
-    } else if (lowerMessage.includes('dashboard') || lowerMessage.includes('metric')) {
-      response += "The dashboard shows key metrics like time savings, usage counts, and adoption rates for each agent. ";
-      if (agents.length > 0) {
-        const totalUsage = agents.reduce((sum, agent) => sum + agent.usage_count, 0);
-        const avgTimeSaved = agents.reduce((sum, agent) => sum + agent.average_time_saved, 0) / agents.length;
-        response += `Currently we have ${totalUsage} total agent uses across all agents, with an average of ${Math.round(avgTimeSaved)} minutes saved per use. `;
-      }
-      response += "Time savings represents hours saved through automation, while usage counts show how often agents are accessed. Would you like details about any specific metric?";
-    } else if (lowerMessage.includes('role') || lowerMessage.includes('permission')) {
-      response += "Our portal has three roles: Super Admins (full access to manage everything), Admins (can manage agents and users), and Viewers (read-only access). Your current role determines what features you can access. Need help with role management?";
-    } else if (lowerMessage.includes('category') || lowerMessage.includes('internal') || lowerMessage.includes('external')) {
-      const internalAgents = agents.filter(a => a.access_level === 'internal');
-      const externalAgents = agents.filter(a => a.access_level === 'external');
-      response += `Agents are categorized by access level:\n\n`;
-      response += `**Internal Agents** (${internalAgents.length}): Available only within Ericsson\n`;
-      response += `**External Agents** (${externalAgents.length}): Can be accessed by external partners\n\n`;
-      if (internalAgents.length > 0) {
-        response += `Internal agents include: ${internalAgents.map(a => a.name).join(', ')}\n`;
-      }
-      if (externalAgents.length > 0) {
-        response += `External agents include: ${externalAgents.map(a => a.name).join(', ')}`;
-      }
     } else {
       response += "I'm here to help with the AI-DU Portal! I can explain GenAI agents, dashboard metrics, user roles, navigation, and troubleshooting. ";
       if (agents.length > 0) {
@@ -170,8 +179,7 @@ Provide a helpful, accurate response as NOVA using the real agent data above:`,
       response += "What would you like to know about?";
     }
 
-    console.log('📝 NOVA enhanced fallback response sent with real data');
-    res.json({ response });
+    res.json({ response, source: 'fallback' });
 
   } catch (error) {
     console.error('❌ Error in NOVA chat:', error);
