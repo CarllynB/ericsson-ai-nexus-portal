@@ -47,30 +47,19 @@ const TalkToNova = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentMessage = inputMessage;
     setInputMessage("");
     setIsLoading(true);
 
     try {
-      // Try to connect to Ollama first
-      const response = await fetch('http://localhost:11434/api/generate', {
+      // Use the backend API endpoint for NOVA chat
+      const response = await fetch('/api/nova/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama3.2', // or 'mistral' depending on what's installed
-          prompt: `You are NOVA, the AI-DU Portal assistant. You help users navigate GenAI agents, answer technical questions, and explain portal features.
-
-Context about the AI-DU Portal:
-- This is an internal portal for the AI & Data Unit at Ericsson
-- It manages various GenAI agents and tracks their performance
-- Users can view agent metrics, time savings, and usage statistics
-- The portal has different user roles and permissions
-
-User question: ${inputMessage}
-
-Provide a helpful, accurate response as NOVA:`,
-          stream: false
+          message: currentMessage
         })
       });
 
@@ -86,15 +75,15 @@ Provide a helpful, accurate response as NOVA:`,
 
         setMessages(prev => [...prev, novaMessage]);
       } else {
-        throw new Error('Ollama connection failed');
+        throw new Error(`API call failed: ${response.status}`);
       }
     } catch (error) {
-      console.error('Error connecting to Ollama:', error);
+      console.error('Error connecting to NOVA API:', error);
       
-      // Fallback response when Ollama is not available
+      // Fallback response when API is not available
       let fallbackResponse = "I'm NOVA, your AI-DU Portal assistant! ";
       
-      const lowerMessage = inputMessage.toLowerCase();
+      const lowerMessage = currentMessage.toLowerCase();
       
       if (lowerMessage.includes('agent') || lowerMessage.includes('genai')) {
         fallbackResponse += "I can help you understand our GenAI agents in the portal. Each agent has specific capabilities like code generation, content creation, data analysis, and more. Would you like to know about any specific agent category?";
@@ -105,7 +94,7 @@ Provide a helpful, accurate response as NOVA:`,
       } else {
         fallbackResponse += `I'm here to help with the AI-DU Portal! I can explain GenAI agents, dashboard metrics, user roles, navigation, and troubleshooting. What would you like to know about?
 
-Note: I'm currently running in fallback mode. For full AI capabilities, make sure Ollama is running with a compatible model like llama3.2 or mistral.`;
+Note: I'm currently running in fallback mode. The backend API may be unavailable or Ollama may not be running.`;
       }
 
       const errorMessage: ChatMessage = {
@@ -119,7 +108,7 @@ Note: I'm currently running in fallback mode. For full AI capabilities, make sur
       
       toast({
         title: "Using Fallback Mode",
-        description: "NOVA is running with limited responses. Install Ollama for full AI capabilities.",
+        description: "NOVA backend API unavailable. Install Ollama and restart the server for full capabilities.",
         variant: "default"
       });
     } finally {
@@ -244,7 +233,7 @@ Note: I'm currently running in fallback mode. For full AI capabilities, make sur
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Powered by Ollama Llama - Install Ollama and run 'ollama run llama3.2' for full AI capabilities
+                Powered by backend API + Ollama - Install Ollama and run 'ollama run llama3.2' for full AI capabilities
               </p>
             </div>
           </CardContent>
