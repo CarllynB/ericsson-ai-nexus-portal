@@ -145,12 +145,12 @@ const TalkToNova = () => {
             <img 
               src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
               alt="NOVA" 
-              className="w-10 h-10"
+              className="w-8 h-8"
             />
             Talk to NOVA
           </h1>
           <p className="text-muted-foreground mt-2">
-            Your AI-DU Portal Assistant
+            Your AI-DU Portal assistant powered by local AI
           </p>
         </div>
 
