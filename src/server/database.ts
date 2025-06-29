@@ -1,4 +1,3 @@
-
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import bcrypt from 'bcryptjs';
@@ -71,6 +70,18 @@ export const setupDatabase = async (): Promise<void> => {
             is_default BOOLEAN NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
             updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+          )
+        `);
+
+        // Create nova_settings table
+        db.run(`
+          CREATE TABLE IF NOT EXISTS nova_settings (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            is_live BOOLEAN DEFAULT 0,
+            available_to_all BOOLEAN DEFAULT 0,
+            updated_by TEXT,
+            updated_at TEXT DEFAULT (datetime('now')),
+            created_at TEXT DEFAULT (datetime('now'))
           )
         `);
 
