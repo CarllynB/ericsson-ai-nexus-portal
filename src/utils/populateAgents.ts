@@ -1,5 +1,10 @@
+
 import { dbRun } from "@/server/database";
-import { v4 as uuidv4 } from 'uuid';
+
+// Simple ID generation function for browser compatibility
+const generateId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
 
 // Function to clear all agents from the database
 export const clearAllAgents = async (): Promise<boolean> => {
@@ -44,7 +49,7 @@ export const populateDefaultAgents = async () => {
 
     const defaultAgents = [
       {
-        id: uuidv4(),
+        id: generateId(),
         name: 'Code Companion',
         description: 'Assists with code generation, debugging, and documentation.',
         category: 'Development',
@@ -63,7 +68,7 @@ export const populateDefaultAgents = async () => {
         impact_score: 8
       },
       {
-        id: uuidv4(),
+        id: generateId(),
         name: 'Content Curator',
         description: 'Generates engaging content for marketing and social media.',
         category: 'Marketing',
@@ -82,7 +87,7 @@ export const populateDefaultAgents = async () => {
         impact_score: 9
       },
       {
-        id: uuidv4(),
+        id: generateId(),
         name: 'Data Detective',
         description: 'Analyzes data to provide insights and improve decision-making.',
         category: 'Analytics',
@@ -101,7 +106,7 @@ export const populateDefaultAgents = async () => {
         impact_score: 7
       },
       {
-        id: uuidv4(),
+        id: generateId(),
         name: 'HR Helper',
         description: 'Automates HR tasks such as onboarding and policy updates.',
         category: 'HR',
@@ -123,7 +128,7 @@ export const populateDefaultAgents = async () => {
         impact_score: 0
       },
       {
-        id: uuidv4(),
+        id: generateId(),
         name: 'Sales Navigator',
         description: 'Provides sales teams with real-time leads and customer insights.',
         category: 'Sales',
@@ -142,7 +147,7 @@ export const populateDefaultAgents = async () => {
         impact_score: 6
       },
       {
-        id: uuidv4(),
+        id: generateId(),
         name: 'Legal Eagle',
         description: 'Assists with legal research, contract review, and compliance.',
         category: 'Legal',
@@ -164,7 +169,7 @@ export const populateDefaultAgents = async () => {
         impact_score: 5
       },
       {
-        id: uuidv4(),
+        id: generateId(),
         name: 'Market Maven',
         description: 'Analyzes market trends and customer behavior to optimize marketing strategies.',
         category: 'Marketing',
@@ -183,7 +188,7 @@ export const populateDefaultAgents = async () => {
         impact_score: 8
       },
       {
-        id: uuidv4(),
+        id: generateId(),
         name: 'Financial Forecaster',
         description: 'Predicts financial trends and provides investment recommendations.',
         category: 'Finance',
@@ -202,7 +207,7 @@ export const populateDefaultAgents = async () => {
         impact_score: 7
       },
       {
-        id: uuidv4(),
+        id: generateId(),
         name: 'Supply Chain Sage',
         description: 'Optimizes supply chain operations and reduces costs.',
         category: 'Supply Chain',
@@ -221,7 +226,7 @@ export const populateDefaultAgents = async () => {
         impact_score: 9
       },
       {
-        id: uuidv4(),
+        id: generateId(),
         name: 'Customer Care Champ',
         description: 'Enhances customer service and improves customer satisfaction.',
         category: 'Customer Service',
