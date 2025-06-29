@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { X, LogIn, Settings, Shield, UserPlus, ExternalLink, Menu } from "lucide-react";
+import { X, LogIn, Settings, Shield, UserPlus, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
 import { UserProfileMenu } from "@/components/UserProfileMenu";
@@ -40,14 +39,8 @@ export const Layout = ({ children }: LayoutProps) => {
   const isAdmin = isAuthenticated && !rolesLoading && (currentUserRole === 'admin' || currentUserRole === 'super_admin');
   const isSuperAdmin = isAuthenticated && !rolesLoading && currentUserRole === 'super_admin';
 
-  // Filter sidebar items based on user role
-  const filteredItems = items.filter(item => {
-    // NOVA is only visible to Super Admins for now
-    if (item.id === 'talk-to-nova') {
-      return isSuperAdmin;
-    }
-    return true;
-  });
+  // Show all sidebar items to all users - no filtering
+  const filteredItems = items;
 
   console.log('Layout debug:', { 
     user: !!user, 
@@ -146,7 +139,7 @@ export const Layout = ({ children }: LayoutProps) => {
         </div>
 
         <nav className="p-6 space-y-2">
-          {/* Dynamic Sidebar Items */}
+          {/* Dynamic Sidebar Items - No external link icons */}
           {filteredItems.map((item) => (
             <button
               key={item.id}
@@ -155,9 +148,6 @@ export const Layout = ({ children }: LayoutProps) => {
             >
               <div className="w-2 h-2 bg-primary rounded-full" />
               <span className="font-medium">{item.title}</span>
-              {(item.url.startsWith('http://') || item.url.startsWith('https://')) && (
-                <ExternalLink className="w-3 h-3 ml-auto text-muted-foreground" />
-              )}
             </button>
           ))}
 

@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -145,12 +144,12 @@ const TalkToNova = () => {
             <img 
               src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
               alt="NOVA" 
-              className="w-8 h-8"
+              className="w-12 h-12"
             />
             Talk to NOVA
           </h1>
           <p className="text-muted-foreground mt-2">
-            Your AI-DU Portal assistant powered by local AI
+            Your AI-DU Portal Assistant
           </p>
         </div>
 
