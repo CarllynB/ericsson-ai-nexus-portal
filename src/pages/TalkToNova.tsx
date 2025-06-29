@@ -80,7 +80,7 @@ const TalkToNova = () => {
     } catch (error) {
       console.error('Error connecting to NOVA API:', error);
       
-      // Fallback response when API is not available
+      // Enhanced fallback response
       let fallbackResponse = "I'm NOVA, your AI-DU Portal assistant! ";
       
       const lowerMessage = currentMessage.toLowerCase();
@@ -92,9 +92,7 @@ const TalkToNova = () => {
       } else if (lowerMessage.includes('role') || lowerMessage.includes('permission')) {
         fallbackResponse += "Our portal has different user roles: Super Admins can manage everything, Admins can manage agents and users, and Viewers have read-only access. Your role determines what features you can access.";
       } else {
-        fallbackResponse += `I'm here to help with the AI-DU Portal! I can explain GenAI agents, dashboard metrics, user roles, navigation, and troubleshooting. What would you like to know about?
-
-Note: I'm currently running in fallback mode. The backend API may be unavailable or Ollama may not be running.`;
+        fallbackResponse += "I'm here to help with the AI-DU Portal! I can explain GenAI agents, dashboard metrics, user roles, navigation, and troubleshooting. What would you like to know about?";
       }
 
       const errorMessage: ChatMessage = {
@@ -105,12 +103,6 @@ Note: I'm currently running in fallback mode. The backend API may be unavailable
       };
 
       setMessages(prev => [...prev, errorMessage]);
-      
-      toast({
-        title: "Using Fallback Mode",
-        description: "NOVA backend API unavailable. Install Ollama and restart the server for full capabilities.",
-        variant: "default"
-      });
     } finally {
       setIsLoading(false);
     }
@@ -148,7 +140,7 @@ Note: I'm currently running in fallback mode. The backend API may be unavailable
             Talk to NOVA
           </h1>
           <p className="text-muted-foreground mt-2">
-            Your AI-DU Portal assistant powered by Llama
+            Your AI-DU Portal assistant
           </p>
         </div>
 
@@ -160,61 +152,68 @@ Note: I'm currently running in fallback mode. The backend API may be unavailable
           <CardContent className="flex-1 flex flex-col p-0">
             <ScrollArea 
               ref={scrollAreaRef}
-              className="flex-1 p-4 space-y-4"
+              className="flex-1 p-4"
             >
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {message.type === 'nova' && (
-                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+              <div className="space-y-4">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {message.type === 'nova' && (
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-1">
+                        <img 
+                          src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
+                          alt="NOVA" 
+                          className="w-5 h-5"
+                        />
+                      </div>
+                    )}
+                    
+                    <div
+                      className={`max-w-[75%] rounded-lg p-4 ${
+                        message.type === 'user'
+                          ? 'bg-primary text-primary-foreground ml-auto'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                        {message.content}
+                      </div>
+                      <div className="text-xs opacity-60 mt-2">
+                        {message.timestamp.toLocaleTimeString()}
+                      </div>
+                    </div>
+
+                    {message.type === 'user' && (
+                      <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 mt-1">
+                        <User className="w-4 h-4" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                
+                {isLoading && (
+                  <div className="flex gap-3 justify-start">
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-1">
                       <img 
                         src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
                         alt="NOVA" 
-                        className="w-6 h-6"
+                        className="w-5 h-5"
                       />
                     </div>
-                  )}
-                  
-                  <div
-                    className={`max-w-[70%] rounded-lg p-3 ${
-                      message.type === 'user'
-                        ? 'bg-primary text-primary-foreground ml-auto'
-                        : 'bg-muted'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    <span className="text-xs opacity-70 mt-1 block">
-                      {message.timestamp.toLocaleTimeString()}
-                    </span>
-                  </div>
-
-                  {message.type === 'user' && (
-                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                      <User className="w-4 h-4" />
+                    <div className="bg-muted rounded-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm text-muted-foreground">NOVA is thinking...</span>
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
-              
-              {isLoading && (
-                <div className="flex gap-3 justify-start">
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                    <img 
-                      src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
-                      alt="NOVA" 
-                      className="w-6 h-6"
-                    />
                   </div>
-                  <div className="bg-muted rounded-lg p-3">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </ScrollArea>
 
-            <div className="p-4 border-t">
+            <div className="p-4 border-t bg-background">
               <div className="flex gap-2">
                 <Input
                   value={inputMessage}
@@ -232,9 +231,6 @@ Note: I'm currently running in fallback mode. The backend API may be unavailable
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Powered by backend API + Ollama - Install Ollama and run 'ollama run llama3.2' for full AI capabilities
-              </p>
             </div>
           </CardContent>
         </Card>
