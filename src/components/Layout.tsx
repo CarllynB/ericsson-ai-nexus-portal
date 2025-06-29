@@ -1,247 +1,167 @@
-
 import { useState } from "react";
-import { X, LogIn, Settings, Shield, UserPlus, ExternalLink, Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { SignInModal } from "@/components/SignInModal";
-import { UserProfileMenu } from "@/components/UserProfileMenu";
-import { useRoles } from "@/hooks/useRoles";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { AgentManagement } from "@/components/AgentManagement";
-import { RoleManagement } from "@/components/RoleManagement";
-import { SidebarManagement } from "@/components/SidebarManagement";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useRoles } from "@/hooks/useRoles";
+import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarTrigger } from "@/components/ui/sidebar";
+import { ModeToggle } from "@/components/ui/mode-toggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User2, Settings, Plus, Bot } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSidebarItems } from "@/hooks/useSidebarItems";
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-export const Layout = ({ children }: LayoutProps) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [signInOpen, setSignInOpen] = useState(false);
-  const [roleManagementOpen, setRoleManagementOpen] = useState(false);
-  const [agentManagementOpen, setAgentManagementOpen] = useState(false);
-  const [sidebarManagementOpen, setSidebarManagementOpen] = useState(false);
-  const { currentUserRole, loading: rolesLoading } = useRoles();
-  const { user, loading: authLoading } = useAuth();
+export const Layout = ({ children }: { children: React.ReactNode }) => {
+  const { user, signOut } = useAuth();
+  const { currentUserRole, isSuperAdmin } = useRoles();
+  const location = useLocation();
   const { items } = useSidebarItems();
-
-  const handleNavigation = (url: string) => {
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      window.open(url, '_blank');
-    } else {
-      window.location.href = url;
-    }
-    setSidebarOpen(false);
-  };
-
-  // Don't show admin panels if loading or not authenticated
-  const isAuthenticated = !!user && !authLoading;
-  const isAdmin = isAuthenticated && !rolesLoading && (currentUserRole === 'admin' || currentUserRole === 'super_admin');
-  const isSuperAdmin = isAuthenticated && !rolesLoading && currentUserRole === 'super_admin';
-
-  console.log('Layout debug:', { 
-    user: !!user, 
-    authLoading, 
-    rolesLoading, 
-    currentUserRole, 
-    isAuthenticated, 
-    isAdmin, 
-    isSuperAdmin 
-  });
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            {/* Menu button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="flex items-center justify-center hover:bg-primary/10"
-            >
-              <div className="w-6 h-6 flex items-center justify-center">
-                <img 
-                  src="/lovable-uploads/ead09f29-c601-44f5-8578-508b00189e3e.png" 
-                  alt="Menu" 
-                  className="w-5 h-5 object-contain"
-                />
-              </div>
-            </Button>
-            <button 
-              onClick={() => window.location.href = '/'}
-              className="text-xl font-bold text-foreground hover:text-primary transition-colors cursor-pointer"
-            >
-              AI-DU Agent Portal
-            </button>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {user ? (
-              <UserProfileMenu email={user.email} />
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSignInOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <LogIn className="w-4 h-4" />
-                Sign In
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Sidebar Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 h-full w-80 bg-card border-r border-border z-50 transform transition-transform duration-300 ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center">
-              <img 
-                src="/lovable-uploads/a0c9376e-fd07-4f06-aae2-04764228ec6e.png" 
-                alt="Ericsson Logo" 
-                className="w-8 h-8 object-contain"
-              />
+    <SidebarProvider>
+      <div className="flex h-screen">
+        <Sidebar className="md:w-64 flex-none border-r">
+          <SidebarHeader className="m-4">
+            <div className="flex items-center justify-between">
+              <h1 className="text-lg font-semibold">AI-DU Agent Portal</h1>
+              <SidebarTrigger />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">AI-DU Agent Portal</p>
-              {isAuthenticated && currentUserRole && (
-                <p className="text-xs text-primary font-medium">
-                  {currentUserRole.replace('_', ' ').toUpperCase()}
-                </p>
-              )}
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
+          </SidebarHeader>
 
-        <nav className="p-6 space-y-2">
-          {/* Dynamic Sidebar Items */}
-          {items.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleNavigation(item.url)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left"
-            >
-              <div className="w-2 h-2 bg-primary rounded-full" />
-              <span className="font-medium">{item.title}</span>
-              {(item.url.startsWith('http://') || item.url.startsWith('https://')) && (
-                <ExternalLink className="w-3 h-3 ml-auto text-muted-foreground" />
-              )}
-            </button>
-          ))}
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={location.pathname === "/"}>
+                  <Link to="/" className="flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-4 w-4"
+                    >
+                      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                      <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    <span>Home</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={location.pathname === "/agents"}>
+                  <Link to="/agents" className="flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-4 w-4"
+                    >
+                      <path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2Z" />
+                      <path d="m12 8 4 4-4 4" />
+                      <path d="M8 12h8" />
+                    </svg>
+                    <span>Agents</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              {currentUserRole === 'admin' || currentUserRole === 'super_admin' ? (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location.pathname === "/dashboard"}>
+                    <Link to="/dashboard" className="flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4"
+                      >
+                        <rect width="7" height="9" x="3" y="3" rx="1" />
+                        <rect width="7" height="5" x="14" y="3" rx="1" />
+                        <rect width="7" height="7" x="14" y="14" rx="1" />
+                        <rect width="7" height="9" x="3" y="12" rx="1" />
+                      </svg>
+                      <span>Dashboard</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ) : null}
 
-          {/* Admin Section - Only show for admin (not super admin) */}
-          {isAdmin && currentUserRole === 'admin' && (
-            <div className="pt-4 border-t border-border">
-              <div className="px-4 py-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Admin Panel
-                </p>
-              </div>
+              {items.map(item => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton asChild isActive={location.pathname === item.url}>
+                    <Link to={item.url} className="flex items-center gap-2">
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
               
-              <Dialog open={agentManagementOpen} onOpenChange={setAgentManagementOpen}>
-                <DialogTrigger asChild>
-                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left">
-                    <Settings className="w-4 h-4" />
-                    <span className="font-medium">Manage Agents</span>
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Agent Management</DialogTitle>
-                  </DialogHeader>
-                  <AgentManagement />
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
+            {isSuperAdmin && (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={location.pathname === "/talk-to-nova"}>
+                  <Link to="/talk-to-nova" className="flex items-center gap-2">
+                    <Bot className="h-4 w-4" />
+                    <span>Talk to NOVA</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+            
+            </SidebarGroup>
+          </SidebarContent>
 
-          {/* Super Admin Section - Only show for super admin */}
-          {isSuperAdmin && (
-            <div className="pt-4 border-t border-border">
-              <div className="px-4 py-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Super Admin
-                </p>
-              </div>
+          <div className="p-4">
+            <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex h-8 w-full items-center justify-between rounded-md">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user?.image} alt={user?.name || "Avatar"} />
+                      <AvatarFallback>{user?.name?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium">{user?.name}</span>
+                  </div>
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem disabled>
+                  <User2 className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => signOut()}>
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </Sidebar>
 
-              <Dialog open={agentManagementOpen} onOpenChange={setAgentManagementOpen}>
-                <DialogTrigger asChild>
-                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left">
-                    <Settings className="w-4 h-4" />
-                    <span className="font-medium">Manage Agents</span>
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Agent Management</DialogTitle>
-                  </DialogHeader>
-                  <AgentManagement />
-                </DialogContent>
-              </Dialog>
-
-              <Dialog open={roleManagementOpen} onOpenChange={setRoleManagementOpen}>
-                <DialogTrigger asChild>
-                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left">
-                    <Shield className="w-4 h-4" />
-                    <span className="font-medium">Manage Roles</span>
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl">
-                  <DialogHeader>
-                    <DialogTitle>Role Management</DialogTitle>
-                  </DialogHeader>
-                  <RoleManagement />
-                </DialogContent>
-              </Dialog>
-
-              <Dialog open={sidebarManagementOpen} onOpenChange={setSidebarManagementOpen}>
-                <DialogTrigger asChild>
-                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-left">
-                    <Menu className="w-4 h-4" />
-                    <span className="font-medium">Manage Sidebar</span>
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Sidebar Management</DialogTitle>
-                  </DialogHeader>
-                  <SidebarManagement />
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
-        </nav>
-      </aside>
-
-      {/* Main Content */}
-      <main className="pt-20">
-        {children}
-      </main>
-
-      <SignInModal open={signInOpen} onOpenChange={setSignInOpen} />
-    </div>
+        <div className="flex-1">
+          <main className="container relative py-8">
+            {children}
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 };

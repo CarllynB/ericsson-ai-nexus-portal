@@ -1,67 +1,112 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRoles } from "@/hooks/useRoles";
+import { useAgents } from "@/hooks/useAgents";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { DataTableView } from "@/components/data-table-view";
+import { AgentManagement } from "@/components/AgentManagement";
+import { UserManagement } from "@/components/UserManagement";
+import { NovaSettings } from "@/components/NovaSettings";
 
 const Dashboard = () => {
+  const { isAdmin, isSuperAdmin } = useRoles();
+  const { agents, loading, error } = useAgents();
+  const [timeSavings, setTimeSavings] = useState(0);
+  const [dollarSavings, setDollarSavings] = useState(0);
+
+  useEffect(() => {
+    // Mock data for time and dollar savings
+    setTimeSavings(1234);
+    setDollarSavings(5678);
+  }, []);
+
   return (
     <div className="min-h-screen px-6 py-12">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center space-y-4 mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-            Dashboard
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Monitor and manage the AI-DU Agents
-          </p>
-        </div>
+        <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
 
-        {/* Coming Soon Card */}
-        <div className="flex items-center justify-center">
-          <Card className="max-w-2xl w-full text-center border-dashed border-2 border-primary/30">
-            <CardHeader className="pb-6">
-              <div className="w-24 h-24 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full mx-auto mb-6 flex items-center justify-center">
-                <div className="w-12 h-12 bg-primary/30 rounded-full flex items-center justify-center">
-                  <div className="w-6 h-6 bg-primary rounded-full animate-pulse" />
-                </div>
+        <Tabs defaultValue="agents" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="agents">Agents</TabsTrigger>
+            {isAdmin && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
+            {isSuperAdmin && <TabsTrigger value="user-management">User Management</TabsTrigger>}
+            {isSuperAdmin && <TabsTrigger value="agent-management">Agent Management</TabsTrigger>}
+            {isSuperAdmin && (
+              <TabsTrigger value="nova-settings">NOVA Settings</TabsTrigger>
+            )}
+          </TabsList>
+          <TabsContent value="agents" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Agent List</CardTitle>
+                <CardDescription>
+                  View and manage the list of available agents.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DataTableView agents={agents} loading={loading} error={error} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="analytics" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Time Savings</CardTitle>
+                    <CardDescription>
+                      Total time saved by using AI agents.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{timeSavings} hours</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Dollar Savings</CardTitle>
+                    <CardDescription>
+                      Total dollar amount saved by using AI agents.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">${dollarSavings}</div>
+                  </CardContent>
+                </Card>
               </div>
-              <CardTitle className="text-3xl font-bold text-foreground">
-                Coming Soon
-              </CardTitle>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
-              <p className="text-lg text-muted-foreground">
-                We're working hard to bring you an amazing dashboard experience with:
-              </p>
-              
-              <div className="space-y-3 text-left max-w-md mx-auto">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full" />
-                  <span className="text-sm">Real-time agent monitoring</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full" />
-                  <span className="text-sm">Performance analytics</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full" />
-                  <span className="text-sm">Usage statistics</span>
-                </div>
-              </div>
-              
-              <div className="pt-4">
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  onClick={() => window.location.href = '/agents'}
-                >
-                  Explore Agents Meanwhile
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Adoption</CardTitle>
+                  <CardDescription>
+                    Agent adoption rate over time.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div>[Adoption Graph]</div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+          {isSuperAdmin && (
+            <TabsContent value="user-management" className="space-y-6">
+              <UserManagement />
+            </TabsContent>
+          )}
+          {isSuperAdmin && (
+            <TabsContent value="agent-management" className="space-y-6">
+              <AgentManagement />
+            </TabsContent>
+          )}
+
+          {isSuperAdmin && (
+            <TabsContent value="nova-settings" className="space-y-6">
+              <NovaSettings />
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
     </div>
   );
