@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Bot, Home, BarChart3, Users, Settings, LogOut, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,12 @@ interface NovaSettings {
   is_live: boolean;
 }
 
-const Layout = () => {
-  const { user, signOut } = useAuth();
+interface LayoutProps {
+  children?: ReactNode;
+}
+
+const Layout = ({ children }: LayoutProps) => {
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [showSignIn, setShowSignIn] = useState(false);
@@ -93,13 +97,13 @@ const Layout = () => {
     ...sidebarItemsWithNova,
     ...customSidebarItems.map(item => ({
       ...item,
-      icon: item.url.startsWith('http') ? undefined : Home, // No icon for external links
+      icon: item.url.startsWith('http') ? undefined : Home,
       isExternal: item.url.startsWith('http')
     }))
   ];
 
   const handleSignOut = () => {
-    signOut();
+    logout();
     navigate('/');
     toast({
       title: "Signed out successfully",
@@ -167,8 +171,8 @@ const Layout = () => {
           </div>
         </div>
         <SignInModal 
-          isOpen={showSignIn} 
-          onClose={() => setShowSignIn(false)} 
+          open={showSignIn} 
+          onOpenChange={setShowSignIn} 
         />
         <OfflineIndicator />
       </div>
@@ -184,7 +188,7 @@ const Layout = () => {
           <span className="font-semibold">AI-DU Portal</span>
         </div>
         <div className="flex items-center gap-2">
-          <UserProfileMenu />
+          <UserProfileMenu email={user.email || ''} />
           <Button
             variant="ghost"
             size="icon"
@@ -243,7 +247,7 @@ const Layout = () => {
                 <div>
                   <h2 className="font-semibold">AI-DU Portal</h2>
                   <p className="text-sm text-muted-foreground">
-                    Welcome, {user.name}
+                    Welcome, {user.email}
                   </p>
                 </div>
               </div>
@@ -261,10 +265,10 @@ const Layout = () => {
                   <User className="w-4 h-4 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{user.name}</p>
+                  <p className="text-sm font-medium truncate">{user.email}</p>
                   <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
                 </div>
-                <UserProfileMenu />
+                <UserProfileMenu email={user.email || ''} />
               </div>
               <Button
                 variant="ghost"
@@ -281,7 +285,7 @@ const Layout = () => {
         {/* Main Content */}
         <div className="flex-1 lg:ml-64">
           <main className="min-h-screen">
-            <Outlet />
+            {children || <Outlet />}
           </main>
         </div>
       </div>
