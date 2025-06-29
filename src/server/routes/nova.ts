@@ -38,36 +38,6 @@ const getNovaSettings = async () => {
   }
 };
 
-// Auto-warmup function to prevent cold starts
-const warmupOllama = async () => {
-  try {
-    console.log('🔥 Warming up Ollama connection...');
-    const response = await fetch('http://localhost:11434/api/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama3.2',
-        prompt: 'Hello',
-        stream: false
-      }),
-      signal: AbortSignal.timeout(10000) // 10 second timeout for warmup
-    });
-    
-    if (response.ok) {
-      console.log('✅ Ollama warmed up successfully');
-    } else {
-      console.log('⚠️ Ollama warmup responded with status:', response.status);
-    }
-  } catch (error) {
-    console.log('⚠️ Ollama warmup failed:', error.message);
-  }
-};
-
-// Start warmup process when the module loads
-warmupOllama();
-
 // Test Ollama connection
 const testOllamaConnection = async () => {
   try {
@@ -156,8 +126,7 @@ User question: ${message}
 
 Provide a helpful, accurate response as NOVA using the real agent data above. Keep responses concise and focused on the AI-DU Portal context:`,
             stream: false
-          }),
-          signal: AbortSignal.timeout(30000) // 30 second timeout
+          })
         });
 
         if (ollamaResponse.ok) {
@@ -218,8 +187,8 @@ Provide a helpful, accurate response as NOVA using the real agent data above. Ke
   }
 });
 
-// Get NOVA status/settings - NOW ACCESSIBLE TO EVERYONE (no auth required)
-router.get('/status', async (req, res) => {
+// Get NOVA status/settings
+router.get('/status', authenticateToken, requireRole(['super_admin']), async (req, res) => {
   try {
     // Check if Ollama is available
     let ollamaStatus = 'disconnected';
