@@ -43,7 +43,7 @@ const testOllamaConnection = async () => {
   try {
     const response = await fetch('http://localhost:11434/api/tags', {
       method: 'GET',
-      signal: AbortSignal.timeout(5000) // 5 second timeout
+      signal: AbortSignal.timeout(3000) // Reduced timeout
     });
     
     if (response.ok) {
@@ -109,7 +109,7 @@ ${agents.map(agent => `
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'mistral',
+            model: 'llama3.2',
             prompt: `You are NOVA, the AI-DU Portal assistant. You help users navigate GenAI agents, answer technical questions, and explain portal features.
 
 Context about the AI-DU Portal:
@@ -125,8 +125,17 @@ ${agentContext}
 User question: ${message}
 
 Provide a helpful, accurate response as NOVA using the real agent data above. Keep responses concise and focused on the AI-DU Portal context:`,
-            stream: false
-          })
+            stream: false,
+            options: {
+              temperature: 0.3,
+              top_p: 0.8,
+              top_k: 20,
+              repeat_penalty: 1.1,
+              num_predict: 200, // Limit response length for speed
+              num_ctx: 2048 // Reduced context window for speed
+            }
+          }),
+          signal: AbortSignal.timeout(15000) // 15 second timeout
         });
 
         if (ollamaResponse.ok) {
@@ -148,17 +157,14 @@ Provide a helpful, accurate response as NOVA using the real agent data above. Ke
     
     const lowerMessage = message.toLowerCase();
     
-    if (lowerMessage.includes('devmate') || lowerMessage.includes('dev mate')) {
-      const devmateAgent = agents.find(a => a.name.toLowerCase().includes('devmate') || a.name.toLowerCase().includes('dev mate'));
-      if (devmateAgent) {
-        response += `DevMate is one of our GenAI agents: ${devmateAgent.description}\n\n`;
-        response += `**Use Cases:** ${devmateAgent.use_cases}\n`;
-        response += `**Access Level:** ${devmateAgent.access_level}\n`;
-        response += `**Usage:** ${devmateAgent.usage_count} times with ${devmateAgent.average_time_saved} minutes saved per use\n`;
-        response += `**Impact Score:** ${devmateAgent.impact_score}`;
-      } else {
-        response += "I don't see a DevMate agent in our current database. Could you check the agent name or ask about other available agents?";
-      }
+    if (lowerMessage.includes('deploy') || lowerMessage.includes('deployment')) {
+      response += "To deploy an agent in the AI-DU Portal:\n\n";
+      response += "1. **Super Admins** can add new agents through the Agent Management section\n";
+      response += "2. Configure the agent's name, description, category, and use cases\n";
+      response += "3. Set the appropriate access level (Public, Internal, or Restricted)\n";
+      response += "4. Test the agent functionality before making it active\n";
+      response += "5. Monitor usage metrics and performance through the dashboard\n\n";
+      response += "Would you like more details about any of these steps?";
     } else if (lowerMessage.includes('agent') || lowerMessage.includes('genai')) {
       if (agents.length > 0) {
         const topAgents = agents.slice(0, 3);

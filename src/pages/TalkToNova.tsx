@@ -29,13 +29,12 @@ const TalkToNova = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
   const sendMessage = async () => {
@@ -57,7 +56,6 @@ const TalkToNova = () => {
     try {
       console.log('Sending message to NOVA API:', currentMessage);
       
-      // Use the backend API endpoint for NOVA chat
       const response = await fetch('/api/nova/chat', {
         method: 'POST',
         headers: {
@@ -73,8 +71,8 @@ const TalkToNova = () => {
         const data = await response.json();
         console.log('NOVA response received:', data.source || 'unknown');
         
-        // Simulate typing delay for better UX
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Minimal typing delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         const novaMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
@@ -86,11 +84,11 @@ const TalkToNova = () => {
 
         setMessages(prev => [...prev, novaMessage]);
         
-        // Show connection status
+        // Show connection status only for Ollama
         if (data.source === 'ollama') {
           toast({
-            title: "🤖 Ollama Connected",
-            description: "NOVA is using local AI for responses",
+            title: "🤖 AI Connected",
+            description: "NOVA is using local AI",
             duration: 2000
           });
         }
@@ -103,7 +101,7 @@ const TalkToNova = () => {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'nova',
-        content: "I'm sorry, I'm having trouble connecting right now. Please check that the backend server is running and try again.",
+        content: "I'm having trouble connecting right now. Please check that the backend server is running and try again.",
         timestamp: new Date()
       };
 
@@ -111,7 +109,7 @@ const TalkToNova = () => {
       
       toast({
         title: "Connection Error",
-        description: "Failed to connect to NOVA. Check backend server.",
+        description: "Failed to connect to NOVA",
         variant: "destructive"
       });
     } finally {
@@ -189,7 +187,7 @@ const TalkToNova = () => {
                           : 'bg-muted'
                       }`}
                     >
-                      <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-break-word">
                         {message.content}
                       </div>
                       <div className="flex items-center justify-between mt-2">
@@ -235,11 +233,11 @@ const TalkToNova = () => {
                           <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                           <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                         </div>
-                        <span className="text-sm text-muted-foreground">NOVA is thinking...</span>
                       </div>
                     </div>
                   </div>
                 )}
+                <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
 
