@@ -70,9 +70,6 @@ const TalkToNova = () => {
         const data = await response.json();
         console.log('NOVA response received:', data.source || 'unknown');
         
-        // Minimal typing delay for better UX
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
         const novaMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           type: 'nova',

@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { dbAll, dbGet, dbRun } from '../database';
@@ -43,7 +42,7 @@ const testOllamaConnection = async () => {
   try {
     const response = await fetch('http://localhost:11434/api/tags', {
       method: 'GET',
-      signal: AbortSignal.timeout(3000) // Reduced timeout
+      signal: AbortSignal.timeout(2000) // Quick timeout for connection test
     });
     
     if (response.ok) {
@@ -84,18 +83,10 @@ router.post('/chat', authenticateToken, async (req: AuthenticatedRequest, res) =
     // Get real agent data from database
     const agents = await getAgentData();
     
-    // Build context with real agent data
+    // Build simpler context with real agent data
     const agentContext = agents.length > 0 ? `
-Current Active Agents in the Portal:
-${agents.map(agent => `
-- ${agent.name} (${agent.category}): ${agent.description}
-  Use cases: ${agent.use_cases}
-  Access: ${agent.access_level}
-  Usage: ${agent.usage_count} times
-  Time saved: ${agent.average_time_saved} minutes average
-  Impact score: ${agent.impact_score}
-`).join('')}
-` : 'No active agents found in the database.';
+Active Agents: ${agents.map(agent => `${agent.name} (${agent.category}): ${agent.description}`).join(', ')}
+` : 'No active agents found.';
 
     // Test Ollama connection first
     const ollamaConnected = await testOllamaConnection();
@@ -110,32 +101,21 @@ ${agents.map(agent => `
           },
           body: JSON.stringify({
             model: 'llama3.2',
-            prompt: `You are NOVA, the AI-DU Portal assistant. You help users navigate GenAI agents, answer technical questions, and explain portal features.
+            prompt: `You are NOVA, the AI-DU Portal assistant. Help users with GenAI agents and portal features.
 
-Context about the AI-DU Portal:
-- This is an internal portal for the AI & Data Unit at Ericsson
-- It manages various GenAI agents and tracks their performance
-- Users can view agent metrics, time savings, and usage statistics
-- The portal has different user roles: Super Admin, Admin, and Viewer
-- Super Admins can manage agents, roles, and sidebar items
-- The dashboard shows adoption graphs and KPIs for agent performance
-
-${agentContext}
+Context: ${agentContext}
 
 User question: ${message}
 
-Provide a helpful, accurate response as NOVA using the real agent data above. Keep responses concise and focused on the AI-DU Portal context:`,
+Provide a helpful, concise response as NOVA:`,
             stream: false,
             options: {
               temperature: 0.3,
-              top_p: 0.8,
-              top_k: 20,
-              repeat_penalty: 1.1,
-              num_predict: 200, // Limit response length for speed
-              num_ctx: 2048 // Reduced context window for speed
+              num_predict: 150, // Shorter response for speed
+              num_ctx: 1024    // Smaller context for speed
             }
           }),
-          signal: AbortSignal.timeout(15000) // 15 second timeout
+          signal: AbortSignal.timeout(10000) // 10 second timeout
         });
 
         if (ollamaResponse.ok) {
@@ -151,38 +131,32 @@ Provide a helpful, accurate response as NOVA using the real agent data above. Ke
       }
     }
 
-    // Enhanced fallback response with real agent data
+    // Simple fallback response with real agent data
     console.log('📝 Using enhanced fallback response with real data');
     let response = "I'm NOVA, your AI-DU Portal assistant! ";
     
     const lowerMessage = message.toLowerCase();
     
-    if (lowerMessage.includes('deploy') || lowerMessage.includes('deployment')) {
-      response += "To deploy an agent in the AI-DU Portal:\n\n";
-      response += "1. **Super Admins** can add new agents through the Agent Management section\n";
-      response += "2. Configure the agent's name, description, category, and use cases\n";
-      response += "3. Set the appropriate access level (Public, Internal, or Restricted)\n";
-      response += "4. Test the agent functionality before making it active\n";
-      response += "5. Monitor usage metrics and performance through the dashboard\n\n";
-      response += "Would you like more details about any of these steps?";
-    } else if (lowerMessage.includes('agent') || lowerMessage.includes('genai')) {
+    if (lowerMessage.includes('features') || lowerMessage.includes('portal')) {
+      response += "The AI-DU Portal includes these key features:\n\n";
+      response += "• **Agent Catalog** - Browse and access GenAI agents\n";
+      response += "• **Dashboard** - View adoption metrics and performance\n";
+      response += "• **Role Management** - Super Admins can manage user permissions\n";
+      response += "• **Agent Management** - Add and configure new agents\n";
+      response += "• **NOVA Chat** - AI assistant (that's me!)\n\n";
+      if (agents.length > 0) {
+        response += `We currently have ${agents.length} active agents ready to help you.`;
+      }
+    } else if (lowerMessage.includes('agent')) {
       if (agents.length > 0) {
         const topAgents = agents.slice(0, 3);
-        response += `We currently have ${agents.length} active agents in the portal. Our top agents include:\n\n`;
-        topAgents.forEach(agent => {
-          response += `• **${agent.name}** (${agent.category}): ${agent.description}\n`;
-          response += `  - Used ${agent.usage_count} times, saves ~${agent.average_time_saved} minutes per use\n\n`;
-        });
-        response += 'Would you like details about any specific agent?';
+        response += `We have ${agents.length} active agents. Top agents: `;
+        response += topAgents.map(agent => `${agent.name} (${agent.category})`).join(', ');
       } else {
-        response += "I can help you understand GenAI agents, but it looks like no agents are currently active in the database. Super Admins can add agents through the portal.";
+        response += "No agents are currently active. Super Admins can add agents through the portal.";
       }
     } else {
-      response += "I'm here to help with the AI-DU Portal! I can explain GenAI agents, dashboard metrics, user roles, navigation, and troubleshooting. ";
-      if (agents.length > 0) {
-        response += `We have ${agents.length} active agents ready to help you. `;
-      }
-      response += "What would you like to know about?";
+      response += "I can help with portal navigation, agent information, and feature explanations. What would you like to know?";
     }
 
     res.json({ response, source: 'fallback' });
