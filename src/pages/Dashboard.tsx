@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRoles } from "@/hooks/useRoles";
 import { useAgents } from "@/hooks/useAgents";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { DataTableView } from "@/components/data-table-view";
 import { AgentManagement } from "@/components/AgentManagement";
 import { UserManagement } from "@/components/UserManagement";
@@ -27,15 +26,14 @@ const Dashboard = () => {
         <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
 
         <Tabs defaultValue="agents" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="agents">Agents</TabsTrigger>
             {isAdmin && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
             {isSuperAdmin && <TabsTrigger value="user-management">User Management</TabsTrigger>}
             {isSuperAdmin && <TabsTrigger value="agent-management">Agent Management</TabsTrigger>}
-            {isSuperAdmin && (
-              <TabsTrigger value="nova-settings">NOVA Settings</TabsTrigger>
-            )}
+            {isSuperAdmin && <TabsTrigger value="nova-settings">NOVA Settings</TabsTrigger>}
           </TabsList>
+          
           <TabsContent value="agents" className="space-y-6">
             <Card>
               <CardHeader>
@@ -49,6 +47,7 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           </TabsContent>
+          
           {isAdmin && (
             <TabsContent value="analytics" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -90,11 +89,13 @@ const Dashboard = () => {
               </Card>
             </TabsContent>
           )}
+          
           {isSuperAdmin && (
             <TabsContent value="user-management" className="space-y-6">
               <UserManagement />
             </TabsContent>
           )}
+          
           {isSuperAdmin && (
             <TabsContent value="agent-management" className="space-y-6">
               <AgentManagement />

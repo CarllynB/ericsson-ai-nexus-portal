@@ -1,18 +1,17 @@
+
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useRoles } from "@/hooks/useRoles";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarTrigger } from "@/components/ui/sidebar";
-import { ModeToggle } from "@/components/ui/mode-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User2, Settings, Plus, Bot } from "lucide-react";
+import { User2, Settings, Bot } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSidebarItems } from "@/hooks/useSidebarItems";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const { currentUserRole, isSuperAdmin } = useRoles();
   const location = useLocation();
   const { items } = useSidebarItems();
@@ -133,10 +132,9 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                 <Button variant="ghost" className="flex h-8 w-full items-center justify-between rounded-md">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.image} alt={user?.name || "Avatar"} />
-                      <AvatarFallback>{user?.name?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+                      <AvatarFallback>{user?.username?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium">{user?.name}</span>
+                    <span className="text-sm font-medium">{user?.username}</span>
                   </div>
                   <Settings className="h-4 w-4 text-muted-foreground" />
                 </Button>
@@ -148,7 +146,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                   <User2 className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => signOut()}>
+                <DropdownMenuItem onClick={() => logout()}>
                   Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
