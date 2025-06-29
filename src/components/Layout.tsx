@@ -40,6 +40,15 @@ export const Layout = ({ children }: LayoutProps) => {
   const isAdmin = isAuthenticated && !rolesLoading && (currentUserRole === 'admin' || currentUserRole === 'super_admin');
   const isSuperAdmin = isAuthenticated && !rolesLoading && currentUserRole === 'super_admin';
 
+  // Filter sidebar items based on user role
+  const filteredItems = items.filter(item => {
+    // NOVA is only visible to Super Admins for now
+    if (item.id === 'talk-to-nova') {
+      return isSuperAdmin;
+    }
+    return true;
+  });
+
   console.log('Layout debug:', { 
     user: !!user, 
     authLoading, 
@@ -138,7 +147,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
         <nav className="p-6 space-y-2">
           {/* Dynamic Sidebar Items */}
-          {items.map((item) => (
+          {filteredItems.map((item) => (
             <button
               key={item.id}
               onClick={() => handleNavigation(item.url)}

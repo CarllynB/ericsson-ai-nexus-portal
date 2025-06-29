@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Agents from "./pages/Agents";
 import Dashboard from "./pages/Dashboard";
+import TalkToNova from "./pages/TalkToNova";
 import NotFound from "./pages/NotFound";
 import { populateDefaultAgents, clearAllCachedAgents } from "./utils/populateAgents";
 import { clearAllAgents } from "./utils/clearDatabase";
@@ -70,6 +71,14 @@ const AppRoutes = () => {
         element={
           <Layout>
             <Dashboard />
+          </Layout>
+        } 
+      />
+      <Route 
+        path="/talk-to-nova" 
+        element={
+          <Layout>
+            <TalkToNova />
           </Layout>
         } 
       />
