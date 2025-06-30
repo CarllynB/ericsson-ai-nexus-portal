@@ -29,18 +29,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// API Routes with error handling
-app.use('/api/auth', (req, res, next) => {
-  console.log('🔑 Auth route accessed:', req.method, req.url);
-  next();
-}, authRoutes);
-
-app.use('/api/agents', agentRoutes);
-app.use('/api/roles', roleRoutes);
-app.use('/api/sidebar', sidebarRoutes);
-app.use('/api/nova', novaRoutes);
-
-// Health check endpoint
+// Health check endpoint - simple route first
 app.get('/api/health', (req, res) => {
   console.log('💓 Health check requested');
   res.json({ 
@@ -51,6 +40,23 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development'
   });
 });
+
+// API Routes with error handling - register routes carefully
+try {
+  app.use('/api/auth', (req, res, next) => {
+    console.log('🔑 Auth route accessed:', req.method, req.url);
+    next();
+  }, authRoutes);
+
+  app.use('/api/agents', agentRoutes);
+  app.use('/api/roles', roleRoutes);
+  app.use('/api/sidebar', sidebarRoutes);
+  app.use('/api/nova', novaRoutes);
+  
+  console.log('✅ All API routes registered successfully');
+} catch (routeError) {
+  console.error('❌ Error registering routes:', routeError);
+}
 
 // Serve static files from dist directory in production
 if (process.env.NODE_ENV === 'production') {
