@@ -1,3 +1,4 @@
+
 import express from 'express';
 import https from 'https';
 import http from 'http';
@@ -45,7 +46,9 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     database: 'connected',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    port: process.env.PORT || 'unknown',
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -86,8 +89,15 @@ const isMainModule = process.argv[1] === __filename;
 if (isMainModule) {
   const startServer = async () => {
     try {
-      // Backend runs on port 8081, Vite frontend on 8080
-      const PORT = parseInt(process.env.PORT || '8081', 10);
+      // Default ports: dev on 8081, production on 443
+      let PORT = parseInt(process.env.PORT || '8081', 10);
+      
+      // Special handling for lab production (port 443)
+      if (process.env.NODE_ENV === 'production' && (process.env.PORT === '443' || process.env.FORCE_HTTPS)) {
+        PORT = 443;
+      }
+
+      console.log(`🌐 Starting server in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 
       // Check for SSL certificates
       const sslCertExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');
@@ -104,14 +114,20 @@ if (isMainModule) {
 
           const server = https.createServer(httpsOptions, app);
           
-          server.on('error', (error) => {
+          server.on('error', (error: any) => {
             console.error('🚨 HTTPS Server Error:', error);
+            if (error.code === 'EACCES' && PORT < 1024) {
+              console.error('💡 Port access denied. Try running with sudo for port 443');
+            }
           });
 
           server.listen(PORT, '0.0.0.0', () => {
-            console.log(`🔒 HTTPS Backend Server running on port ${PORT}`);
-            console.log(`🔧 Backend API: https://localhost:${PORT}`);
-            console.log(`🔍 API Health: https://localhost:${PORT}/api/health`);
+            console.log(`🔒 HTTPS Server running on port ${PORT}`);
+            console.log(`🔧 API: https://localhost:${PORT}`);
+            console.log(`🔍 Health: https://localhost:${PORT}/api/health`);
+            if (PORT === 443) {
+              console.log(`🌐 Lab URL: https://aiduagent-csstip.ckit1.explab.com`);
+            }
           });
         } catch (sslError) {
           console.warn('⚠️ SSL certificate error, falling back to HTTP:', sslError.message);
@@ -130,14 +146,17 @@ if (isMainModule) {
   const startHttpServer = (port: number) => {
     const server = http.createServer(app);
     
-    server.on('error', (error) => {
+    server.on('error', (error: any) => {
       console.error('🚨 HTTP Server Error:', error);
+      if (error.code === 'EACCES' && port < 1024) {
+        console.error('💡 Port access denied. Try running with sudo for privileged ports');
+      }
     });
 
     server.listen(port, '0.0.0.0', () => {
-      console.log(`🌐 HTTP Backend Server running on port ${port}`);
-      console.log(`🔧 Backend API: http://localhost:${port}`);
-      console.log(`🔍 API Health: http://localhost:${port}/api/health`);
+      console.log(`🌐 HTTP Server running on port ${port}`);
+      console.log(`🔧 API: http://localhost:${port}`);
+      console.log(`🔍 Health: http://localhost:${port}/api/health`);
     });
   };
 
