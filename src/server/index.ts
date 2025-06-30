@@ -75,18 +75,51 @@ if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(process.cwd(), 'dist');
   console.log('📁 Serving static files from:', distPath);
   
-  app.use(express.static(distPath));
+  // Serve static files with proper error handling
+  try {
+    app.use(express.static(distPath, {
+      setHeaders: (res, path) => {
+        if (path.endsWith('.js')) {
+          res.set('Content-Type', 'application/javascript');
+        }
+      }
+    }));
+    console.log('✅ Static files middleware registered');
+  } catch (staticError) {
+    console.error('❌ Error setting up static files:', staticError);
+  }
   
-  // Serve index.html for all non-API routes (React Router support)
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-      console.log('📄 Serving index.html for:', req.path);
-      res.sendFile(path.join(distPath, 'index.html'));
-    } else {
-      console.log('❓ Unhandled API route:', req.path);
-      res.status(404).json({ error: 'API endpoint not found' });
-    }
-  });
+  // Handle React Router routes with better error handling
+  try {
+    app.get('*', (req, res, next) => {
+      try {
+        // Only handle non-API routes
+        if (req.path.startsWith('/api/')) {
+          console.log('❓ Unhandled API route:', req.path);
+          res.status(404).json({ error: 'API endpoint not found' });
+          return;
+        }
+        
+        console.log('📄 Serving index.html for:', req.path);
+        const indexPath = path.join(distPath, 'index.html');
+        
+        // Check if index.html exists
+        if (!fs.existsSync(indexPath)) {
+          console.error('❌ index.html not found at:', indexPath);
+          res.status(500).send('Application not built properly');
+          return;
+        }
+        
+        res.sendFile(indexPath);
+      } catch (sendError) {
+        console.error('❌ Error serving file:', sendError);
+        next(sendError);
+      }
+    });
+    console.log('✅ React Router wildcard route registered');
+  } catch (wildcardError) {
+    console.error('❌ Error setting up wildcard route:', wildcardError);
+  }
 }
 
 // Global error handler - MUST be last middleware
