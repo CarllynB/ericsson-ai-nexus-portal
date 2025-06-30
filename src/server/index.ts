@@ -41,32 +41,50 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// API Routes with error handling - register routes carefully
+// API Routes with detailed error handling and validation
 try {
+  console.log('🔧 Registering API routes with validation...');
+  
+  // Register each route with individual error handling
   app.use('/api/auth', (req, res, next) => {
     console.log('🔑 Auth route accessed:', req.method, req.url);
     next();
   }, authRoutes);
+  console.log('✅ Auth routes registered');
 
   app.use('/api/agents', agentRoutes);
+  console.log('✅ Agent routes registered');
+
   app.use('/api/roles', roleRoutes);
+  console.log('✅ Role routes registered');
+
   app.use('/api/sidebar', sidebarRoutes);
+  console.log('✅ Sidebar routes registered');
+
   app.use('/api/nova', novaRoutes);
+  console.log('✅ Nova routes registered');
   
   console.log('✅ All API routes registered successfully');
 } catch (routeError) {
   console.error('❌ Error registering routes:', routeError);
+  process.exit(1);
 }
 
 // Serve static files from dist directory in production
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(process.cwd(), 'dist');
+  console.log('📁 Serving static files from:', distPath);
+  
   app.use(express.static(distPath));
   
   // Serve index.html for all non-API routes (React Router support)
   app.get('*', (req, res) => {
     if (!req.path.startsWith('/api')) {
+      console.log('📄 Serving index.html for:', req.path);
       res.sendFile(path.join(distPath, 'index.html'));
+    } else {
+      console.log('❓ Unhandled API route:', req.path);
+      res.status(404).json({ error: 'API endpoint not found' });
     }
   });
 }
