@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,18 +64,13 @@ const Index = () => {
   return (
     <div className="min-h-screen px-6 py-12 relative">
       {/* Floating NOVA Logo Button */}
-      <Button
+      <img 
+        src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
+        alt="NOVA" 
+        className="fixed top-24 left-6 z-40 w-12 h-12 cursor-pointer hover:scale-110 transition-transform duration-300"
         onClick={() => window.location.href = '/talk-to-nova'}
-        className="fixed top-24 right-6 z-40 w-16 h-16 rounded-full bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-        size="icon"
         title="Talk to NOVA"
-      >
-        <img 
-          src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
-          alt="NOVA" 
-          className="w-8 h-8"
-        />
-      </Button>
+      />
 
       {/* Welcome Banner - Updated with darker background */}
       {showWelcome && (
