@@ -1,3 +1,4 @@
+
 import express from 'express';
 import https from 'https';
 import http from 'http';
@@ -45,7 +46,8 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     database: 'connected',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    mode: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -60,6 +62,9 @@ if (process.env.NODE_ENV === 'production') {
       res.sendFile(path.join(distPath, 'index.html'));
     }
   });
+} else {
+  // In development, serve static files from public directory
+  app.use(express.static('public'));
 }
 
 // Global error handler - MUST be last middleware
@@ -86,8 +91,8 @@ const isMainModule = process.argv[1] === __filename;
 if (isMainModule) {
   const startServer = async () => {
     try {
-      // Backend runs on port 8081, Vite frontend on 8080
-      const PORT = parseInt(process.env.PORT || '8081', 10);
+      const PORT = parseInt(process.env.PORT || '8080', 10);
+      const isDev = process.env.NODE_ENV === 'development';
 
       // Check for SSL certificates
       const sslCertExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');
@@ -98,7 +103,6 @@ if (isMainModule) {
           const httpsOptions = {
             cert: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.crt'),
             key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key'),
-            // Force HTTP/1.1 to avoid Node.js HTTP/2 issues
             allowHTTP1: true
           };
 
@@ -109,8 +113,8 @@ if (isMainModule) {
           });
 
           server.listen(PORT, '0.0.0.0', () => {
-            console.log(`🔒 HTTPS Backend Server running on port ${PORT}`);
-            console.log(`🔧 Backend API: https://localhost:${PORT}`);
+            console.log(`🔒 HTTPS ${isDev ? 'Development' : 'Production'} Server running on port ${PORT}`);
+            console.log(`🌐 Access your app: https://localhost:${PORT}`);
             console.log(`🔍 API Health: https://localhost:${PORT}/api/health`);
           });
         } catch (sslError) {
@@ -135,7 +139,7 @@ if (isMainModule) {
     });
 
     server.listen(port, '0.0.0.0', () => {
-      console.log(`🌐 HTTP Backend Server running on port ${port}`);
+      console.log(`🌐 HTTP Server running on port ${port}`);
       console.log(`🔧 Backend API: http://localhost:${port}`);
       console.log(`🔍 API Health: http://localhost:${port}/api/health`);
     });
