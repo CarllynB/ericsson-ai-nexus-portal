@@ -1,3 +1,4 @@
+
 import express, { Request, Response } from 'express';
 import { dbAll, dbRun, dbGet } from '../database';
 import { authenticateToken, requireRole } from '../middleware/auth';
@@ -18,7 +19,7 @@ agentRoutes.get('/', async (req: Request, res: Response) => {
 
     const formattedAgents = agents.map(agent => ({
       ...agent,
-      key_features: JSON.parse(agent.key_features),
+      key_features: JSON.parse(agent.key_features || '[]'),
       contact_info: agent.contact_info ? JSON.parse(agent.contact_info) : undefined
     }));
 
@@ -52,7 +53,7 @@ agentRoutes.post('/', authenticateToken, requireRole(['admin', 'super_admin']), 
       newAgent.description,
       newAgent.category,
       newAgent.status,
-      JSON.stringify(newAgent.key_features),
+      JSON.stringify(newAgent.key_features || []),
       newAgent.access_link || null,
       newAgent.contact_info ? JSON.stringify(newAgent.contact_info) : null,
       newAgent.owner,
@@ -108,7 +109,7 @@ agentRoutes.put('/:id', authenticateToken, requireRole(['admin', 'super_admin'])
     const updatedAgent = await dbGet('SELECT * FROM agents WHERE id = ?', [id]);
     const formattedAgent = {
       ...updatedAgent,
-      key_features: JSON.parse(updatedAgent.key_features),
+      key_features: JSON.parse(updatedAgent.key_features || '[]'),
       contact_info: updatedAgent.contact_info ? JSON.parse(updatedAgent.contact_info) : undefined
     };
 
