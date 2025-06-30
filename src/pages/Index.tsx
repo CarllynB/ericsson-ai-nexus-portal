@@ -63,7 +63,21 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen px-6 py-12">
+    <div className="min-h-screen px-6 py-12 relative">
+      {/* Floating NOVA Logo Button */}
+      <Button
+        onClick={() => window.location.href = '/talk-to-nova'}
+        className="fixed top-24 right-6 z-40 w-16 h-16 rounded-full bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+        size="icon"
+        title="Talk to NOVA"
+      >
+        <img 
+          src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
+          alt="NOVA" 
+          className="w-8 h-8"
+        />
+      </Button>
+
       {/* Welcome Banner - Updated with darker background */}
       {showWelcome && (
         <div className="bg-gray-200 dark:bg-gray-700 rounded-2xl p-8 mb-8 relative">
