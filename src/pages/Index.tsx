@@ -65,7 +65,7 @@ const Index = () => {
     <div className="min-h-screen px-6 py-12 relative">
       {/* Floating NOVA Logo Button */}
       <div
-        className="fixed top-24 left-6 z-40 w-12 h-12 cursor-pointer hover:scale-110 transition-transform duration-300 rounded-full border-2 border-blue-300 hover:border-blue-400 p-1 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md"
+        className="fixed top-24 left-6 z-40 w-12 h-12 cursor-pointer hover:scale-110 transition-transform duration-300 rounded-full border-2 border-slate-700 hover:border-slate-600 p-1 bg-gray-200 hover:bg-gray-300 shadow-sm hover:shadow-md"
         onClick={() => window.location.href = '/talk-to-nova'}
         title="Talk to NOVA"
       >
