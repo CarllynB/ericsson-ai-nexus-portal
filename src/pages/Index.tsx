@@ -64,13 +64,17 @@ const Index = () => {
   return (
     <div className="min-h-screen px-6 py-12 relative">
       {/* Floating NOVA Logo Button */}
-      <img 
-        src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
-        alt="NOVA" 
-        className="fixed top-24 left-6 z-40 w-12 h-12 cursor-pointer hover:scale-110 transition-transform duration-300"
+      <div
+        className="fixed top-24 left-6 z-40 w-12 h-12 cursor-pointer hover:scale-110 transition-transform duration-300 rounded-full border-2 border-blue-300 hover:border-blue-400 p-1 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md"
         onClick={() => window.location.href = '/talk-to-nova'}
         title="Talk to NOVA"
-      />
+      >
+        <img 
+          src="/lovable-uploads/bcbb4631-9e18-46d6-8baa-0f53f9092b35.png" 
+          alt="NOVA" 
+          className="w-full h-full object-contain"
+        />
+      </div>
 
       {/* Welcome Banner - Updated with darker background */}
       {showWelcome && (
