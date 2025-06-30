@@ -1,6 +1,7 @@
 
 import { spawn } from 'child_process';
 import fs from 'fs';
+import path from 'path';
 
 console.log('🚀 Starting AI-DU Agent Portal for Lab Production (Port 443)...\n');
 
@@ -42,8 +43,8 @@ function startLabProductionServer() {
   console.log('🚀 Starting lab production server on port 443...');
   console.log('⚠️  Note: You may need to run with sudo: sudo node start-lab-production.js');
   
-  // Start the production server on port 443
-  const serverProcess = spawn('node', ['-r', 'ts-node/register', './src/server/index.ts'], {
+  // Start the production server using tsx to handle TypeScript
+  const serverProcess = spawn('npx', ['tsx', './src/server/index.ts'], {
     stdio: 'inherit',
     env: {
       ...process.env,
