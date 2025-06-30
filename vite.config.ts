@@ -20,7 +20,15 @@ export default defineConfig(({ mode }) => ({
       key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key')
     } : undefined,
     cors: true,
-    // No proxy needed - unified server handles everything
+    // Proxy API requests to the backend server
+    proxy: {
+      '/api': {
+        target: sslCertExists && sslKeyExists ? 'https://localhost:8081' : 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false,
+        rejectUnauthorized: false
+      }
+    }
   },
   plugins: [
     react(),
