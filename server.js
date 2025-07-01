@@ -7,6 +7,14 @@ import path from 'path';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 
+// Import backend routes and middleware
+import { setupDatabase } from './src/server/database.js';
+import { authRoutes } from './src/server/routes/auth.js';
+import { agentRoutes } from './src/server/routes/agents.js';
+import { roleRoutes } from './src/server/routes/roles.js';
+import { sidebarRoutes } from './src/server/routes/sidebar.js';
+import { novaRoutes } from './src/server/routes/nova.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -42,23 +50,26 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint (must be before static files)
+// Backend API routes (MUST be before static files and fallback)
+app.use('/api/auth', (req, res, next) => {
+  console.log('🔑 Auth route accessed:', req.method, req.url);
+  next();
+}, authRoutes);
+
+app.use('/api/agents', agentRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/sidebar', sidebarRoutes);
+app.use('/api/nova', novaRoutes);
+
+// Health check endpoint
 app.get('/api/health', (req, res) => {
   console.log('💓 Health check requested from:', req.ip);
   res.json({ 
     status: 'ok', 
+    database: 'connected',
     timestamp: new Date().toISOString(),
     host: req.get('Host'),
     environment: process.env.NODE_ENV || 'production'
-  });
-});
-
-// Basic API fallback for missing backend
-app.use('/api/*', (req, res) => {
-  console.log(`⚠️ API endpoint not implemented: ${req.method} ${req.path}`);
-  res.status(503).json({ 
-    error: 'API endpoint not available',
-    message: 'Backend services are not fully configured'
   });
 });
 
@@ -92,6 +103,19 @@ app.use((error, req, res, next) => {
     message: process.env.NODE_ENV === 'development' ? error.message : 'Server error occurred'
   });
 });
+
+// Initialize database before starting server
+const initializeAndStart = async () => {
+  try {
+    console.log('🗄️ Initializing database...');
+    await setupDatabase();
+    console.log('✅ Database initialized successfully');
+    startProductionServer();
+  } catch (error) {
+    console.error('❌ Failed to initialize database:', error);
+    process.exit(1);
+  }
+};
 
 // Production server startup
 const startProductionServer = () => {
@@ -147,6 +171,8 @@ const startProductionServer = () => {
         console.log(`🔍 Health Check: https://aiduagent-csstip.ckit1.explab.com/api/health`);
         console.log(`💾 Static Files: ${distPath}`);
         console.log(`🛡️ SSL Certificates: Loaded and Active`);
+        console.log(`🗄️ Database: SQLite (shared_database.sqlite)`);
+        console.log(`📡 API Routes: Fully Integrated`);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('✨ Ready to accept connections from your domain!');
       });
@@ -182,6 +208,8 @@ const startHttpFallback = (port) => {
     console.log(`🌐 HTTP Server: Running on port ${port}`);
     console.log(`🔍 Local Access: http://localhost:${port}`);
     console.log(`💾 Static Files: ${path.join(__dirname, 'dist')}`);
+    console.log(`🗄️ Database: SQLite (shared_database.sqlite)`);
+    console.log(`📡 API Routes: Fully Integrated`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('⚠️ Running in HTTP mode - SSL certificates needed for HTTPS');
   });
@@ -209,5 +237,5 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// Start the production server
-startProductionServer();
+// Initialize database and start the production server
+initializeAndStart();
