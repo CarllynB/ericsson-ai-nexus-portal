@@ -1,4 +1,3 @@
-
 import express from 'express';
 import https from 'https';
 import http from 'http';
@@ -8,12 +7,12 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 
 // Import backend routes and middleware
-import { setupDatabase } from './src/server/database.js';
-import { authRoutes } from './src/server/routes/auth.js';
-import { agentRoutes } from './src/server/routes/agents.js';
-import { roleRoutes } from './src/server/routes/roles.js';
-import { sidebarRoutes } from './src/server/routes/sidebar.js';
-import { novaRoutes } from './src/server/routes/nova.js';
+import { setupDatabase } from './src/server/database.ts';
+import { authRoutes } from './src/server/routes/auth.ts';
+import { agentRoutes } from './src/server/routes/agents.ts';
+import { roleRoutes } from './src/server/routes/roles.ts';
+import { sidebarRoutes } from './src/server/routes/sidebar.ts';
+import { novaRoutes } from './src/server/routes/nova.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
