@@ -1,4 +1,3 @@
-
 import express from 'express';
 import https from 'https';
 import http from 'http';
@@ -29,39 +28,16 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Add debug logging for route registration
-console.log('🔧 Registering API routes with debug logging...');
+// API Routes with error handling
+app.use('/api/auth', (req, res, next) => {
+  console.log('🔑 Auth route accessed:', req.method, req.url);
+  next();
+}, authRoutes);
 
-// API Routes with error handling and debug logging
-try {
-  console.log('📝 Registering auth routes at /api/auth');
-  app.use('/api/auth', (req, res, next) => {
-    console.log('🔑 Auth route accessed:', req.method, req.url);
-    next();
-  }, authRoutes);
-  console.log('✅ Auth routes registered successfully');
-
-  console.log('📝 Registering agent routes at /api/agents');
-  app.use('/api/agents', agentRoutes);
-  console.log('✅ Agent routes registered successfully');
-
-  console.log('📝 Registering role routes at /api/roles');
-  app.use('/api/roles', roleRoutes);
-  console.log('✅ Role routes registered successfully');
-
-  console.log('📝 Registering sidebar routes at /api/sidebar');
-  app.use('/api/sidebar', sidebarRoutes);
-  console.log('✅ Sidebar routes registered successfully');
-
-  console.log('📝 Registering nova routes at /api/nova');
-  app.use('/api/nova', novaRoutes);
-  console.log('✅ Nova routes registered successfully');
-
-  console.log('✅ All API routes registered successfully');
-} catch (error) {
-  console.error('❌ Error registering API routes:', error);
-  process.exit(1);
-}
+app.use('/api/agents', agentRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/sidebar', sidebarRoutes);
+app.use('/api/nova', novaRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -76,35 +52,14 @@ app.get('/api/health', (req, res) => {
 // Serve static files from dist directory in production
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(process.cwd(), 'dist');
-  console.log('📁 Serving static files from:', distPath);
+  app.use(express.static(distPath));
   
-  if (fs.existsSync(distPath)) {
-    app.use(express.static(distPath));
-    console.log('✅ Static files middleware registered');
-    
-    // Serve index.html for all non-API routes (React Router support)
-    app.get('*', (req, res, next) => {
-      console.log('🌐 Wildcard route hit:', req.path);
-      
-      // Only serve index.html for non-API routes and non-static files
-      if (!req.path.startsWith('/api') && !req.path.includes('.')) {
-        const indexPath = path.join(distPath, 'index.html');
-        if (fs.existsSync(indexPath)) {
-          console.log('📄 Serving index.html for:', req.path);
-          res.sendFile(indexPath);
-        } else {
-          console.log('❌ index.html not found at:', indexPath);
-          res.status(404).send('index.html not found');
-        }
-      } else {
-        console.log('⏭️ Skipping wildcard for:', req.path);
-        next();
-      }
-    });
-    console.log('✅ Wildcard route registered for React Router');
-  } else {
-    console.warn('⚠️ Dist directory not found:', distPath);
-  }
+  // Serve index.html for all non-API routes (React Router support)
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(distPath, 'index.html'));
+    }
+  });
 }
 
 // Global error handler - MUST be last middleware
@@ -131,9 +86,8 @@ const isMainModule = process.argv[1] === __filename;
 if (isMainModule) {
   const startServer = async () => {
     try {
-      // Use port 443 for production, 8081 for development
-      const PORT = parseInt(process.env.PORT || (process.env.NODE_ENV === 'production' ? '443' : '8081'), 10);
-      console.log('🔧 Starting server on port:', PORT);
+      // Backend runs on port 8081, Vite frontend on 8080
+      const PORT = parseInt(process.env.PORT || '8081', 10);
 
       // Check for SSL certificates
       const sslCertExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');
@@ -155,10 +109,9 @@ if (isMainModule) {
           });
 
           server.listen(PORT, '0.0.0.0', () => {
-            console.log(`🔒 HTTPS Server running on port ${PORT}`);
-            console.log(`🌐 Public URL: https://aiduagent-csstip.ckit1.explab.com`);
-            console.log(`🔧 Local HTTPS: https://localhost:${PORT}`);
-            console.log(`🔍 API Health: https://aiduagent-csstip.ckit1.explab.com/api/health`);
+            console.log(`🔒 HTTPS Backend Server running on port ${PORT}`);
+            console.log(`🔧 Backend API: https://localhost:${PORT}`);
+            console.log(`🔍 API Health: https://localhost:${PORT}/api/health`);
           });
         } catch (sslError) {
           console.warn('⚠️ SSL certificate error, falling back to HTTP:', sslError.message);
@@ -182,8 +135,8 @@ if (isMainModule) {
     });
 
     server.listen(port, '0.0.0.0', () => {
-      console.log(`🌐 HTTP Server running on port ${port}`);
-      console.log(`🔧 Local HTTP: http://localhost:${port}`);
+      console.log(`🌐 HTTP Backend Server running on port ${port}`);
+      console.log(`🔧 Backend API: http://localhost:${port}`);
       console.log(`🔍 API Health: http://localhost:${port}/api/health`);
     });
   };

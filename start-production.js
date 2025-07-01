@@ -1,6 +1,6 @@
 
-const { spawn } = require('child_process');
-const fs = require('fs');
+import { spawn } from 'child_process';
+import fs from 'fs';
 
 console.log('🚀 Starting AI-DU Agent Portal Production Server...\n');
 
@@ -27,15 +27,15 @@ if (!fs.existsSync('./dist')) {
 }
 
 function startProductionServer() {
-  console.log('🚀 Starting production server with full backend...');
+  console.log('🚀 Starting production server...');
   
-  // Start the production server using the full backend
+  // Start the production server
   const serverProcess = spawn('node', ['-r', 'ts-node/register', './src/server/index.ts'], {
     stdio: 'inherit',
     env: {
       ...process.env,
       NODE_ENV: 'production',
-      PORT: '443'
+      PORT: '8080'
     }
   });
 
@@ -60,9 +60,8 @@ function startProductionServer() {
   });
 
   console.log('✅ Production server started successfully!');
-  console.log('🌐 HTTPS URL: https://aiduagent-csstip.ckit1.explab.com');
-  console.log('🔒 Local HTTPS: https://localhost:443');
-  console.log('🔍 API Health: https://aiduagent-csstip.ckit1.explab.com/api/health');
+  console.log('🌐 All-in-One Production Server: http://localhost:8080');
+  console.log('🔍 API Health: http://localhost:8080/api/health');
   console.log('💾 SQLite Database: shared_database.sqlite');
   console.log('\nPress Ctrl+C to stop the server\n');
 }
