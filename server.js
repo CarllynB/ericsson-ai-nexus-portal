@@ -13,15 +13,20 @@ app.use(cors());
 // Serve static files from dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Handle React Router routes
+// Handle React Router routes - fix the wildcard route
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  // Only serve index.html for non-API routes and non-static files
+  if (!req.path.startsWith('/api') && !req.path.includes('.')) {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  } else {
+    res.status(404).send('Not Found');
+  }
 });
 
 // HTTPS Configuration
 const httpsOptions = {
   cert: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.crt'),
-  key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key') // You'll need to get this file
+  key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key')
 };
 
 const PORT = process.env.PORT || 443;
