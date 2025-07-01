@@ -197,15 +197,12 @@ const startServer = async () => {
   }
 };
 
-// Production server startup
+// Production server startup - FORCE PORT 443
 const startProductionServer = (app) => {
-  const PORT = parseInt(process.env.PORT || '443', 10);
+  const PORT = 443; // FORCE PORT 443 as requested
   
-  // Check if we're in a production environment
-  const isProduction = process.env.NODE_ENV === 'production' || PORT === 443;
-  
-  console.log('🚀 Starting AI-DU Agent Portal Production Server...');
-  console.log(`📍 Environment: ${isProduction ? 'Production' : 'Development'}`);
+  console.log('🚀 Starting AI-DU Agent Portal Production Server on PORT 443...');
+  console.log(`📍 Environment: Production Mode (Port ${PORT})`);
   
   // Check for SSL certificates
   const certPath = './aiduagent-csstip.ckit1.explab.com.crt';
@@ -249,25 +246,27 @@ const startProductionServer = (app) => {
         console.log(`🔒 HTTPS Server: Running on port ${PORT}`);
         console.log(`🌐 Production URL: https://aiduagent-csstip.ckit1.explab.com/`);
         console.log(`🔍 Health Check: https://aiduagent-csstip.ckit1.explab.com/api/health`);
+        console.log(`🤖 NOVA API: https://aiduagent-csstip.ckit1.explab.com/api/nova/chat`);
         console.log(`💾 Static Files: ${path.join(__dirname, 'dist')}`);
         console.log(`🛡️ SSL Certificates: Loaded and Active`);
         console.log(`🗄️ Database: SQLite (shared_database.sqlite)`);
         console.log(`📡 API Routes: Fully Integrated`);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('✨ Ready to accept connections from your domain!');
+        console.log('🤖 NOVA is ready and available for chat!');
       });
 
     } catch (sslError) {
       console.error('❌ SSL Certificate Error:', sslError.message);
-      console.error('🔧 Falling back to HTTP server...');
-      startHttpFallback(PORT, app);
+      console.error('🔧 Cannot start without SSL on port 443');
+      process.exit(1);
     }
   } else {
-    console.log('⚠️ SSL certificates not found:');
+    console.error('❌ SSL certificates required for port 443:');
     console.log(`   - Certificate: ${certPath} ${sslCertExists ? '✅' : '❌'}`);
     console.log(`   - Private Key: ${keyPath} ${sslKeyExists ? '✅' : '❌'}`);
-    console.log('🔧 Starting HTTP server as fallback...');
-    startHttpFallback(PORT === 443 ? 8080 : PORT, app);
+    console.error('🔧 Cannot start HTTPS server on port 443 without SSL certificates');
+    process.exit(1);
   }
 };
 

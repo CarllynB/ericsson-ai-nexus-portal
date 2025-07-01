@@ -1,8 +1,7 @@
-
 import { Router } from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth';
-import { dbAll, dbGet, dbRun } from '../database';
-import { AuthenticatedRequest } from '../types';
+import { authenticateToken, requireRole } from '../middleware/auth.js';
+import { dbAll, dbGet, dbRun } from '../database.js';
+import { AuthenticatedRequest } from '../types.js';
 
 const router = Router();
 

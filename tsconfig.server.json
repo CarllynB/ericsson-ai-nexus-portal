@@ -7,29 +7,36 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "allowJs": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": false,
     "skipLibCheck": true,
+    "strict": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": false,
     "declaration": false,
-    "sourceMap": false,
-    "types": ["node"],
-    "baseUrl": ".",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": "./src",
     "paths": {
-      "@/*": ["src/*"]
-    }
+      "@/*": ["*"]
+    },
+    "types": ["node"]
   },
   "include": [
-    "src/server/**/*.ts",
-    "src/services/**/*.ts"
+    "src/server/**/*",
+    "src/services/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "src/!(server|services)"
+    "src/components/**/*",
+    "src/pages/**/*",
+    "src/hooks/**/*",
+    "src/lib/**/*",
+    "src/integrations/**/*",
+    "src/main.tsx",
+    "src/App.tsx",
+    "src/index.css",
+    "src/App.css"
   ]
 }
