@@ -29,7 +29,7 @@ const setupBackendRoutes = async () => {
     
     console.log('🔄 Loading TypeScript backend modules...');
     
-    // Dynamic import of TypeScript modules
+    // Import TypeScript modules using require (not dynamic import)
     const { setupDatabase } = require('./src/server/database.ts');
     const { authRoutes } = require('./src/server/routes/auth.ts');
     const { agentRoutes } = require('./src/server/routes/agents.ts');
@@ -37,7 +37,7 @@ const setupBackendRoutes = async () => {
     const { sidebarRoutes } = require('./src/server/routes/sidebar.ts');
     const { novaRoutes } = require('./src/server/routes/nova.ts');
 
-    // Setup database
+    // Setup database first
     await setupDatabase();
     console.log('✅ Database initialized for production server');
 
