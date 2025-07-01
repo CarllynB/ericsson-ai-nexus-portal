@@ -8,7 +8,7 @@
     "esModuleInterop": true,
     "allowJs": true,
     "outDir": "./dist/server",
-    "rootDir": "./src/server",
+    "rootDir": "./src",
     "strict": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -24,11 +24,12 @@
     }
   },
   "include": [
-    "src/server/**/*.ts"
+    "src/server/**/*.ts",
+    "src/services/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "src/!(server)"
+    "src/!(server|services)"
   ]
 }

@@ -70,9 +70,9 @@ authRoutes.post('/login', async (req: Request, res: Response) => {
 
     console.log('✅ Login successful for:', email, 'with role:', role);
     res.json(response);
-  } catch (error) {
+  } catch (error: any) {
     console.error('🚨 CRITICAL LOGIN ERROR:', error);
-    console.error('Stack trace:', error.stack);
+    console.error('Stack trace:', error?.stack || 'No stack trace available');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -156,9 +156,9 @@ authRoutes.post('/register', async (req: Request, res: Response) => {
 
     console.log('✅ Registration successful for:', email, 'with role:', role);
     res.json(response);
-  } catch (error) {
+  } catch (error: any) {
     console.error('🚨 CRITICAL REGISTRATION ERROR:', error);
-    console.error('Stack trace:', error.stack);
+    console.error('Stack trace:', error?.stack || 'No stack trace available');
     res.status(500).json({ error: 'Internal server error' });
   }
 });

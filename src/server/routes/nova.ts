@@ -48,14 +48,14 @@ const testOllamaConnection = async () => {
     
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ Ollama connected successfully. Available models:', data.models?.map(m => m.name));
+      console.log('✅ Ollama connected successfully. Available models:', data.models?.map((m: any) => m.name));
       return true;
     } else {
       console.log('❌ Ollama responded with error:', response.status);
       return false;
     }
-  } catch (error) {
-    console.log('❌ Ollama connection failed:', error.message);
+  } catch (error: any) {
+    console.log('❌ Ollama connection failed:', error?.message || 'Unknown error');
     return false;
   }
 };
@@ -161,8 +161,8 @@ Provide a helpful, accurate response as NOVA using the real agent data above. Ke
         } else {
           console.log('❌ Ollama API error:', ollamaResponse.status);
         }
-      } catch (ollamaError) {
-        console.log('❌ Ollama request failed:', ollamaError.message);
+      } catch (ollamaError: any) {
+        console.log('❌ Ollama request failed:', ollamaError?.message || 'Unknown error');
       }
     }
 

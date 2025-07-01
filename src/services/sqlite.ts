@@ -1,3 +1,4 @@
+
 import initSqlJs, { Database } from 'sql.js';
 import { Agent } from './api';
 
@@ -312,7 +313,9 @@ class SQLiteService {
         const updateStmt = this.db.prepare(`
           UPDATE agents SET ${updateFields.join(', ')} WHERE id = ?
         `);
-        updateStmt.run([...values, id]);
+        // Fix: Ensure all parameters are properly typed for SQL.js
+        const sqlParams = [...values.map(v => typeof v === 'string' ? v : String(v)), id];
+        updateStmt.run(sqlParams);
         updateStmt.free();
       }
 
@@ -405,9 +408,9 @@ class SQLiteService {
       
       this.saveDatabase();
       console.log('💾 Database saved - role assignment will persist across all sessions');
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error in createUserRole:', error);
-      throw new Error(`Failed to assign role: ${error.message}`);
+      throw new Error(`Failed to assign role: ${error?.message || 'Unknown error'}`);
     }
   }
 
@@ -443,9 +446,9 @@ class SQLiteService {
       
       this.saveDatabase();
       console.log('✅ User role updated permanently - will persist across all sessions');
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error updating user role:', error);
-      throw new Error(`Failed to update role: ${error.message}`);
+      throw new Error(`Failed to update role: ${error?.message || 'Unknown error'}`);
     }
   }
 

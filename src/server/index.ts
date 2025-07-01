@@ -1,3 +1,4 @@
+
 import express from 'express';
 import https from 'https';
 import http from 'http';
@@ -113,8 +114,8 @@ if (isMainModule) {
             console.log(`🔧 Backend API: https://localhost:${PORT}`);
             console.log(`🔍 API Health: https://localhost:${PORT}/api/health`);
           });
-        } catch (sslError) {
-          console.warn('⚠️ SSL certificate error, falling back to HTTP:', sslError.message);
+        } catch (sslError: any) {
+          console.warn('⚠️ SSL certificate error, falling back to HTTP:', sslError?.message || 'Unknown SSL error');
           startHttpServer(PORT);
         }
       } else {
