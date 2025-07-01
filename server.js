@@ -11,21 +11,21 @@ import { spawn } from 'child_process';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Compile TypeScript files first
-const compileTypeScript = () => {
+// Compile TypeScript server files first
+const compileServerTypeScript = () => {
   return new Promise((resolve, reject) => {
-    console.log('🔧 Compiling TypeScript files...');
-    const tscProcess = spawn('npx', ['tsc', '--project', 'tsconfig.app.json'], {
+    console.log('🔧 Compiling server TypeScript files...');
+    const tscProcess = spawn('npx', ['tsc', '--project', 'tsconfig.server.json'], {
       stdio: 'inherit'
     });
 
     tscProcess.on('close', (code) => {
       if (code === 0) {
-        console.log('✅ TypeScript compilation successful');
+        console.log('✅ Server TypeScript compilation successful');
         resolve();
       } else {
-        console.error('❌ TypeScript compilation failed');
-        reject(new Error(`TypeScript compilation failed with code ${code}`));
+        console.error('❌ Server TypeScript compilation failed');
+        reject(new Error(`Server TypeScript compilation failed with code ${code}`));
       }
     });
 
@@ -38,8 +38,8 @@ const compileTypeScript = () => {
 
 const startServer = async () => {
   try {
-    // Compile TypeScript first
-    await compileTypeScript();
+    // Compile server TypeScript first
+    await compileServerTypeScript();
 
     // Now dynamically import the compiled JavaScript modules
     const { setupDatabase } = await import('./dist/server/database.js');
