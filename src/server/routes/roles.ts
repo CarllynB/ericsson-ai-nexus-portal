@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
-import { dbAll, dbRun, dbGet } from '../database';
-import { authenticateToken, requireRole } from '../middleware/auth';
-import { AuthenticatedRequest } from '../types';
+import { dbAll, dbRun, dbGet } from '../database.js';
+import { authenticateToken, requireRole } from '../middleware/auth.js';
+import { AuthenticatedRequest } from '../types.js';
 
 export const roleRoutes = express.Router();
 

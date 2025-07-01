@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
-import { dbAll, dbRun, dbGet } from '../database';
-import { authenticateToken, requireRole } from '../middleware/auth';
-import { Agent } from '../../services/api';
+import { dbAll, dbRun, dbGet } from '../database.js';
+import { authenticateToken, requireRole } from '../middleware/auth.js';
+import { Agent } from '../../services/api.js';
 
 export const agentRoutes = express.Router();
 

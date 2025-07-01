@@ -1,4 +1,3 @@
-
 import express from 'express';
 import https from 'https';
 import http from 'http';
@@ -25,6 +24,18 @@ const compileServerTypeScript = () => {
 
     console.log('📁 Server source directory found:', serverDir);
     
+    // Clean up any existing dist/server directory to avoid conflicts
+    const distServerDir = path.join(__dirname, 'dist', 'server');
+    if (fs.existsSync(distServerDir)) {
+      console.log('🧹 Cleaning existing dist/server directory...');
+      try {
+        fs.rmSync(distServerDir, { recursive: true, force: true });
+        console.log('✅ Cleaned dist/server directory');
+      } catch (cleanError) {
+        console.warn('⚠️ Could not clean dist/server directory:', cleanError.message);
+      }
+    }
+    
     const tscProcess = spawn('npx', ['tsc', '--project', 'tsconfig.server.json'], {
       stdio: 'inherit'
     });
@@ -33,7 +44,7 @@ const compileServerTypeScript = () => {
       if (code === 0) {
         console.log('✅ Server TypeScript compilation successful');
         
-        // Verify that the compiled files exist - updated paths
+        // Verify that the compiled files exist
         const expectedFiles = [
           './dist/server/database.js',
           './dist/server/routes/auth.js',
