@@ -1,4 +1,3 @@
-
 import express from 'express';
 import https from 'https';
 import http from 'http';
@@ -14,36 +13,39 @@ const startServer = async () => {
   try {
     console.log('🚀 Starting AI-DU Agent Portal Production Server (Offline Package)...');
     
-    // Check if pre-compiled files exist
-    const expectedFiles = [
-      './dist/server/database.js',
-      './dist/server/routes/auth.js',
-      './dist/server/routes/agents.js',
-      './dist/server/routes/roles.js',
-      './dist/server/routes/sidebar.js',
-      './dist/server/routes/nova.js'
-    ];
+    // Check if we can use pre-compiled files, otherwise use source files directly
+    const useCompiledFiles = fs.existsSync('./dist/server/database.js');
     
-    const missingFiles = expectedFiles.filter(file => !fs.existsSync(file));
-    if (missingFiles.length > 0) {
-      console.error('❌ Pre-compiled server files not found:', missingFiles);
-      console.error('This offline package is incomplete. Expected files:');
-      expectedFiles.forEach(file => {
-        const exists = fs.existsSync(file);
-        console.log(`   ${exists ? '✅' : '❌'} ${file}`);
-      });
-      process.exit(1);
+    let setupDatabase, authRoutes, agentRoutes, roleRoutes, sidebarRoutes, novaRoutes;
+    
+    if (useCompiledFiles) {
+      console.log('✅ Using pre-compiled server files');
+      try {
+        const dbModule = await import('./dist/server/database.js');
+        setupDatabase = dbModule.setupDatabase;
+        
+        const authModule = await import('./dist/server/routes/auth.js');
+        authRoutes = authModule.authRoutes;
+        
+        const agentModule = await import('./dist/server/routes/agents.js');
+        agentRoutes = agentModule.agentRoutes;
+        
+        const roleModule = await import('./dist/server/routes/roles.js');
+        roleRoutes = roleModule.roleRoutes;
+        
+        const sidebarModule = await import('./dist/server/routes/sidebar.js');
+        sidebarRoutes = sidebarModule.sidebarRoutes;
+        
+        const novaModule = await import('./dist/server/routes/nova.js');
+        novaRoutes = novaModule.novaRoutes;
+      } catch (compiledError) {
+        console.log('⚠️ Pre-compiled files failed, falling back to source files');
+        console.log('Error:', compiledError.message);
+        throw new Error('Compiled files are corrupted, need source fallback');
+      }
+    } else {
+      throw new Error('No compiled files found, need source fallback');
     }
-
-    console.log('✅ All pre-compiled server files found');
-
-    // Import the compiled JavaScript modules
-    const { setupDatabase } = await import('./dist/server/database.js');
-    const { authRoutes } = await import('./dist/server/routes/auth.js');
-    const { agentRoutes } = await import('./dist/server/routes/agents.js');
-    const { roleRoutes } = await import('./dist/server/routes/roles.js');
-    const { sidebarRoutes } = await import('./dist/server/routes/sidebar.js');
-    const { novaRoutes } = await import('./dist/server/routes/nova.js');
     
     console.log('✅ All server modules imported successfully');
 
@@ -59,7 +61,7 @@ const startServer = async () => {
     app.use(cors({
       origin: [
         'https://aiduagent-csstip.ckit1.explab.com',
-        'http://localhost:8080', // for development fallback
+        'http://localhost:8080',
         'https://localhost:8080'
       ],
       credentials: true,
@@ -151,13 +153,121 @@ const startServer = async () => {
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     console.error('Stack trace:', error.stack);
-    process.exit(1);
+    
+    // Try fallback to source files with ts-node
+    console.log('🔄 Attempting fallback to source files...');
+    try {
+      // Import ts-node and register it
+      const tsNode = await import('ts-node');
+      tsNode.register({
+        project: './tsconfig.server.json'
+      });
+      
+      // Now try importing TypeScript source files
+      const { setupDatabase } = await import('./src/server/database.ts');
+      const { authRoutes } = await import('./src/server/routes/auth.ts');
+      const { agentRoutes } = await import('./src/server/routes/agents.ts');
+      const { roleRoutes } = await import('./src/server/routes/roles.ts');
+      const { sidebarRoutes } = await import('./src/server/routes/sidebar.ts');
+      const { novaRoutes } = await import('./src/server/routes/nova.ts');
+      
+      console.log('✅ Source files loaded successfully');
+      
+      // Continue with the same server setup
+      const app = express();
+      
+      app.use((req, res, next) => {
+        console.log(`📨 ${new Date().toISOString()} - ${req.method} ${req.url} - Host: ${req.get('Host')}`);
+        next();
+      });
+
+      app.use(cors({
+        origin: [
+          'https://aiduagent-csstip.ckit1.explab.com',
+          'http://localhost:8080',
+          'https://localhost:8080'
+        ],
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization']
+      }));
+
+      app.use(express.json({ limit: '10mb' }));
+      app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+      app.use((req, res, next) => {
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('X-Frame-Options', 'DENY');
+        res.setHeader('X-XSS-Protection', '1; mode=block');
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        next();
+      });
+
+      app.use('/api/auth', (req, res, next) => {
+        console.log('🔑 Auth route accessed:', req.method, req.url);
+        next();
+      }, authRoutes);
+
+      app.use('/api/agents', agentRoutes);
+      app.use('/api/roles', roleRoutes);
+      app.use('/api/sidebar', sidebarRoutes);
+      app.use('/api/nova', novaRoutes);
+
+      app.get('/api/health', (req, res) => {
+        console.log('💓 Health check requested from:', req.ip);
+        res.json({ 
+          status: 'ok', 
+          database: 'connected',
+          timestamp: new Date().toISOString(),
+          host: req.get('Host'),
+          environment: 'production-offline-fallback',
+          package: 'source-files'
+        });
+      });
+
+      const distPath = path.join(__dirname, 'dist');
+      app.use(express.static(distPath, {
+        maxAge: '1d',
+        etag: true
+      }));
+
+      app.get('*', (req, res) => {
+        if (req.path.startsWith('/api')) {
+          return res.status(404).json({ error: 'API endpoint not found' });
+        }
+        
+        const indexPath = path.join(distPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          res.status(500).send('Application not built. Missing dist/index.html');
+        }
+      });
+
+      app.use((error, req, res, next) => {
+        console.error('🚨 Server Error:', error);
+        res.status(500).json({ 
+          error: 'Internal server error',
+          message: process.env.NODE_ENV === 'development' ? error.message : 'Server error occurred'
+        });
+      });
+
+      console.log('🗄️ Initializing database...');
+      await setupDatabase();
+      console.log('✅ Database initialized successfully');
+      startProductionServer(app);
+      
+    } catch (fallbackError) {
+      console.error('❌ Fallback also failed:', fallbackError);
+      console.error('💥 Cannot start server in any mode');
+      process.exit(1);
+    }
   }
 };
 
 // Production server startup - FORCE PORT 443
 const startProductionServer = (app) => {
-  const PORT = 443; // FORCE PORT 443 as requested
+  const PORT = 443;
   
   console.log('🚀 Starting AI-DU Agent Portal Production Server on PORT 443...');
   console.log(`📍 Environment: Production Offline Mode (Port ${PORT})`);
@@ -173,7 +283,6 @@ const startProductionServer = (app) => {
       const httpsOptions = {
         cert: fs.readFileSync(certPath),
         key: fs.readFileSync(keyPath),
-        // Additional security options
         secureProtocol: 'TLSv1_2_method',
         honorCipherOrder: true,
         ciphers: [
@@ -186,7 +295,6 @@ const startProductionServer = (app) => {
 
       const server = https.createServer(httpsOptions, app);
       
-      // Handle server errors
       server.on('error', (error) => {
         console.error('🚨 HTTPS Server Error:', error);
         if (error.code === 'EACCES') {
@@ -197,7 +305,6 @@ const startProductionServer = (app) => {
         process.exit(1);
       });
 
-      // Start HTTPS server - bind to all interfaces for production
       server.listen(PORT, '0.0.0.0', () => {
         console.log('✅ HTTPS Production Server Started Successfully!');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -209,7 +316,7 @@ const startProductionServer = (app) => {
         console.log(`🛡️ SSL Certificates: Loaded and Active`);
         console.log(`🗄️ Database: SQLite (shared_database.sqlite)`);
         console.log(`📡 API Routes: Fully Integrated`);
-        console.log(`📦 Package: Offline-Ready (No TypeScript Compilation)`);
+        console.log(`📦 Package: Offline-Ready with Fallback`);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('✨ Ready to accept connections from your domain!');
         console.log('🤖 NOVA is ready and available for chat!');
@@ -240,7 +347,6 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Handle uncaught errors
 process.on('uncaughtException', (error) => {
   console.error('🚨 UNCAUGHT EXCEPTION:', error);
   process.exit(1);
@@ -251,5 +357,4 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// Start the server
 startServer();
