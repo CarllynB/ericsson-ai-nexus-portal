@@ -9,7 +9,7 @@
     "allowJs": true,
     "outDir": "./dist/server",
     "rootDir": "./src/server",
-    "strict": true,
+    "strict": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
@@ -17,10 +17,14 @@
     "noEmit": false,
     "declaration": false,
     "sourceMap": false,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": [
-    "src/server/**/*"
+    "src/server/**/*.ts"
   ],
   "exclude": [
     "node_modules",

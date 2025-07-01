@@ -15,6 +15,16 @@ const __dirname = path.dirname(__filename);
 const compileServerTypeScript = () => {
   return new Promise((resolve, reject) => {
     console.log('🔧 Compiling server TypeScript files...');
+    
+    // Check if source files exist
+    const serverDir = path.join(__dirname, 'src', 'server');
+    if (!fs.existsSync(serverDir)) {
+      reject(new Error(`Server source directory not found: ${serverDir}`));
+      return;
+    }
+
+    console.log('📁 Server source directory found:', serverDir);
+    
     const tscProcess = spawn('npx', ['tsc', '--project', 'tsconfig.server.json'], {
       stdio: 'inherit'
     });
@@ -22,7 +32,25 @@ const compileServerTypeScript = () => {
     tscProcess.on('close', (code) => {
       if (code === 0) {
         console.log('✅ Server TypeScript compilation successful');
-        resolve();
+        
+        // Verify that the compiled files exist
+        const expectedFiles = [
+          './dist/server/database.js',
+          './dist/server/routes/auth.js',
+          './dist/server/routes/agents.js',
+          './dist/server/routes/roles.js',
+          './dist/server/routes/sidebar.js',
+          './dist/server/routes/nova.js'
+        ];
+        
+        const missingFiles = expectedFiles.filter(file => !fs.existsSync(file));
+        if (missingFiles.length > 0) {
+          console.error('❌ Expected compiled files not found:', missingFiles);
+          reject(new Error(`Compiled files missing: ${missingFiles.join(', ')}`));
+        } else {
+          console.log('✅ All expected compiled files found');
+          resolve();
+        }
       } else {
         console.error('❌ Server TypeScript compilation failed');
         reject(new Error(`Server TypeScript compilation failed with code ${code}`));
@@ -48,6 +76,8 @@ const startServer = async () => {
     const { roleRoutes } = await import('./dist/server/routes/roles.js');
     const { sidebarRoutes } = await import('./dist/server/routes/sidebar.js');
     const { novaRoutes } = await import('./dist/server/routes/nova.js');
+    
+    console.log('✅ All server modules imported successfully');
 
     const app = express();
 
@@ -151,6 +181,7 @@ const startServer = async () => {
     await initializeAndStart();
   } catch (error) {
     console.error('❌ Failed to start server:', error);
+    console.error('Stack trace:', error.stack);
     process.exit(1);
   }
 };
