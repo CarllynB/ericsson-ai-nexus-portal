@@ -7,7 +7,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "allowJs": true,
-    "outDir": "./dist/server",
+    "outDir": "./dist",
     "rootDir": "./src",
     "strict": false,
     "skipLibCheck": true,

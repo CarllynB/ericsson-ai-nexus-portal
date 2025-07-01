@@ -33,7 +33,7 @@ const compileServerTypeScript = () => {
       if (code === 0) {
         console.log('✅ Server TypeScript compilation successful');
         
-        // Verify that the compiled files exist
+        // Verify that the compiled files exist - updated paths
         const expectedFiles = [
           './dist/server/database.js',
           './dist/server/routes/auth.js',
