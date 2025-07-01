@@ -3,18 +3,51 @@ version: '3.8'
 
 services:
   ai-du-agent:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-du-agent-portal
+    restart: unless-stopped
     ports:
       - "443:443"
     volumes:
+      # Mount SSL certificates as read-only
       - ./aiduagent-csstip.ckit1.explab.com.crt:/app/aiduagent-csstip.ckit1.explab.com.crt:ro
       - ./aiduagent-csstip.ckit1.explab.com.key:/app/aiduagent-csstip.ckit1.explab.com.key:ro
+      # Optional: Mount logs directory
+      - ./logs:/app/logs
     environment:
       - NODE_ENV=production
-    restart: unless-stopped
+      - PORT=443
+      - TZ=UTC
     networks:
       - ai-du-network
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "https://localhost:443/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
 
 networks:
   ai-du-network:
     driver: bridge
+    name: ai-du-network
+
+# Optional: Add volume for persistent logs
+volumes:
+  logs:
+    driver: local
