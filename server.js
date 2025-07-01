@@ -1,3 +1,4 @@
+
 import express from 'express';
 import https from 'https';
 import http from 'http';
@@ -9,6 +10,10 @@ import { spawn } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Domain-specific configuration
+const DOMAIN = 'aiduagent-csstip.ckit1.explab.com';
+const PRODUCTION_URL = `https://${DOMAIN}`;
 
 // Compile TypeScript server files first
 const compileServerTypeScript = () => {
@@ -98,11 +103,13 @@ const startServer = async () => {
       next();
     });
 
-    // Enable CORS with production-ready configuration
+    // Enable CORS with domain-specific configuration
     app.use(cors({
       origin: [
-        'https://aiduagent-csstip.ckit1.explab.com',
-        'http://localhost:8080', // for development fallback
+        PRODUCTION_URL,
+        `https://${DOMAIN}`,
+        // Allow during development/testing
+        'http://localhost:8080',
         'https://localhost:8080'
       ],
       credentials: true,
@@ -141,6 +148,7 @@ const startServer = async () => {
         database: 'connected',
         timestamp: new Date().toISOString(),
         host: req.get('Host'),
+        domain: DOMAIN,
         environment: process.env.NODE_ENV || 'production'
       });
     });
@@ -197,16 +205,17 @@ const startServer = async () => {
   }
 };
 
-// Production server startup - FORCE PORT 443
+// Production server startup - DOMAIN-SPECIFIC PORT 443
 const startProductionServer = (app) => {
-  const PORT = 443; // FORCE PORT 443 as requested
+  const PORT = 443; // FORCE PORT 443 for domain
   
-  console.log('🚀 Starting AI-DU Agent Portal Production Server on PORT 443...');
-  console.log(`📍 Environment: Production Mode (Port ${PORT})`);
+  console.log(`🚀 Starting AI-DU Agent Portal for ${DOMAIN} on PORT 443...`);
+  console.log(`📍 Domain: ${DOMAIN}`);
+  console.log(`🌐 Production URL: ${PRODUCTION_URL}`);
   
   // Check for SSL certificates
-  const certPath = './aiduagent-csstip.ckit1.explab.com.crt';
-  const keyPath = './aiduagent-csstip.ckit1.explab.com.key';
+  const certPath = `./aiduagent-csstip.ckit1.explab.com.crt`;
+  const keyPath = `./aiduagent-csstip.ckit1.explab.com.key`;
   const sslCertExists = fs.existsSync(certPath);
   const sslKeyExists = fs.existsSync(keyPath);
 
@@ -244,75 +253,57 @@ const startProductionServer = (app) => {
         console.log('✅ HTTPS Production Server Started Successfully!');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log(`🔒 HTTPS Server: Running on port ${PORT}`);
-        console.log(`🌐 Production URL: https://aiduagent-csstip.ckit1.explab.com/`);
-        console.log(`🔍 Health Check: https://aiduagent-csstip.ckit1.explab.com/api/health`);
-        console.log(`🤖 NOVA API: https://aiduagent-csstip.ckit1.explab.com/api/nova/chat`);
+        console.log(`🌐 Production URL: ${PRODUCTION_URL}/`);
+        console.log(`🏠 Home Page: ${PRODUCTION_URL}/`);
+        console.log(`🔍 Health Check: ${PRODUCTION_URL}/api/health`);
+        console.log(`🤖 NOVA Chat: ${PRODUCTION_URL}/api/nova/chat`);
+        console.log(`🎯 NOVA Status: ${PRODUCTION_URL}/api/nova/status`);
+        console.log(`📊 Dashboard: ${PRODUCTION_URL}/dashboard`);
+        console.log(`🤖 Talk to NOVA: ${PRODUCTION_URL}/talk-to-nova`);
         console.log(`💾 Static Files: ${path.join(__dirname, 'dist')}`);
         console.log(`🛡️ SSL Certificates: Loaded and Active`);
         console.log(`🗄️ Database: SQLite (shared_database.sqlite)`);
         console.log(`📡 API Routes: Fully Integrated`);
+        console.log(`🎯 Domain: ${DOMAIN}`);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('✨ Ready to accept connections from your domain!');
+        console.log(`✨ Ready to accept connections at ${PRODUCTION_URL}!`);
         console.log('🤖 NOVA is ready and available for chat!');
+        console.log(`🌍 Server configured for domain: ${DOMAIN}`);
       });
 
     } catch (sslError) {
       console.error('❌ SSL Certificate Error:', sslError.message);
-      console.error('🔧 Cannot start without SSL on port 443');
+      console.error(`🔧 Cannot start ${DOMAIN} without SSL on port 443`);
       process.exit(1);
     }
   } else {
-    console.error('❌ SSL certificates required for port 443:');
+    console.error(`❌ SSL certificates required for ${DOMAIN} on port 443:`);
     console.log(`   - Certificate: ${certPath} ${sslCertExists ? '✅' : '❌'}`);
     console.log(`   - Private Key: ${keyPath} ${sslKeyExists ? '✅' : '❌'}`);
-    console.error('🔧 Cannot start HTTPS server on port 443 without SSL certificates');
+    console.error(`🔧 Cannot start HTTPS server for ${DOMAIN} on port 443 without SSL certificates`);
     process.exit(1);
   }
 };
 
-const startHttpFallback = (port, app) => {
-  const server = http.createServer(app);
-  
-  server.on('error', (error) => {
-    console.error('🚨 HTTP Server Error:', error);
-    if (error.code === 'EADDRINUSE') {
-      console.error(`❌ Port ${port} is already in use`);
-    }
-    process.exit(1);
-  });
-
-  server.listen(port, '0.0.0.0', () => {
-    console.log('✅ HTTP Fallback Server Started');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`🌐 HTTP Server: Running on port ${port}`);
-    console.log(`🔍 Local Access: http://localhost:${port}`);
-    console.log(`💾 Static Files: ${path.join(__dirname, 'dist')}`);
-    console.log(`🗄️ Database: SQLite (shared_database.sqlite)`);
-    console.log(`📡 API Routes: Fully Integrated`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('⚠️ Running in HTTP mode - SSL certificates needed for HTTPS');
-  });
-};
-
 // Handle process termination gracefully
 process.on('SIGTERM', () => {
-  console.log('🛑 Received SIGTERM, shutting down gracefully...');
+  console.log(`🛑 Received SIGTERM, shutting down ${DOMAIN} server gracefully...`);
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('🛑 Received SIGINT, shutting down gracefully...');
+  console.log(`🛑 Received SIGINT, shutting down ${DOMAIN} server gracefully...`);
   process.exit(0);
 });
 
 // Handle uncaught errors
 process.on('uncaughtException', (error) => {
-  console.error('🚨 UNCAUGHT EXCEPTION:', error);
+  console.error(`🚨 UNCAUGHT EXCEPTION on ${DOMAIN}:`, error);
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('🚨 UNHANDLED REJECTION at:', promise, 'reason:', reason);
+  console.error(`🚨 UNHANDLED REJECTION on ${DOMAIN} at:`, promise, 'reason:', reason);
   process.exit(1);
 });
 
