@@ -72,13 +72,13 @@ router.post('/', authenticateToken, requireRole(['admin', 'super_admin']), async
   }
 });
 
-// Update sidebar item (admin/super_admin only) - using proper parameter name
-router.put('/:itemId', authenticateToken, requireRole(['admin', 'super_admin']), async (req, res) => {
+// Update sidebar item (admin/super_admin only)
+router.put('/:id', authenticateToken, requireRole(['admin', 'super_admin']), async (req, res) => {
   try {
-    const { itemId } = req.params;
+    const { id } = req.params;
     const { title, url, order } = req.body;
 
-    console.log('📝 Updating sidebar item:', itemId);
+    console.log('📝 Updating sidebar item:', id);
 
     const updateFields = [];
     const values = [];
@@ -97,14 +97,14 @@ router.put('/:itemId', authenticateToken, requireRole(['admin', 'super_admin']),
     }
 
     updateFields.push('updated_at = datetime("now")');
-    values.push(itemId);
+    values.push(id);
 
     await dbRun(
       `UPDATE sidebar_items SET ${updateFields.join(', ')} WHERE id = ?`,
       values
     );
 
-    const updatedItem = await dbGet('SELECT * FROM sidebar_items WHERE id = ?', [itemId]);
+    const updatedItem = await dbGet('SELECT * FROM sidebar_items WHERE id = ?', [id]);
     
     if (!updatedItem) {
       res.status(404).json({ error: 'Sidebar item not found' });
@@ -129,15 +129,15 @@ router.put('/:itemId', authenticateToken, requireRole(['admin', 'super_admin']),
   }
 });
 
-// Delete sidebar item (admin/super_admin only) - using proper parameter name
-router.delete('/:itemId', authenticateToken, requireRole(['admin', 'super_admin']), async (req, res) => {
+// Delete sidebar item (admin/super_admin only)
+router.delete('/:id', authenticateToken, requireRole(['admin', 'super_admin']), async (req, res) => {
   try {
-    const { itemId } = req.params;
+    const { id } = req.params;
 
-    console.log('🗑️ Deleting sidebar item:', itemId);
+    console.log('🗑️ Deleting sidebar item:', id);
 
     // Check if item is default
-    const item = await dbGet('SELECT is_default FROM sidebar_items WHERE id = ?', [itemId]);
+    const item = await dbGet('SELECT is_default FROM sidebar_items WHERE id = ?', [id]);
     
     if (!item) {
       res.status(404).json({ error: 'Sidebar item not found' });
@@ -149,7 +149,7 @@ router.delete('/:itemId', authenticateToken, requireRole(['admin', 'super_admin'
       return;
     }
 
-    await dbRun('DELETE FROM sidebar_items WHERE id = ?', [itemId]);
+    await dbRun('DELETE FROM sidebar_items WHERE id = ?', [id]);
 
     console.log('✅ Sidebar item deleted successfully');
     res.json({ message: 'Sidebar item deleted successfully' });

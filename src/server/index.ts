@@ -1,4 +1,3 @@
-
 import express from 'express';
 import https from 'https';
 import http from 'http';
@@ -29,97 +28,38 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Health check endpoint - simple route first
+// API Routes with error handling
+app.use('/api/auth', (req, res, next) => {
+  console.log('🔑 Auth route accessed:', req.method, req.url);
+  next();
+}, authRoutes);
+
+app.use('/api/agents', agentRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/sidebar', sidebarRoutes);
+app.use('/api/nova', novaRoutes);
+
+// Health check endpoint
 app.get('/api/health', (req, res) => {
   console.log('💓 Health check requested');
   res.json({ 
     status: 'ok', 
     database: 'connected',
-    timestamp: new Date().toISOString(),
-    port: process.env.PORT || 'unknown',
-    environment: process.env.NODE_ENV || 'development'
+    timestamp: new Date().toISOString()
   });
 });
-
-// API Routes with detailed error handling and validation
-try {
-  console.log('🔧 Registering API routes with validation...');
-  
-  // Register each route with individual error handling
-  app.use('/api/auth', (req, res, next) => {
-    console.log('🔑 Auth route accessed:', req.method, req.url);
-    next();
-  }, authRoutes);
-  console.log('✅ Auth routes registered');
-
-  app.use('/api/agents', agentRoutes);
-  console.log('✅ Agent routes registered');
-
-  app.use('/api/roles', roleRoutes);
-  console.log('✅ Role routes registered');
-
-  app.use('/api/sidebar', sidebarRoutes);
-  console.log('✅ Sidebar routes registered');
-
-  app.use('/api/nova', novaRoutes);
-  console.log('✅ Nova routes registered');
-  
-  console.log('✅ All API routes registered successfully');
-} catch (routeError) {
-  console.error('❌ Error registering routes:', routeError);
-  process.exit(1);
-}
 
 // Serve static files from dist directory in production
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(process.cwd(), 'dist');
-  console.log('📁 Serving static files from:', distPath);
+  app.use(express.static(distPath));
   
-  // Serve static files with proper error handling
-  try {
-    app.use(express.static(distPath, {
-      setHeaders: (res, path) => {
-        if (path.endsWith('.js')) {
-          res.set('Content-Type', 'application/javascript');
-        }
-      }
-    }));
-    console.log('✅ Static files middleware registered');
-  } catch (staticError) {
-    console.error('❌ Error setting up static files:', staticError);
-  }
-  
-  // Handle React Router routes with better error handling
-  try {
-    app.get('*', (req, res, next) => {
-      try {
-        // Only handle non-API routes
-        if (req.path.startsWith('/api/')) {
-          console.log('❓ Unhandled API route:', req.path);
-          res.status(404).json({ error: 'API endpoint not found' });
-          return;
-        }
-        
-        console.log('📄 Serving index.html for:', req.path);
-        const indexPath = path.join(distPath, 'index.html');
-        
-        // Check if index.html exists
-        if (!fs.existsSync(indexPath)) {
-          console.error('❌ index.html not found at:', indexPath);
-          res.status(500).send('Application not built properly');
-          return;
-        }
-        
-        res.sendFile(indexPath);
-      } catch (sendError) {
-        console.error('❌ Error serving file:', sendError);
-        next(sendError);
-      }
-    });
-    console.log('✅ React Router wildcard route registered');
-  } catch (wildcardError) {
-    console.error('❌ Error setting up wildcard route:', wildcardError);
-  }
+  // Serve index.html for all non-API routes (React Router support)
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(distPath, 'index.html'));
+    }
+  });
 }
 
 // Global error handler - MUST be last middleware
@@ -146,15 +86,8 @@ const isMainModule = process.argv[1] === __filename;
 if (isMainModule) {
   const startServer = async () => {
     try {
-      // Default ports: dev on 8081, production on 443
-      let PORT = parseInt(process.env.PORT || '8081', 10);
-      
-      // Special handling for lab production (port 443)
-      if (process.env.NODE_ENV === 'production' && (process.env.PORT === '443' || process.env.FORCE_HTTPS)) {
-        PORT = 443;
-      }
-
-      console.log(`🌐 Starting server in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      // Backend runs on port 8081, Vite frontend on 8080
+      const PORT = parseInt(process.env.PORT || '8081', 10);
 
       // Check for SSL certificates
       const sslCertExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');
@@ -171,20 +104,14 @@ if (isMainModule) {
 
           const server = https.createServer(httpsOptions, app);
           
-          server.on('error', (error: any) => {
+          server.on('error', (error) => {
             console.error('🚨 HTTPS Server Error:', error);
-            if (error.code === 'EACCES' && PORT < 1024) {
-              console.error('💡 Port access denied. Try running with sudo for port 443');
-            }
           });
 
           server.listen(PORT, '0.0.0.0', () => {
-            console.log(`🔒 HTTPS Server running on port ${PORT}`);
-            console.log(`🔧 API: https://localhost:${PORT}`);
-            console.log(`🔍 Health: https://localhost:${PORT}/api/health`);
-            if (PORT === 443) {
-              console.log(`🌐 Lab URL: https://aiduagent-csstip.ckit1.explab.com`);
-            }
+            console.log(`🔒 HTTPS Backend Server running on port ${PORT}`);
+            console.log(`🔧 Backend API: https://localhost:${PORT}`);
+            console.log(`🔍 API Health: https://localhost:${PORT}/api/health`);
           });
         } catch (sslError) {
           console.warn('⚠️ SSL certificate error, falling back to HTTP:', sslError.message);
@@ -203,17 +130,14 @@ if (isMainModule) {
   const startHttpServer = (port: number) => {
     const server = http.createServer(app);
     
-    server.on('error', (error: any) => {
+    server.on('error', (error) => {
       console.error('🚨 HTTP Server Error:', error);
-      if (error.code === 'EACCES' && port < 1024) {
-        console.error('💡 Port access denied. Try running with sudo for privileged ports');
-      }
     });
 
     server.listen(port, '0.0.0.0', () => {
-      console.log(`🌐 HTTP Server running on port ${port}`);
-      console.log(`🔧 API: http://localhost:${port}`);
-      console.log(`🔍 Health: http://localhost:${port}/api/health`);
+      console.log(`🌐 HTTP Backend Server running on port ${port}`);
+      console.log(`🔧 Backend API: http://localhost:${port}`);
+      console.log(`🔍 API Health: http://localhost:${port}/api/health`);
     });
   };
 

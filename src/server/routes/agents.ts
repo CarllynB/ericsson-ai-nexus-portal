@@ -1,4 +1,3 @@
-
 import express, { Request, Response } from 'express';
 import { dbAll, dbRun, dbGet } from '../database';
 import { authenticateToken, requireRole } from '../middleware/auth';
@@ -17,22 +16,11 @@ agentRoutes.get('/', async (req: Request, res: Response) => {
       console.log('✅ Server: Database is empty - this is expected (no hardcoded agents)');
     }
 
-    const formattedAgents = agents.map(agent => {
-      try {
-        return {
-          ...agent,
-          key_features: agent.key_features ? JSON.parse(agent.key_features) : [],
-          contact_info: agent.contact_info ? JSON.parse(agent.contact_info) : undefined
-        };
-      } catch (parseError) {
-        console.error('❌ Server: JSON parse error for agent:', agent.id, parseError);
-        return {
-          ...agent,
-          key_features: [],
-          contact_info: undefined
-        };
-      }
-    });
+    const formattedAgents = agents.map(agent => ({
+      ...agent,
+      key_features: JSON.parse(agent.key_features),
+      contact_info: agent.contact_info ? JSON.parse(agent.contact_info) : undefined
+    }));
 
     console.log('🚫 Server: NO hardcoded agents, NO fallback data - only SQLite results');
     res.json(formattedAgents);
@@ -64,7 +52,7 @@ agentRoutes.post('/', authenticateToken, requireRole(['admin', 'super_admin']), 
       newAgent.description,
       newAgent.category,
       newAgent.status,
-      JSON.stringify(newAgent.key_features || []),
+      JSON.stringify(newAgent.key_features),
       newAgent.access_link || null,
       newAgent.contact_info ? JSON.stringify(newAgent.contact_info) : null,
       newAgent.owner,
@@ -80,7 +68,7 @@ agentRoutes.post('/', authenticateToken, requireRole(['admin', 'super_admin']), 
   }
 });
 
-// Update agent (admin/super_admin only) - using standard parameter syntax
+// Update agent (admin/super_admin only)
 agentRoutes.put('/:id', authenticateToken, requireRole(['admin', 'super_admin']), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -120,7 +108,7 @@ agentRoutes.put('/:id', authenticateToken, requireRole(['admin', 'super_admin'])
     const updatedAgent = await dbGet('SELECT * FROM agents WHERE id = ?', [id]);
     const formattedAgent = {
       ...updatedAgent,
-      key_features: updatedAgent.key_features ? JSON.parse(updatedAgent.key_features) : [],
+      key_features: JSON.parse(updatedAgent.key_features),
       contact_info: updatedAgent.contact_info ? JSON.parse(updatedAgent.contact_info) : undefined
     };
 
@@ -132,7 +120,7 @@ agentRoutes.put('/:id', authenticateToken, requireRole(['admin', 'super_admin'])
   }
 });
 
-// Delete agent (admin/super_admin only) - using standard parameter syntax
+// Delete agent (admin/super_admin only)
 agentRoutes.delete('/:id', authenticateToken, requireRole(['admin', 'super_admin']), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

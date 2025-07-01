@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -331,6 +332,109 @@ export const AgentManagement = () => {
                 />
                 <Button type="submit" className="w-full">
                   {editingAgent ? 'Update Agent' : 'Create Agent'}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+        
+        {/* Separate edit dialog for both admins and super admins */}
+        {!isSuperAdmin && editingAgent && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Edit Agent</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                  placeholder="Agent Name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  required
+                />
+                <Textarea
+                  placeholder="Description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  required
+                />
+                <Input
+                  placeholder="Category"
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  required
+                />
+                <Select
+                  value={formData.status}
+                  onValueChange={(value: Agent['status']) => 
+                    setFormData({...formData, status: value})
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="coming_soon">Coming Soon</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Textarea
+                  placeholder="Key Features (one per line)"
+                  value={formData.key_features}
+                  onChange={(e) => setFormData({...formData, key_features: e.target.value})}
+                />
+                
+                <div className="space-y-4">
+                  <label className="text-sm font-medium">Access Type</label>
+                  <Select
+                    value={formData.access_type}
+                    onValueChange={(value: 'link' | 'contact') => 
+                      setFormData({...formData, access_type: value})
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="link">Access Link</SelectItem>
+                      <SelectItem value="contact">Contact Information</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {formData.access_type === 'link' ? (
+                    <Input
+                      placeholder="Access Link (optional)"
+                      value={formData.access_link}
+                      onChange={(e) => setFormData({...formData, access_link: e.target.value})}
+                    />
+                  ) : (
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Contact Name"
+                        value={formData.contact_name}
+                        onChange={(e) => setFormData({...formData, contact_name: e.target.value})}
+                        required
+                      />
+                      <Input
+                        placeholder="Contact Email"
+                        type="email"
+                        value={formData.contact_email}
+                        onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+                
+                <Input
+                  placeholder="Owner"
+                  value={formData.owner}
+                  onChange={(e) => setFormData({...formData, owner: e.target.value})}
+                  required
+                />
+                <Button type="submit" className="w-full">
+                  Update Agent
                 </Button>
               </form>
             </DialogContent>
