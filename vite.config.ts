@@ -5,14 +5,9 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import fs from "fs";
 
-// Domain-specific configuration
-const DOMAIN = 'aiduagent-csstip.ckit1.explab.com';
-const SSL_CERT_PATH = './aiduagent-csstip.ckit1.explab.com.crt';
-const SSL_KEY_PATH = './aiduagent-csstip.ckit1.explab.com.key';
-
 // Check if SSL certificates exist
-const sslCertExists = fs.existsSync(SSL_CERT_PATH);
-const sslKeyExists = fs.existsSync(SSL_KEY_PATH);
+const sslCertExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.crt');
+const sslKeyExists = fs.existsSync('./aiduagent-csstip.ckit1.explab.com.key');
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -21,14 +16,14 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     // Use HTTPS with SSL certificates if they exist
     https: sslCertExists && sslKeyExists ? {
-      cert: fs.readFileSync(SSL_CERT_PATH),
-      key: fs.readFileSync(SSL_KEY_PATH)
+      cert: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.crt'),
+      key: fs.readFileSync('./aiduagent-csstip.ckit1.explab.com.key')
     } : undefined,
     cors: true,
-    // Proxy API requests to the backend server on the same domain
+    // Proxy API requests to the backend server
     proxy: {
       '/api': {
-        target: sslCertExists && sslKeyExists ? `https://${DOMAIN}:8081` : 'http://localhost:8081',
+        target: sslCertExists && sslKeyExists ? 'https://localhost:8081' : 'http://localhost:8081',
         changeOrigin: true,
         secure: false,
         rejectUnauthorized: false
