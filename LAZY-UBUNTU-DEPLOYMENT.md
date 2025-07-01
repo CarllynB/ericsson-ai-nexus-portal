@@ -3,7 +3,7 @@
 
 ## Prerequisites
 - Fresh Ubuntu server with sudo access
-- AI_DU folder packaged as `ai-du-production-ready.tar.gz`
+- AI_DU folder (transferred however you want)
 
 ## Step 1: Prepare Ubuntu Server
 ```bash
@@ -19,13 +19,16 @@ node --version
 npm --version
 ```
 
-## Step 2: Transfer & Extract
+## Step 2: Transfer AI_DU Folder
 ```bash
-# Upload ai-du-production-ready.tar.gz to server (use WinSCP/FileZilla)
-# Or use SCP: scp ai-du-production-ready.tar.gz user@server:/home/user/
+# Transfer your AI_DU folder to the server using your preferred method:
+# - SCP: scp -r AI_DU/ user@server:/home/user/
+# - WinSCP/FileZilla
+# - Git clone
+# - USB drive
+# - Whatever works for you
 
-# Extract
-tar -xzf ai-du-production-ready.tar.gz
+# Navigate to the folder
 cd AI_DU/
 ```
 
@@ -82,4 +85,4 @@ sudo node server.js
 ```
 
 ## That's It!
-No compilation, no building - just extract and run!
+No packaging, no compression - just transfer your folder and run!
