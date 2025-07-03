@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useSidebarItems, SidebarItem } from "@/hooks/useSidebarItems";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { NovaSettings } from "./NovaSettings";
+
 
 export const SidebarManagement = () => {
   const { items, loading, addItem, updateItem, deleteItem, reorderItems } = useSidebarItems();
@@ -88,17 +88,13 @@ export const SidebarManagement = () => {
       <div>
         <h2 className="text-lg font-semibold">Portal Management</h2>
         <p className="text-sm text-muted-foreground">
-          Customize sidebar navigation and configure NOVA AI assistant settings.
+          Customize sidebar navigation for the portal.
         </p>
       </div>
 
-      <Tabs defaultValue="sidebar" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="sidebar">Sidebar Items</TabsTrigger>
-          <TabsTrigger value="nova">NOVA Settings</TabsTrigger>
-        </TabsList>
+      <div className="w-full">
         
-        <TabsContent value="sidebar" className="space-y-6">
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-md font-medium">Sidebar Navigation</h3>
@@ -210,12 +206,8 @@ export const SidebarManagement = () => {
               </Card>
             ))}
           </div>
-        </TabsContent>
-
-        <TabsContent value="nova" className="space-y-6">
-          <NovaSettings />
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>

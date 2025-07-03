@@ -1,0 +1,19 @@
+{
+  "name": "ai-du-agent-portal-offline",
+  "version": "1.0.0", 
+  "description": "AI-DU Agent Portal - Zero-Download Offline Package",
+  "main": "run-offline.js",
+  "scripts": {
+    "start": "node run-offline.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "sqlite3": "^5.1.7",
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "keywords": ["ai", "agent", "portal", "offline", "zero-download"],
+  "author": "AI-DU Team",
+  "license": "MIT"
+}
