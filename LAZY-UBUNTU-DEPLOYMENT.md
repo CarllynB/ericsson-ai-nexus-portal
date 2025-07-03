@@ -34,7 +34,11 @@ cd AI_DU/
 
 ## Step 3: Install Dependencies (if needed)
 ```bash
-# Only if node_modules is missing
+# Only if node_modules is missing OR if you get install errors
+npm install
+
+# If npm install fails with ENOTEMPTY errors:
+rm -rf node_modules package-lock.json
 npm install
 ```
 
