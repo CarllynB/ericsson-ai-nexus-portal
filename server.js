@@ -50,7 +50,8 @@ const compileServerTypeScript = () => {
           './dist/server/routes/auth.js',
           './dist/server/routes/agents.js',
           './dist/server/routes/roles.js',
-          './dist/server/routes/sidebar.js'
+          './dist/server/routes/sidebar.js',
+          './dist/server/routes/nova.js'
         ];
         
         const missingFiles = expectedFiles.filter(file => !fs.existsSync(file));
@@ -85,7 +86,7 @@ const startServer = async () => {
     const { agentRoutes } = await import('./dist/server/routes/agents.js');
     const { roleRoutes } = await import('./dist/server/routes/roles.js');
     const { sidebarRoutes } = await import('./dist/server/routes/sidebar.js');
-    
+    const { novaRoutes } = await import('./dist/server/routes/nova.js');
     
     console.log('✅ All server modules imported successfully');
 
@@ -130,7 +131,7 @@ const startServer = async () => {
     app.use('/api/agents', agentRoutes);
     app.use('/api/roles', roleRoutes);
     app.use('/api/sidebar', sidebarRoutes);
-    
+    app.use('/api/nova', novaRoutes);
 
     // Health check endpoint
     app.get('/api/health', (req, res) => {
@@ -245,12 +246,14 @@ const startProductionServer = (app) => {
         console.log(`🔒 HTTPS Server: Running on port ${PORT}`);
         console.log(`🌐 Production URL: https://aiduagent-csstip.ckit1.explab.com/`);
         console.log(`🔍 Health Check: https://aiduagent-csstip.ckit1.explab.com/api/health`);
+        console.log(`🤖 NOVA API: https://aiduagent-csstip.ckit1.explab.com/api/nova/chat`);
         console.log(`💾 Static Files: ${path.join(__dirname, 'dist')}`);
         console.log(`🛡️ SSL Certificates: Loaded and Active`);
         console.log(`🗄️ Database: SQLite (shared_database.sqlite)`);
         console.log(`📡 API Routes: Fully Integrated`);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('✨ Ready to accept connections from your domain!');
+        console.log('🤖 NOVA is ready and available for chat!');
       });
 
     } catch (sslError) {
